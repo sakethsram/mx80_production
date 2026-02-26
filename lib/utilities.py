@@ -276,17 +276,6 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
     return entries
 
 
-# ═════════════════════════════════════════════════════════════
-# PIPELINE STEP 2 — parse_outputs
-#
-# Reads entries from global_config.device_results.
-# For each command looks up the parser in VENDOR_REGISTRY.
-# Runs parser → writes json_output back into the entry dict.
-# Calls log_task once per command: "{cmd}: json=True/False"
-#
-# Returns: True if ALL parsers ran without error; False otherwise.
-# ═════════════════════════════════════════════════════════════
-
 def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
     """
     STEP 2 — Run registered parser functions over collected raw output.
@@ -294,12 +283,18 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
     Reads from  : global_config.device_results[device_key][check_type]
     Writes back : entry["json_output"]  for each entry in-place
 
+    Failure rules:
+        - No parser registered for a command  → SKIP (collect-only cmd), never a failure
+        - Parser registered but output empty  → FAIL  (we expected data)
+        - Parser registered, output present, parser crashes or returns {} → FAIL
+        - Parser registered, output present, parser returns data → SUCCESS
+
     log_task called once per command with:
         task_name = "Parsing the data"
-        log_line  = "{cmd}: json=True"  or  "{cmd}: json=False"
+        log_line  = "{cmd}: json=True"  or  "{cmd}: json=False (<reason>)"
 
-    Returns True only when every command with a registered parser
-    returns a non-empty dict without raising an exception.
+    Returns True only when every command that HAS a registered parser
+    returned a non-empty dict without raising an exception.
     """
     phase = "pre-checks" if check_type == "pre" else "post-checks"
 
@@ -321,23 +316,24 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
         cmd    = entry["command"]
         output = entry["output"]
 
-        # ── no output → skip parser, log False ────────────────────────
-        if not output or not output.strip():
-            log.warning(f"[{device_key}] '{cmd}' — output empty, skipping parser")
-            log_task(device_key, phase, "Parsing the data",
-                     "Failed", f"{cmd}: output empty",
-                     log_line=f"{cmd}: json=False (output empty)")
-            all_ok = False
-            continue
-
-        # ── no parser registered → skip silently, do NOT fail ─────────
+        # ── no parser registered → collect-only command, skip entirely ─
+        # This is NOT a failure — many commands (config, logs, etc.)
+        # are collected for storage/report only and have no parser.
         parser_fn = registry.get((vendor, cmd))
         if parser_fn is None:
-            log.warning(f"[{device_key}] No parser registered for ('{vendor}', '{cmd}') — skipping")
-            # not a failure; we just don't have a parser for this command
+            log.debug(f"[{device_key}] '{cmd}' — no parser registered, collect-only, skipping")
             log_task(device_key, phase, "Parsing the data",
-                     "Success", f"{cmd}: no parser registered (skipped)",
-                     log_line=f"{cmd}: json=False (no parser)")
+                     "Success", f"{cmd}: collect-only (no parser)",
+                     log_line=f"{cmd}: json=False (no parser, collect-only — OK)")
+            continue
+
+        # ── parser IS registered but output is empty → FAIL ───────────
+        if not output or not output.strip():
+            log.warning(f"[{device_key}] '{cmd}' — parser registered but output is EMPTY")
+            log_task(device_key, phase, "Parsing the data",
+                     "Failed", f"{cmd}: output empty but parser expected",
+                     log_line=f"{cmd}: json=False (output empty)")
+            all_ok = False
             continue
 
         # ── run parser ─────────────────────────────────────────────────
@@ -351,7 +347,7 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
 
             entry["json_output"] = result
             json_ok = True
-            log.info(f"[{device_key}] '{cmd}' parsed OK")
+            log.info(f"[{device_key}] '{cmd}' parsed OK — keys: {list(result.keys()) if isinstance(result, dict) else type(result).__name__}")
 
         except Exception as exc:
             import traceback as _tb
@@ -362,17 +358,15 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
             all_ok  = False
             log.error(f"[{device_key}] {parser_fn.__name__}() failed for '{cmd}': {exc}")
 
-        # ── log_task once per command ──────────────────────────────────
-        parse_status  = "Success" if json_ok else "Failed"
-        cmd_log_msg   = f"{cmd}: json={json_ok}"
+        # ── log_task once per command that has a parser ────────────────
+        parse_status = "Success" if json_ok else "Failed"
+        cmd_log_msg  = f"{cmd}: json={json_ok}"
         log_task(device_key, phase, "Parsing the data",
                  parse_status, cmd_log_msg, log_line=cmd_log_msg)
 
     verdict = "all parsers OK" if all_ok else "one or more parsers FAILED"
     log.info(f"[{device_key}] STEP 2 done — {verdict}")
     return all_ok
-
-
 # ═════════════════════════════════════════════════════════════
 # PIPELINE STEP 3 — push_to_tracker
 #
