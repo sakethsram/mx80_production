@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workflow Report — 2 Device(s)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0f14;--surf:#13161e;--surf2:#1a1e28;
+  --border:#252a38;--border2:#2e3547;
+  --text:#e2e8f0;--muted:#64748b;--muted2:#94a3b8;
+  --accent:#38bdf8;--ok:#22c55e;--err:#f43f5e;--warn:#f59e0b;
+  --mono:"Fira Code",monospace;--sans:"Inter",sans-serif;
+  --r:8px;--shadow:0 4px 24px rgba(0,0,0,.5);
+}
+html{font-size:15px}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding:2.5rem 1.5rem 5rem}
+.wrap{max-width:1160px;margin:0 auto}
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.hdr h1{font-size:1.6rem;font-weight:700;letter-spacing:-.01em;color:var(--text);line-height:1.25}
+.hdr h1 span{color:var(--accent)}
+.hdr .meta{font-family:var(--mono);font-size:.7rem;color:var(--muted);margin-top:.4rem;line-height:1.9}
+.pill{display:inline-block;padding:.28rem .85rem;border-radius:4px;font-family:var(--mono);font-size:.7rem;font-weight:600;letter-spacing:.06em;white-space:nowrap;margin-top:.35rem;text-transform:uppercase}
+.pill.ok{background:rgba(34,197,94,.1);color:var(--ok);border:1px solid rgba(34,197,94,.25)}
+.pill.fail{background:rgba(244,63,94,.1);color:var(--err);border:1px solid rgba(244,63,94,.25)}
+.pill.partial{background:rgba(245,158,11,.1);color:var(--warn);border:1px solid rgba(245,158,11,.25)}
+.selector-bar{display:flex;align-items:center;gap:1rem;background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:1.5rem;}
+.selector-bar label{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;white-space:nowrap;}
+.device-select{font-family:var(--mono);font-size:.82rem;font-weight:600;background:var(--surf2);color:var(--accent);border:1px solid var(--border2);border-radius:4px;padding:.4rem .75rem;cursor:pointer;min-width:220px;outline:none;}
+.device-select:focus{border-color:var(--accent)}
+.device-select option{background:var(--surf2);color:var(--text)}
+.device-count{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+/* Device info card — rendered by JS below the dropdown */
+.dev-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem 1.5rem;display:flex;flex-wrap:wrap;gap:2.5rem;margin-bottom:1.5rem}
+.df{display:flex;flex-direction:column;gap:.25rem}
+.df .lbl{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
+.df .val{font-family:var(--mono);font-size:.88rem;color:var(--accent)}
+.dev-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);}
+.dev-key{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--text)}
+.meta-ts{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
+.sc{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.3rem}
+.sc .n{font-size:2.1rem;font-weight:700;line-height:1;letter-spacing:-.02em;font-family:var(--mono)}
+.sc.tot .n{color:var(--accent)} .sc.ok .n{color:var(--ok)} .sc.err .n{color:var(--err)}
+.sc .l{font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}
+.prog{margin-top:.5rem;height:3px;background:var(--border);border-radius:99px;overflow:hidden}
+.progbar{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ok),#86efac)}
+.tw{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);margin-bottom:2rem}
+table{width:100%;border-collapse:collapse}
+col.ct{width:12%} col.cs{width:24%} col.cst{width:10%} col.cr{width:54%}
+thead tr{background:var(--surf2);border-bottom:2px solid var(--border)}
+thead th{padding:.75rem 1.25rem;font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600;text-align:left}
+.task-row td{padding:.75rem 1.25rem;vertical-align:top;border-bottom:1px solid var(--border);font-size:.84rem;line-height:1.5}
+.task-row:hover td{background:var(--surf2);transition:background .1s}
+.task-row.failed-row{background:rgba(244,63,94,.02)}
+.phase-sep td{padding:0!important;height:6px;background:var(--bg);border:none!important}
+.phase-cell{vertical-align:middle!important;text-align:center;padding:.75rem .75rem!important;border-right:1px solid var(--border);background:rgba(255,255,255,.008)}
+.phase-name{font-size:.62rem;text-transform:uppercase;letter-spacing:.09em;font-weight:700;line-height:1.3}
+.subtask-cell{font-family:var(--mono);font-size:.77rem!important;color:#cbd5e1;word-break:break-word}
+.status-cell{text-align:center;vertical-align:middle!important}
+.badge{display:inline-block;padding:.2rem .6rem;border-radius:3px;font-size:.65rem;font-weight:600;letter-spacing:.05em;font-family:var(--mono);white-space:nowrap;text-transform:uppercase}
+.badge-success{background:rgba(34,197,94,.12);color:var(--ok);border:1px solid rgba(34,197,94,.28)}
+.badge-failed{background:rgba(244,63,94,.12);color:var(--err);border:1px solid rgba(244,63,94,.28)}
+.badge-blank{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.remark-cell{font-family:var(--mono);font-size:.75rem!important;color:var(--muted2);word-break:break-word}
+.remark-ok{color:#86efac} .remark-err{color:#fca5a5} .remark-na{color:var(--border)}
+.log-btn{display:inline-block;margin-top:.4rem;margin-right:.3rem;padding:.14rem .5rem;background:rgba(244,63,94,.06);border:1px solid rgba(244,63,94,.22);border-radius:3px;font-family:var(--mono);font-size:.62rem;font-weight:600;color:var(--err);cursor:pointer;user-select:none;transition:background .12s;letter-spacing:.04em;}
+.log-btn:hover{background:rgba(244,63,94,.14);border-color:rgba(244,63,94,.4)}
+.cmd-block .log-btn{background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.18);color:var(--accent);}
+.cmd-block .log-btn:hover{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.38)}
+.log-drawer{margin-top:.42rem;background:#08090e;border:1px solid var(--border2);border-radius:4px;padding:.5rem .8rem;overflow-x:auto;}
+.log-line{font-family:var(--mono);font-size:.69rem;line-height:1.9;color:#fca5a5;white-space:pre-wrap;word-break:break-all;}
+.cmd-block .log-line{color:#7dd3fc;border-bottom:1px solid rgba(255,255,255,.03);}
+.cmd-block .log-line:last-child{border-bottom:none}
+.cmd-phase-block{margin-bottom:2rem}
+.cmd-phase-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;font-family:var(--mono);}
+.cmd-block{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:.75rem;}
+.cmd-label{font-family:var(--mono);font-size:.82rem;color:var(--text);font-weight:600;margin-bottom:.5rem}
+.cmd-toggles{display:flex;gap:.5rem;flex-wrap:wrap}
+.jb-inline{margin-top:.5rem;font-family:var(--mono);font-size:.7rem;line-height:1.7;color:#94a3b8;white-space:pre;overflow-x:auto;}
+.json-sec{margin-top:1.5rem}
+.json-sec summary{cursor:pointer;user-select:none;list-style:none;display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);padding:.5rem 0;transition:color .12s;font-family:var(--mono);}
+.json-sec summary::-webkit-details-marker{display:none}
+.json-sec[open] summary{color:var(--accent)}
+.json-sec summary:hover{color:var(--accent)}
+pre.jb{margin-top:.7rem;background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem 1.4rem;font-family:var(--mono);font-size:.73rem;line-height:1.75;color:#94a3b8;overflow-x:auto;white-space:pre;box-shadow:var(--shadow);}
+.ft{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);font-size:.67rem;color:var(--muted);font-family:var(--mono);text-align:center}
+@media(max-width:640px){.stats{grid-template-columns:1fr}.hdr{flex-direction:column}.selector-bar{flex-direction:column;align-items:flex-start}.device-select{width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hdr">
+  <div>
+    <h1>Network Device <span>Workflow Report</span></h1>
+    <p class="meta">Generated: 2026-02-26 05:34:27<br>2 device(s) processed</p>
+  </div>
+  <div><span class="pill partial">2 TASK(S) FAILED</span></div>
+</header>
+
+<!-- Dropdown selector -->
+<div class="selector-bar">
+  <label for="device-select">Device</label>
+  <select id="device-select" class="device-select" onchange="selectDevice(this.value)">
+    <option value="juniper_mx204" selected>juniper_mx204</option>
+<option value="cisco_ncs5501">cisco_ncs5501</option>
+  </select>
+  <span class="device-count">2 device(s) in this report</span>
+</div>
+
+<!-- Device info card — populated by JS, sits between dropdown and panels -->
+<div class="dev-card" id="dev-info-card">
+  <div class="df"><span class="lbl">Host / IP</span><span class="val" id="di-host">—</span></div>
+  <div class="df"><span class="lbl">Vendor</span><span class="val" id="di-vendor">—</span></div>
+  <div class="df"><span class="lbl">Model</span><span class="val" id="di-model">—</span></div>
+  <div class="df"><span class="lbl">Hostname</span><span class="val" id="di-hostname">—</span></div>
+  <div class="df"><span class="lbl">Version</span><span class="val" id="di-version">—</span></div>
+  <div class="df"><span class="lbl">Run At</span><span class="val" id="di-timestamp">—</span></div>
+</div>
+
+
+<div class="device-panel" id="panel-juniper_mx204" style="display:block;">
+
+  <div class="dev-header">
+    <div>
+      <span class="dev-key">juniper_mx204</span>
+      <span class="pill partial" style="margin-left:1rem;">1 FAILED</span>
+    </div>
+    <div class="meta-ts" id="ts-juniper_mx204"></div>
+  </div>
+
+  <div class="stats">
+    <div class="sc tot"><span class="n">17</span><span class="l">Total Tasks</span>
+      <div class="prog"><div class="progbar" style="width:53%"></div></div></div>
+    <div class="sc ok"><span class="n">9</span><span class="l">Successful</span></div>
+    <div class="sc err"><span class="n">1</span><span class="l">Failed</span></div>
+  </div>
+
+  <div class="tw">
+    <table>
+      <colgroup><col class="ct"><col class="cs"><col class="cst"><col class="cr"></colgroup>
+      <thead><tr><th>Phase</th><th>Subtask</th><th>Status</th><th>Remark</th></tr></thead>
+      <tbody>
+<tr class="task-row"><td class="phase-cell" rowspan="10" style="border-left:4px solid #2563eb;"><span class="phase-name" style="color:#2563eb;">Pre-Checks</span></td><td class="subtask-cell">Load device config from YAML</td><td class="status-cell"><span class="badge badge-success">Success</span></td><td class="remark-cell"><span class="remark-ok">deviceDetails.yaml loaded successfully</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Initialise log file for session</td><td class="status-cell"><span class="badge badge-success">Success</span></td><td class="remark-cell"><span class="remark-ok">Logger initialised</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Establish SSH session to device</td><td class="status-cell"><span class="badge badge-success">Success</span></td><td class="remark-cell"><span class="remark-ok">Connected to 10.80.71.55</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Run show version</td><td class="status-cell"><span class="badge badge-success">Success</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Collect pre-check show command output</td><td class="status-cell"><span class="badge badge-success">Success</span></td><td class="remark-cell"><span class="remark-ok">2 cmds collected</span></td></tr>
+<tr class="task-row failed-row"><td class="subtask-cell">Parse and validate pre-check output<button class="log-btn" onclick="toggleLog('log-juniper_mx204-5')" aria-expanded="false">View Logs</button><div id="log-juniper_mx204-5" class="log-drawer" hidden><div class="log-line">parse_show_bgp_summary() raised KeyError: missing key &quot;peer-state&quot;</div></div></td><td class="status-cell"><span class="badge badge-failed">Failed</span></td><td class="remark-cell"><span class="remark-err">Parser error on show bgp summary</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Save running config and device logs</td><td class="status-cell"><span class="badge badge-success">Success</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Verify image integrity via MD5</td><td class="status-cell"><span class="badge badge-success">Success</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Confirm sufficient disk space</td><td class="status-cell"><span class="badge badge-success">Success</span></td><td class="remark-cell"><span class="remark-ok">12 GB free</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Remove RE protection firewall filter</td><td class="status-cell"><span class="badge badge-success">Success</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="phase-sep"><td colspan="4"></td></tr>
+<tr class="task-row"><td class="phase-cell" rowspan="3" style="border-left:4px solid #7c3aed;"><span class="phase-name" style="color:#7c3aed;">Upgrade</span></td><td class="subtask-cell">Install target OS image on device</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Reboot and confirm device comes up</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Verify device reachability after upgrade</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="phase-sep"><td colspan="4"></td></tr>
+<tr class="task-row"><td class="phase-cell" rowspan="4" style="border-left:4px solid #059669;"><span class="phase-name" style="color:#059669;">Post-Checks</span></td><td class="subtask-cell">Snapshot primary disk to backup disk</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Collect post-upgrade show command output</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Parse and validate post-upgrade output</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Re-apply RE protection firewall filter</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="phase-sep"><td colspan="4"></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  
+<div class="cmd-phase-block">
+  <div class="cmd-phase-title" style="color:#2563eb;">Pre-Checks — Command Outputs</div>
+  
+<div class="cmd-block">
+  <div class="cmd-label">show arp no-resolve | no-more</div>
+  <div class="cmd-toggles">
+    <button class="log-btn" onclick="toggleLog('raw-juniper_mx204-prechecks-0')">Raw Output</button>
+    <button class="log-btn" onclick="toggleLog('jsn-juniper_mx204-prechecks-0')">Parsed JSON</button>
+  </div>
+  <div id="raw-juniper_mx204-prechecks-0" class="log-drawer" hidden><div class="log-line">sample arp output...</div></div>
+  <div id="jsn-juniper_mx204-prechecks-0" class="log-drawer" hidden><pre class="jb-inline">{
+  &quot;entries&quot;: [],
+  &quot;total_entries&quot;: 25
+}</pre></div>
+</div>
+<div class="cmd-block">
+  <div class="cmd-label">show lldp neighbors | no-more</div>
+  <div class="cmd-toggles">
+    <button class="log-btn" onclick="toggleLog('raw-juniper_mx204-prechecks-1')">Raw Output</button>
+    <button class="log-btn" onclick="toggleLog('jsn-juniper_mx204-prechecks-1')">Parsed JSON</button>
+  </div>
+  <div id="raw-juniper_mx204-prechecks-1" class="log-drawer" hidden><div class="log-line">sample lldp output...</div></div>
+  <div id="jsn-juniper_mx204-prechecks-1" class="log-drawer" hidden><pre class="jb-inline">{
+  &quot;entries&quot;: []
+}</pre></div>
+</div>
+</div>
+
+</div>
+
+<div class="device-panel" id="panel-cisco_ncs5501" style="display:none;">
+
+  <div class="dev-header">
+    <div>
+      <span class="dev-key">cisco_ncs5501</span>
+      <span class="pill partial" style="margin-left:1rem;">1 FAILED</span>
+    </div>
+    <div class="meta-ts" id="ts-cisco_ncs5501"></div>
+  </div>
+
+  <div class="stats">
+    <div class="sc tot"><span class="n">17</span><span class="l">Total Tasks</span>
+      <div class="prog"><div class="progbar" style="width:12%"></div></div></div>
+    <div class="sc ok"><span class="n">2</span><span class="l">Successful</span></div>
+    <div class="sc err"><span class="n">1</span><span class="l">Failed</span></div>
+  </div>
+
+  <div class="tw">
+    <table>
+      <colgroup><col class="ct"><col class="cs"><col class="cst"><col class="cr"></colgroup>
+      <thead><tr><th>Phase</th><th>Subtask</th><th>Status</th><th>Remark</th></tr></thead>
+      <tbody>
+<tr class="task-row"><td class="phase-cell" rowspan="10" style="border-left:4px solid #2563eb;"><span class="phase-name" style="color:#2563eb;">Pre-Checks</span></td><td class="subtask-cell">Load device config from YAML</td><td class="status-cell"><span class="badge badge-success">Success</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Initialise log file for session</td><td class="status-cell"><span class="badge badge-success">Success</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row failed-row"><td class="subtask-cell">Establish SSH session to device<button class="log-btn" onclick="toggleLog('log-cisco_ncs5501-2')" aria-expanded="false">View Logs</button><div id="log-cisco_ncs5501-2" class="log-drawer" hidden><div class="log-line">SSH handshake timed out after 30s — host unreachable or credentials wrong</div></div></td><td class="status-cell"><span class="badge badge-failed">Failed</span></td><td class="remark-cell"><span class="remark-err">10.80.71.60: Connection timed out</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Run show version</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Collect pre-check show commands</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Parse pre-check output</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Save running config</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Verify MD5</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Storage check</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Remove firewall filter</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="phase-sep"><td colspan="4"></td></tr>
+<tr class="task-row"><td class="phase-cell" rowspan="3" style="border-left:4px solid #7c3aed;"><span class="phase-name" style="color:#7c3aed;">Upgrade</span></td><td class="subtask-cell">Install target OS image on device</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Reboot and confirm device comes up</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Verify device reachability after upgrade</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="phase-sep"><td colspan="4"></td></tr>
+<tr class="task-row"><td class="phase-cell" rowspan="4" style="border-left:4px solid #059669;"><span class="phase-name" style="color:#059669;">Post-Checks</span></td><td class="subtask-cell">Snapshot primary disk to backup disk</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Collect post-upgrade show command output</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Parse and validate post-upgrade output</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="task-row"><td class="subtask-cell">Re-apply RE protection firewall filter</td><td class="status-cell"><span class="badge badge-blank">—</span></td><td class="remark-cell"><span class="remark-na">—</span></td></tr>
+<tr class="phase-sep"><td colspan="4"></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  
+
+</div>
+
+<details class="json-sec">
+  <summary>Raw Workflow JSON (all devices)</summary>
+  <pre class="jb">{
+  &quot;juniper_mx204&quot;: {
+    &quot;device_info&quot;: {
+      &quot;host&quot;: &quot;10.80.71.55&quot;,
+      &quot;vendor&quot;: &quot;juniper&quot;,
+      &quot;model&quot;: &quot;mx204&quot;,
+      &quot;hostname&quot;: &quot;router-test-01&quot;,
+      &quot;version&quot;: &quot;23.4R2-S5.6&quot;,
+      &quot;timestamp&quot;: &quot;2026-02-23_09-00-00&quot;
+    },
+    &quot;pre-checks&quot;: {
+      &quot;tasks&quot;: {
+        &quot;read Yaml&quot;: {
+          &quot;status&quot;: &quot;Success&quot;,
+          &quot;error&quot;: &quot;deviceDetails.yaml loaded successfully&quot;,
+          &quot;title&quot;: &quot;Load device config from YAML&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;start logger&quot;: {
+          &quot;status&quot;: &quot;Success&quot;,
+          &quot;error&quot;: &quot;Logger initialised&quot;,
+          &quot;title&quot;: &quot;Initialise log file for session&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;connection using credentials&quot;: {
+          &quot;status&quot;: &quot;Success&quot;,
+          &quot;error&quot;: &quot;Connected to 10.80.71.55&quot;,
+          &quot;title&quot;: &quot;Establish SSH session to device&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;show version&quot;: {
+          &quot;status&quot;: &quot;Success&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Run show version&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;executing show commands&quot;: {
+          &quot;status&quot;: &quot;Success&quot;,
+          &quot;error&quot;: &quot;2 cmds collected&quot;,
+          &quot;title&quot;: &quot;Collect pre-check show command output&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;Parsing the data&quot;: {
+          &quot;status&quot;: &quot;Failed&quot;,
+          &quot;error&quot;: &quot;Parser error on show bgp summary&quot;,
+          &quot;title&quot;: &quot;Parse and validate pre-check output&quot;,
+          &quot;logs&quot;: &quot;parse_show_bgp_summary() raised KeyError: missing key \&quot;peer-state\&quot;&quot;
+        },
+        &quot;Backup Config&quot;: {
+          &quot;status&quot;: &quot;Success&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Save running config and device logs&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;Validate MD5 checksum&quot;: {
+          &quot;status&quot;: &quot;Success&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Verify image integrity via MD5&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;Storage Check (5GB threshold)&quot;: {
+          &quot;status&quot;: &quot;Success&quot;,
+          &quot;error&quot;: &quot;12 GB free&quot;,
+          &quot;title&quot;: &quot;Confirm sufficient disk space&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;Disable Filter&quot;: {
+          &quot;status&quot;: &quot;Success&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Remove RE protection firewall filter&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        }
+      },
+      &quot;commands&quot;: [
+        {
+          &quot;cmd&quot;: &quot;show arp no-resolve | no-more&quot;,
+          &quot;output&quot;: &quot;sample arp output...&quot;,
+          &quot;json&quot;: {
+            &quot;entries&quot;: [],
+            &quot;total_entries&quot;: 25
+          }
+        },
+        {
+          &quot;cmd&quot;: &quot;show lldp neighbors | no-more&quot;,
+          &quot;output&quot;: &quot;sample lldp output...&quot;,
+          &quot;json&quot;: {
+            &quot;entries&quot;: []
+          }
+        }
+      ]
+    },
+    &quot;upgrade&quot;: {
+      &quot;tasks&quot;: {
+        &quot;image installation&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Install target OS image on device&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;reboot the device&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Reboot and confirm device comes up&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;ping the device&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Verify device reachability after upgrade&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        }
+      }
+    },
+    &quot;post-checks&quot;: {
+      &quot;tasks&quot;: {
+        &quot;Take snapshot&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Snapshot primary disk to backup disk&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;Execute show commands&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Collect post-upgrade show command output&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;parsing the commands&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Parse and validate post-upgrade output&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;Enable RE-PROTECT filter&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Re-apply RE protection firewall filter&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        }
+      },
+      &quot;commands&quot;: []
+    }
+  },
+  &quot;cisco_ncs5501&quot;: {
+    &quot;device_info&quot;: {
+      &quot;host&quot;: &quot;10.80.71.60&quot;,
+      &quot;vendor&quot;: &quot;cisco&quot;,
+      &quot;model&quot;: &quot;ncs5501&quot;,
+      &quot;hostname&quot;: &quot;&quot;,
+      &quot;version&quot;: &quot;7.9.1&quot;,
+      &quot;timestamp&quot;: &quot;2026-02-23_09-01-00&quot;
+    },
+    &quot;pre-checks&quot;: {
+      &quot;tasks&quot;: {
+        &quot;read Yaml&quot;: {
+          &quot;status&quot;: &quot;Success&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Load device config from YAML&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;start logger&quot;: {
+          &quot;status&quot;: &quot;Success&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Initialise log file for session&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;connection using credentials&quot;: {
+          &quot;status&quot;: &quot;Failed&quot;,
+          &quot;error&quot;: &quot;10.80.71.60: Connection timed out&quot;,
+          &quot;title&quot;: &quot;Establish SSH session to device&quot;,
+          &quot;logs&quot;: &quot;SSH handshake timed out after 30s \u2014 host unreachable or credentials wrong&quot;
+        },
+        &quot;show version&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Run show version&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;executing show commands&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Collect pre-check show commands&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;Parsing the data&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Parse pre-check output&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;Backup Config&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Save running config&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;Validate MD5 checksum&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Verify MD5&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;Storage Check (5GB threshold)&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Storage check&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;Disable Filter&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Remove firewall filter&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        }
+      },
+      &quot;commands&quot;: []
+    },
+    &quot;upgrade&quot;: {
+      &quot;tasks&quot;: {
+        &quot;image installation&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Install target OS image on device&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;reboot the device&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Reboot and confirm device comes up&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;ping the device&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Verify device reachability after upgrade&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        }
+      }
+    },
+    &quot;post-checks&quot;: {
+      &quot;tasks&quot;: {
+        &quot;Take snapshot&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Snapshot primary disk to backup disk&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;Execute show commands&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Collect post-upgrade show command output&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;parsing the commands&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Parse and validate post-upgrade output&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        },
+        &quot;Enable RE-PROTECT filter&quot;: {
+          &quot;status&quot;: &quot;&quot;,
+          &quot;error&quot;: &quot;&quot;,
+          &quot;title&quot;: &quot;Re-apply RE protection firewall filter&quot;,
+          &quot;logs&quot;: &quot;&quot;
+        }
+      },
+      &quot;commands&quot;: []
+    }
+  }
+}</pre>
+</details>
+
+<footer class="ft">workflow_report_generator.py / 2026-02-26 05:34:27</footer>
+
+</div>
+
+<script>
+var DEVICE_INFO = {"juniper_mx204": {"host": "10.80.71.55", "vendor": "JUNIPER", "model": "MX204", "hostname": "router-test-01", "version": "23.4R2-S5.6", "timestamp": "2026-02-23_09-00-00"}, "cisco_ncs5501": {"host": "10.80.71.60", "vendor": "CISCO", "model": "NCS5501", "hostname": "\u2014", "version": "7.9.1", "timestamp": "2026-02-23_09-01-00"}};
+
+function updateInfoCard(key) {
+  var d = DEVICE_INFO[key];
+  if (!d) return;
+  document.getElementById('di-host').textContent      = d.host      || '—';
+  document.getElementById('di-vendor').textContent    = d.vendor    || '—';
+  document.getElementById('di-model').textContent     = d.model     || '—';
+  document.getElementById('di-hostname').textContent  = d.hostname  || '—';
+  document.getElementById('di-version').textContent   = d.version   || '—';
+  document.getElementById('di-timestamp').textContent = d.timestamp || '—';
+}
+
+function selectDevice(key) {
+  document.querySelectorAll('.device-panel').forEach(function(p) {
+    p.style.display = 'none';
+  });
+  var panel = document.getElementById('panel-' + key);
+  if (panel) panel.style.display = 'block';
+  updateInfoCard(key);
+}
+
+function toggleLog(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.hidden = !el.hidden;
+  var parent = el.parentElement;
+  parent.querySelectorAll('.log-btn').forEach(function(btn) {
+    var oc = btn.getAttribute('onclick') || '';
+    if (oc.indexOf(id) !== -1) {
+      btn.textContent = el.hidden
+        ? btn.textContent.replace('Hide', 'View')
+        : btn.textContent.replace('View', 'Hide');
+    }
+  });
+}
+
+// Initialise card with first device on load
+updateInfoCard('juniper_mx204');
+</script>
+</body>
+</html>

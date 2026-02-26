@@ -1,0 +1,54 @@
+2026-02-23_17:15:43 - INFO - Starting pipeline for juniper mx204
+2026-02-23_17:15:43 - INFO - Connecting to 10.80.71.55
+2026-02-23_17:15:43 - INFO - Connecting to 10.80.71.55 using Netmiko...
+2026-02-23_17:15:43 - INFO - Login Successful to 10.80.71.55
+2026-02-23_17:15:43 - INFO - 10.80.71.55: Connected successfully
+2026-02-23_17:15:43 - INFO - Running pre-checks
+2026-02-23_17:15:43 - INFO - 10.80.71.55 — Prechecks started at 2026-02-23 17:15:43.654643
+2026-02-23_17:15:43 - INFO - Running show version for juniper
+2026-02-23_17:15:43 - INFO - 10.80.71.55: Executing 'show version' for vendor: juniper
+2026-02-23_17:15:44 - INFO - 10.80.71.55: Version information retrieved for vendor: juniper
+2026-02-23_17:15:44 - INFO - Executing show commands
+2026-02-23_17:15:44 - INFO - Execute show commands from YAML and store output globally
+2026-02-23_17:15:44 - INFO - 10.80.71.55: Executing: 'show version | no-more' for vendor juniper_mx204
+2026-02-23_17:15:44 - INFO - 10.80.71.55: Executing: 'show system uptime | no-more' for vendor juniper_mx204
+2026-02-23_17:15:44 - INFO - 10.80.71.55: Executing: 'show ntp associations no-resolve | no-more' for vendor juniper_mx204
+2026-02-23_17:15:44 - INFO - 10.80.71.55: Executing: 'show vmhost version |no-more' for vendor juniper_mx204
+2026-02-23_17:15:46 - INFO - 10.80.71.55: Executing: 'show vmhost snapshot |no-more' for vendor juniper_mx204
+2026-02-23_17:15:48 - INFO - 10.80.71.55: Executing: 'show chassis hardware | no-more' for vendor juniper_mx204
+2026-02-23_17:15:48 - INFO - 10.80.71.55: Executing: 'show chassis fpc detail | no-more' for vendor juniper_mx204
+2026-02-23_17:15:48 - INFO - 10.80.71.55: Executing: 'show chassis alarms | no-more' for vendor juniper_mx204
+2026-02-23_17:15:49 - INFO - 10.80.71.55: Executing: 'show system alarms | no-more' for vendor juniper_mx204
+2026-02-23_17:15:49 - INFO - 10.80.71.55: Executing: 'show chassis routing-engine | no-more' for vendor juniper_mx204
+2026-02-23_17:15:49 - INFO - 10.80.71.55: Executing: 'show chassis environment | no-more' for vendor juniper_mx204
+2026-02-23_17:15:49 - INFO - 10.80.71.55: Executing: 'show system resource-monitor fpc | no-more' for vendor juniper_mx204
+2026-02-23_17:15:49 - INFO - 10.80.71.55: Executing: 'show system processes extensive | match rpd |no-more' for vendor juniper_mx204
+2026-02-23_17:15:49 - INFO - 10.80.71.55: Executing: 'show interface terse | match "up    up" | no-more' for vendor juniper_mx204
+2026-02-23_17:15:49 - INFO - 10.80.71.55: Executing: 'show interface terse | no-more' for vendor juniper_mx204
+2026-02-23_17:15:50 - INFO - 10.80.71.55: Executing: 'show interfaces descriptions | no-more' for vendor juniper_mx204
+2026-02-23_17:15:50 - INFO - 10.80.71.55: Executing: 'show oam ethernet connectivity-fault-management interfaces extensive | no-more' for vendor juniper_mx204
+2026-02-23_17:15:50 - INFO - 10.80.71.55: Executing: 'show arp no-resolve | no-more' for vendor juniper_mx204
+2026-02-23_17:15:50 - INFO - 10.80.71.55: Executing: 'show vrrp summary | no-more' for vendor juniper_mx204
+2026-02-23_17:15:50 - INFO - 10.80.71.55: Executing: 'show lldp neighbors | no-more' for vendor juniper_mx204
+2026-02-23_17:15:50 - INFO - 10.80.71.55: Executing: 'show bfd session | no-more' for vendor juniper_mx204
+2026-02-23_17:15:50 - INFO - 10.80.71.55: Executing: 'show rsvp neighbor | no-more' for vendor juniper_mx204
+2026-02-23_17:15:51 - INFO - 10.80.71.55: Executing: 'show rsvp session | no-more' for vendor juniper_mx204
+2026-02-23_17:15:51 - INFO - 10.80.71.55: Executing: 'show route table inet.0 | no-more' for vendor juniper_mx204
+2026-02-23_17:15:51 - INFO - 10.80.71.55: Executing: 'show route table inet.3 | no-more' for vendor juniper_mx204
+2026-02-23_17:15:51 - INFO - 10.80.71.55: Executing: 'show route table mpls.0 | no-more' for vendor juniper_mx204
+2026-02-23_17:15:51 - INFO - 10.80.71.55: Executing: 'show mpls interface | no-more' for vendor juniper_mx204
+2026-02-23_17:15:51 - INFO - 10.80.71.55: Executing: 'show mpls lsp | no-more' for vendor juniper_mx204
+2026-02-23_17:15:51 - INFO - 10.80.71.55: Executing: 'show mpls lsp p2mp | no-more' for vendor juniper_mx204
+2026-02-23_17:15:51 - INFO - 10.80.71.55: Executing: 'show bgp summary | no-more' for vendor juniper_mx204
+2026-02-23_17:15:51 - INFO - 10.80.71.55: Executing: 'show bgp neighbor | no-more' for vendor juniper_mx204
+2026-02-23_17:15:52 - INFO - 10.80.71.55: Executing: 'show isis adjacency extensive | no-more' for vendor juniper_mx204
+2026-02-23_17:15:52 - INFO - 10.80.71.55: Executing: 'show route summary | no-more' for vendor juniper_mx204
+2026-02-23_17:15:52 - INFO - 10.80.71.55: Executing: 'show rsvp session | match DN |no-more' for vendor juniper_mx204
+2026-02-23_17:15:52 - INFO - 10.80.71.55: Executing: 'show mpls lsp unidirectional | match Dn |no-more' for vendor juniper_mx204
+2026-02-23_17:15:52 - INFO - 10.80.71.55: Executing: 'show ldp neighbor | no-more' for vendor juniper_mx204
+2026-02-23_17:15:52 - INFO - 10.80.71.55: Executing: 'show connections | no-more' for vendor juniper_mx204
+2026-02-23_17:15:52 - INFO - 10.80.71.55: Executing: 'show log messages | last 200 | no-more' for vendor juniper_mx204
+2026-02-23_17:15:52 - INFO - 10.80.71.55: Executing: 'show configuration | no-more' for vendor juniper_mx204
+2026-02-23_17:15:53 - INFO - 10.80.71.55: Executing: 'show configuration | no-more | display set' for vendor juniper_mx204
+2026-02-23_17:15:53 - INFO - 10.80.71.55: Executing: 'show configuration | display set | count' for vendor juniper_mx204
+ 

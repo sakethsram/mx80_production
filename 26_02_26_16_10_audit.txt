@@ -1,0 +1,40 @@
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show arp no-resolve | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show lldp neighbors | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show chassis routing-engine | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show system uptime | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show ntp associations no-resolve | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show vmhost version | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show vmhost snapshot | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show chassis hardware | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show chassis fpc detail | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show chassis alarms | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show system alarms | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show chassis environment | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show system resource-monitor fpc | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show system processes extensive | match rpd | no-more' | parse_failed           | Command ran but JSON is empty — parser likely failed.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show interface terse | match "up    up" | no-more' | parse_failed           | Command ran but JSON is empty — parser likely failed.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show interface terse | no-more' | parse_failed           | Command ran but JSON is empty — parser likely failed.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show interfaces descriptions | no-more' | parse_failed           | Command ran but JSON is empty — parser likely failed.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show oam ethernet connectivity-fault-management interfaces extensive | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show vrrp summary | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show bfd session | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show rsvp neighbor | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show rsvp session | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show route table inet.0 | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show route table inet.3 | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show route table mpls.0 | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show mpls interface | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show mpls lsp | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show mpls lsp p2mp | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show bgp summary | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show bgp neighbor | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show isis adjacency extensive | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show route summary | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show rsvp session | match DN | no-more' | parse_failed           | Command ran but JSON is empty — parser likely failed.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show mpls lsp unidirectional | match Dn | no-more' | parse_failed           | Command ran but JSON is empty — parser likely failed.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show ldp neighbor | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show connections | no-more' | ok                     | Command ran and JSON was produced successfully.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show log messages | last 200 | no-more' | parse_failed           | Command ran but JSON is empty — parser likely failed.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show configuration | no-more' | parse_failed           | Command ran but JSON is empty — parser likely failed.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show configuration | no-more | display set' | parse_failed           | Command ran but JSON is empty — parser likely failed.
+[audit] juniper_mx204 | cmd #  ? | cmd: 'show configuration | display set | count' | parse_failed           | Command ran but JSON is empty — parser likely failed.

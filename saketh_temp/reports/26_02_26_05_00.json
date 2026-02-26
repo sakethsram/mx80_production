@@ -1,0 +1,66 @@
+{
+  "juniper_mx204": {
+    "device_details": {
+      "device_key": "juniper_mx204",
+      "vendor": "juniper",
+      "model": "mx204",
+      "hostname": "router-test-01",
+      "version": "23.4R2-S5.6",
+      "pre_check_timestamp": "2026-02-26_09-00-00"
+    },
+    "pre_checks": [
+      {
+        "cmd": "show arp no-resolve | no-more",
+        "output": "MAC Address       Address         Name                      Interface           Flags",
+        "json": {
+          "total_entries": 1,
+          "entries": [
+            {
+              "mac": "00:00:5e:00:01:01",
+              "ip": "10.0.0.1",
+              "interface": "et-0/0/0.0"
+            }
+          ]
+        }
+      },
+      {
+        "cmd": "show route summary | no-more",
+        "output": "Autonomous system number: 65000",
+        "json": {
+          "as_number": "65000",
+          "tables": [
+            {
+              "name": "inet.0",
+              "destinations": 120,
+              "routes": 240
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "juniper_mx80": {
+    "device_details": {
+      "device_key": "juniper_mx80",
+      "vendor": "juniper",
+      "model": "mx204",
+      "hostname": "router-test-01",
+      "version": "23.4R2-S5.6",
+      "pre_check_timestamp": "2026-02-26_09-00-00"
+    },
+    "pre_checks": [
+      {
+        "cmd": "show chassis alarms | no-more",
+        "output": "No alarms currently active",
+        "json": {
+          "alarms": []
+        }
+      },
+      {
+        "cmd": "show bgp summary | no-more",
+        "output": "",
+        "json": {}
+      }
+    ]
+  }
+}

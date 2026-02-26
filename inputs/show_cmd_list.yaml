@@ -1,0 +1,45 @@
+# juniper_mx204:
+  # - show version | no-more
+  # - show system uptime | no-more
+  # - show ntp associations no-resolve | no-more
+  # - show vmhost version |no-more
+  # - show vmhost snapshot |no-more
+  # - show chassis hardware | no-more
+  # - show chassis fpc detail | no-more
+  # - show chassis alarms | no-more
+  # - show system alarms | no-more
+  # - show chassis environment | no-more
+  # - show chassis routing-engine | no-more
+  # - show system resource-monitor fpc | no-more
+  # - show system processes extensive | match rpd |no-more
+  # - show interface terse | match "up    up" | no-more
+  # - show interface terse | no-more
+  # - show interfaces descriptions | no-more
+  # - show oam ethernet connectivity-fault-management interfaces extensive | no-more
+  # - show arp no-resolve | no-more
+  # - show vrrp summary | no-more
+  # - show lldp neighbors | no-more
+  # - show bfd session | no-more 
+  # - show rsvp neighbor | no-more
+  # - show rsvp session | no-more
+  # - show route table inet.0 | no-more
+  # - show route table inet.3 | no-more
+  # - show route table mpls.0 | no-more
+  # - show mpls interface | no-more
+  # - show mpls lsp | no-more
+  # - show mpls lsp p2mp | no-more
+  # - show bgp summary | no-more
+  # - show bgp neighbor | no-more
+  # - show isis adjacency extensive | no-more
+  # - show route summary | no-more
+  # - show rsvp session | match DN |no-more
+  # - show mpls lsp unidirectional | match Dn |no-more
+  # - show ldp neighbor | no-more
+  # - show connections | no-more
+  # - show log messages | last 200 | no-more
+  # - show configuration | no-more
+  # - show configuration | no-more | display set
+  # - show configuration | display set | count
+
+
+

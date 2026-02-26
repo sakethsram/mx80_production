@@ -1,0 +1,51 @@
+{
+  "juniper_mx204": {
+    "device_details": {
+      "device_key": "juniper_mx204",
+      "vendor": "juniper",
+      "model": "mx204",
+      "hostname": "router-test-01",
+      "version": "23.4R2-S5.6",
+      "pre_check_timestamp": "2026-02-26_09-00-00"
+    },
+    "pre_checks": [
+      {
+        "cmd": "show arp no-resolve | no-more",
+        "output": "MAC Address       Address         Name                      Interface           Flags",
+        "json": {
+          "total_entries": 2,
+          "entries": [
+            {
+              "mac": "00:00:5e:00:01:01",
+              "ip": "10.0.0.1",
+              "interface": "et-0/0/0.0"
+            },
+            {
+              "mac": "00:00:5e:00:01:02",
+              "ip": "10.0.0.2",
+              "interface": "et-0/0/1.0"
+            }
+          ]
+        }
+      },
+      {
+        "cmd": "show lldp neighbors | no-more",
+        "output": "Local Interface    Parent Interface    Chassis Id          Port info",
+        "json": {
+          "entries": [
+            {
+              "local_interface": "et-0/0/0",
+              "chassis_id": "aa:bb:cc:dd:ee:ff",
+              "port_info": "et-0/0/0"
+            }
+          ]
+        }
+      },
+      {
+        "cmd": "show bgp summary | no-more",
+        "output": "",
+        "json": {}
+      }
+    ]
+  }
+}
