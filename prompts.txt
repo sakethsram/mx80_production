@@ -1,1415 +1,472 @@
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ cat main.py
-import logging
-import sys
-import json
-from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from prechecks import PreCheck
-from lib.utilities import *
-from parsers.junos.junos_mx80 import *
-from pprint import pformat
-from workflow_report_generator import generate_html_report
-from parsers.junos_wrapper import *
-from parsers.junos_wrapper import run_junos_parsers
-import os
-
-# NEW: use the wrapper from run_checks.py
-from run_checks import execute_commands
-
-MAX_THREADS = 5
-PRECHECKS_ONLY = True   # <--- Run prechecks only; skip upgrade in main()
-
-
-# ----------------------------------------------------
-# Abort helper — call when any step fails
-# ----------------------------------------------------
-
-def abort(device_key, phase, subtask, error, logger):
-    # Mark the failed subtask in the tracker
-    log_task(device_key, phase, subtask, 'Failed', error)
-
-    # Log + console
-    logger.error(f"[{device_key}] FATAL [{phase}] '{subtask}': {error}")
-    logger.error(f"[{device_key}] Aborting workflow — generating report")
-
-    j = json.dumps(workflow_tracker, indent=2)
-    logger.info(f"\n{j}")
-    print("\n" + "=" * 60)
-    print(f"WORKFLOW ABORTED for {device_key} — partial results (JSON):")
-    print("=" * 60)
-    print(j)
-    print("=" * 60 + "\n")
-
-    # Generate HTML report here (centralized on failure)
-    try:
-        path = generate_html_report(workflow_tracker, 'workflow_report.html')
-        logger.info(f"[{device_key}] Report saved -> {path}")
-        print(f"Report saved -> {path}")
-    except Exception as e:
-        logger.error(f"[{device_key}] Could not write HTML report: {e}")
-
-    sys.exit(1)
-
-def run_prechecks(device, logger):
-    dev        = device["devices"][0]
-    host       = dev["host"]
-    vendor_lc  = dev["vendor"].lower()
-    model_lc   = str(dev["model"]).lower().replace("-", "")
-    device_key = f"{vendor_lc}_{model_lc}"
-    device_type = dev.get("device_type")
-    model       = dev.get("model")
-
-    start_time = datetime.now()
-    logger.info(f"[{device_key}] Prechecks started at {start_time}")
-
-    # For filenames/JSON stamps if needed
-    pre_check_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    global_config.pre_check_timestamp = pre_check_timestamp
-
-    # These are displayed in the report; log them here (not in main)
-    log_task(device_key, 'pre-checks', 'read Yaml',    'Success', 'deviceDetails.yaml loaded successfully')
-    log_task(device_key, 'pre-checks', 'start logger', 'Success', 'Logger initialised')
-
-    precheck = PreCheck(device)
-
-    try:
-        # 1) Connect
-        conn = precheck.connect(logger)
-        print("CONNECTION...",conn)
-        if not conn:
-            abort(device_key, 'pre-checks', 'connection using credentials',
-                  f'{host}: connect() returned None', logger)
-        log_task(device_key, 'pre-checks', 'connection using credentials', 'Success',
-                 f'{host}: Connected successfully', '')
-
-        # 2) Show Version
-        version_output = precheck.showVersion(conn, device_type, logger)
-        print('version...', version_output)
-        if not version_output:
-            abort(device_key, 'pre-checks', 'show version',
-                  f'{host}: showVersion() returned empty/False', logger)
-        log_task(device_key, 'pre-checks', 'show version', 'Success',
-                 f'{host}: show version retrieved','ABC')
-
-        # 3) Execute Commands (+ parse) — via run_checks wrapper
-        try:
-            global_config.vendor     = vendor_lc
-            global_config.device_key = device_key
-            all_cmds                 = load_yaml("show_cmd_list.yaml")
-            global_config.commands   = all_cmds[device_key]
-
-            logger.info(f"[{device_key}] Executing pre-check show commands")
-            exec_ok = execute_commands("pre", conn=conn, logger=logger)
-            if not exec_ok:
-                abort(device_key, 'pre-checks', 'executing show commands',
-                      f'{host}: execute_commands() failed (collection/parsing)', logger)
-            # NOTE: run_checks.push_to_tracker() logs:
-            #   - 'executing show commands'
-            #   - 'Parsing the data'
-        except KeyError as e:
-            abort(device_key, 'pre-checks', 'executing show commands',
-                  f"{host}: Missing command list for vendor='{vendor_lc}' — {e}", logger)
-        except Exception as e:
-            abort(device_key, 'pre-checks', 'executing show commands',
-                  f"{host}: execute_commands() exception — {e}", logger)
-        '''
-        # 4) Backup (config + logs)
-        filename = f"{device_type}_{model}_{pre_check_timestamp}"
-        logger.info(f"[{device_key}] Starting backup — filename: {filename}")
-        prebackup = precheck.preBackup(conn, filename, logger)
-        if not prebackup:
-            abort(device_key, 'pre-checks', 'Backup Config',
-                  f'{host}: preBackup() failed', logger)
-        log_task(device_key, 'pre-checks', 'Backup Config', 'Success',
-                 f'{host}: Backup complete')
-
-        # 5) Validate MD5 checksum
-        md5_ok = precheck.verifyChecksum(conn, logger)
-        if not md5_ok:
-            abort(device_key, 'pre-checks', 'Validate MD5 checksum',
-                  f'{host}: MD5 checksum mismatch — image may be corrupted', logger)
-        log_task(device_key, 'pre-checks', 'Validate MD5 checksum', 'Success',
-                 f'{host}: Checksum verification PASSED')
-
-        # 6) Storage Check
-        storage = precheck.checkStorage(conn, logger)
-        logger.info(f"[{device_key}] Storage result: {storage}")
-        if not storage or storage.get('status') not in ('OK', 'SELECTED_FILES_DELETED'):
-            abort(device_key, 'pre-checks', 'Storage Check (5GB threshold)',
-                  f'{host}: Insufficient storage or cleanup failed. Result: {storage}', logger)
-        log_task(device_key, 'pre-checks', 'Storage Check (5GB threshold)', 'Success',
-                 f'{host}: Storage status {storage.get("status")}')
-
-        # 7) Disable RE-PROTECT Filter
-        filter_ok = precheck.disableReProtectFilter(conn, logger)
-        if not filter_ok:
-            abort(device_key, 'pre-checks', 'Disable Filter',
-                  f'{host}: disableReProtectFilter() failed', logger)
-        log_task(device_key, 'pre-checks', 'Disable Filter', 'Success',
-                 f'{host}: RE-PROTECT filter disabled')
-        '''
-        logger.info(f"[{device_key}] All pre-checks passed")
-        return True
-
-    except SystemExit:
-        raise
-    except Exception as e:
-        logger.error(f"[{device_key}] Precheck failed with unhandled exception: {e}")
-        abort(device_key, 'pre-checks', 'unexpected error',
-              f'{host}: Unhandled exception — {e}', logger)
-        return False
-    finally:
-        precheck.disconnect(logger)
-        end_time = datetime.now()
-        logger.info(f"[{device_key}] Prechecks completed at {end_time}")
-
-
-
-# ----------------------------------------------------
-# Main Function — call ONLY prechecks (guarded)
-# ----------------------------------------------------
-
-def main():
-    devices   = load_yaml("deviceDetails.yaml")
-    dev       = devices["devices"][0]
-    host      = dev["host"]
-    vendor_lc = dev["vendor"].lower()
-    model_lc  = str(dev["model"]).lower().replace("-", "")
-    device_key = f"{vendor_lc}_{model_lc}"
-
-    # Logger
-    global_config.vendor = vendor_lc
-    global_config.model  = dev["model"]
-    logger = setup_logger("main")
-    print("devicekey....", device_key)
-    # Init tracker slot for this device
-    if device_key not in workflow_tracker:
-        init_device_tracker(device_key, host, vendor_lc, model_lc)
-    print("workflow...",workflow_tracker)
-    # Run prechecks (owns all log_task updates)
-    logger.info(f"[{device_key}] Running pre-checks …")
-    print("main devices...", devices)
-
-    ok = run_prechecks(devices, logger)
-    open(f"reports/{global_config.device_key}.json", "w").write(json.dumps(workflow_tracker[global_config.device_key], indent=2))
-
-    export_device_summary(global_config.device_key)
-    sys.exit(0 if ok else 1)
-
-if __name__ == "__main__":
-    main()
-
-colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ cat run_checks.py
-import sys
-import json
-import logging
-
-from lib.utilities import *
-from lib.mock_outputs import MOCK_DATA_PRE, MOCK_DATA_POST
-
-# ─────────────────────────────────────────────────────────────
-# Module logger
-# ─────────────────────────────────────────────────────────────
-logger = logging.getLogger("run_checks")
-logger.setLevel(logging.DEBUG)
-if not logger.handlers:
-    h = logging.StreamHandler()
-    h.setFormatter(logging.Formatter(
-        "%(asctime)s | %(levelname)-8s | run_checks | %(message)s",
-        datefmt="%H:%M:%S"
-    ))
-    logger.addHandler(h)
-    logger.propagate = False
-
-# ─────────────────────────────────────────────────────────────
-# Build parser registries once at import time
-# ─────────────────────────────────────────────────────────────
-JUNOS_REGISTRY = build_registries()
-
-VENDOR_REGISTRY = {
-
-    "juniper": JUNOS_REGISTRY
-}
-
-OUTPUT_FILE = os.path.join(os.getcwd(), "outputs", "debug_results.json")
-
-
-# ═════════════════════════════════════════════════════════════
-# STEP 1 — Collect outputs
-# ═════════════════════════════════════════════════════════════
-def collect_real(device_key, vendor, commands, check_type, conn, log):
-    """Send each command to the device via SSH conn. Returns raw entries list."""
-    print(f"[{device_key}] [{check_type.upper()}] REAL collection — {len(commands)} command(s)")
-    entries = []
-    for cmd in commands:
-        print(f"[{device_key}] Sending: '{cmd}'")
-        try:
-            output  = conn.send_command(cmd)
-            preview = output.strip().splitlines()[0][:80] if output.strip() else "<empty>"
-            log.debug(f"[{device_key}] '{cmd}' preview: {preview}")
-            print(f"[{device_key}] ✓ '{cmd}' — {output} chars received")
-            entries.append({"command": cmd, "output": output, "json_output": {}})
-        except Exception as e:
-            print(f"[{device_key}] ✗ '{cmd}' failed: {e}")
-            entries.append({"command": cmd, "output": "", "json_output": {"error": str(e)}})
-    print(f"[{device_key}] Real collection done — {len(entries)} entries")
-    return entries
-
-
-def collect_mock(device_key, vendor, commands, check_type, log):
-    """Pull outputs from MOCK_DATA_PRE / MOCK_DATA_POST. Returns raw entries list."""
-    source     = MOCK_DATA_PRE if check_type == "pre" else MOCK_DATA_POST
-    mock_store = source.get(device_key, {})
-
-    print(f"[{device_key}] [{check_type.upper()}] MOCK collection — {len(commands)} command(s)")
-    if not mock_store:
-        log.warning(f"[{device_key}] No mock data in MOCK_DATA_{check_type.upper()} for this device_key — outputs will be empty")
-
-    entries = []
-    for cmd in commands:
-        output = mock_store.get(cmd, "")
-        if output:
-            preview = output.strip().splitlines()[0][:80]
-            print(f"[{device_key}] MOCK ✓ '{cmd}' → {preview}...")
-        else:
-            log.warning(f"[{device_key}] MOCK ✗ '{cmd}' → no fixture in MOCK_DATA_{check_type.upper()}")
-        entries.append({"command": cmd, "output": output, "json_output": {}})
-
-    print(f"[{device_key}] Mock collection done — {len(entries)} entries")
-    return entries
-
-
-# ═════════════════════════════════════════════════════════════
-# STEP 2 — Store raw entries in global_config.device_results
-# ═════════════════════════════════════════════════════════════
-def store_raw(device_key, check_type, entries, log):
-    if device_key not in global_config.device_results:
-        global_config.device_results[device_key] = {}
-        log.debug(f"[{device_key}] Created new device slot in global_config.device_results")
-    global_config.device_results[device_key][check_type] = entries
-    print(f"[{device_key}] Stored {len(entries)} raw entries → device_results[{device_key}][{check_type}]")
-
-
-# ═════════════════════════════════════════════════════════════
-# STEP 3 — Run parsers over stored entries
-# ═════════════════════════════════════════════════════════════
-def run_parser(device_key, vendor, check_type, log):
-    """
-    Look up each command in VENDOR_REGISTRY[(vendor, cmd)],
-    run the parser, write result back into entry["json_output"].
-    Returns True only if ALL parsers ran without error.
-    """
-    registry = VENDOR_REGISTRY.get(vendor)
-    if registry is None:
-        print(f"[{device_key}] No registry for vendor='{vendor}' — supported: {list(VENDOR_REGISTRY.keys())}")
-        return False
-
-    entries = global_config.device_results.get(device_key, {}).get(check_type, [])
-    if not entries:
-        log.warning(f"[{device_key}] Nothing in device_results[{device_key}][{check_type}] to parse")
-        return False
-
-    print(f"[{device_key}] [{check_type.upper()}] Running parsers over {len(entries)} entry(ies)")
-    all_ok = True
-
-    for entry in entries:
-        cmd    = entry["command"]
-        output = entry["output"]
-
-        if not output:
-            log.warning(f"[{device_key}] '{cmd}' — output empty, skipping parser")
-            continue
-
-        parser_fn = registry.get((vendor, cmd))
-        if parser_fn is None:
-            log.warning(f"[{device_key}] No parser registered for ('{vendor}', '{cmd}') — skipping")
-            continue
-
-        print(f"[{device_key}] Running {parser_fn.__name__}() for '{cmd}'")
-        try:
-            result = parser_fn(output)
-            entry["json_output"] = result
-            keys = list(result.keys()) if isinstance(result, dict) else type(result).__name__
-            print(f"[{device_key}] ✅ '{cmd}' parsed OK — result type: {keys}")
-        except Exception as e:
-            print(f"[{device_key}] ❌ {parser_fn.__name__}() failed for '{cmd}': {e}")
-            entry["json_output"] = {"error": str(e)}
-            all_ok = False
-
-    verdict = "all parsers OK" if all_ok else "one or more parsers FAILED"
-    print(f"[{device_key}] [{check_type.upper()}] Parser run complete — {verdict}")
-    return all_ok
-
-
-# ═════════════════════════════════════════════════════════════
-# STEP 4 — Push results into workflow_tracker
-# ═════════════════════════════════════════════════════════════
-def push_to_tracker(device_key, check_type, entries, parse_ok, log):
-    """
-    Convert entries to tracker format and write to workflow_tracker commands.
-    Then log the two tracker tasks: 'executing show commands' and 'Parsing the data'.
-    """
-    phase = "pre-checks" if check_type == "pre" else "post-checks"
-
-    tracker_entries = [
-        {"cmd": e["command"], "output": e["output"], "json": e["json_output"]}
-        for e in entries
-    ]
-    set_commands(device_key, phase, tracker_entries)
-    print(f"[{device_key}] [{check_type.upper()}] Pushed {len(tracker_entries)} entries to tracker commands")
-
-    # Log 'executing show commands'
-    cmd_ok     = "Success" if any(e["output"] for e in entries) else "Failed"
-    cmd_detail = f"{len(entries)} command(s) collected"
-    log_task(device_key, phase, "executing show commands", cmd_ok, cmd_detail,
-            log_line=f"Collected {len(entries)} outputs [{check_type.upper()}]")
-    print(f"[{device_key}] Logged 'executing show commands' → {cmd_ok}")
-
-    # Log 'Parsing the data'
-    parse_status = "Success" if parse_ok else "Failed"
-    parse_detail = "All parsers OK" if parse_ok else "One or more parsers failed"
-    log_task(device_key, phase, "Parsing the data", parse_status, parse_detail,
-            log_line=f"Parser run — {parse_detail}")
-    print(f"[{device_key}] Logged 'Parsing the data' → {parse_status}")
-
-
-# ═════════════════════════════════════════════════════════════
-# PUBLIC API — called from prechecks.py
-# ═════════════════════════════════════════════════════════════
-def execute_and_parse(device_key, vendor, commands, check_type,
-                    conn=None, logger=None):
-    """
-    Main entry point.
-
-    Args:
-        device_key : e.g. 'juniper_mx204'
-        vendor     : e.g. 'juniper'
-        commands   : list of CLI command strings
-        check_type : 'pre' | 'post'
-        conn       : live Netmiko connection — None triggers mock mode
-        logger     : caller's logger; falls back to module logger
-
-    Returns:
-        True  — collection + all parsers succeeded
-        False — collection failed or one/more parsers failed
-    """
-    log = logger or logger
-
-    print(f"[{device_key}] ── execute_and_parse START ─────────────────────────")
-    print(f"[{device_key}] vendor={vendor}  check_type={check_type}  mode={'REAL' if conn else 'MOCK'}")
-    print(f"[{device_key}] Commands ({len(commands)}): {commands}")
-
-    if not commands:
-        print(f"[{device_key}] No commands provided — aborting execute_and_parse")
-        return False
-
-    # Step 1 — collect
-    entries = (collect_real(device_key, vendor, commands, check_type, conn, log)
-            if conn else
-            collect_mock(device_key, vendor, commands, check_type, log))
-
-    if not entries:
-        print(f"[{device_key}] Collection returned no entries — aborting")
-        return False
-
-    # Step 2 — store raw
-    store_raw(device_key, check_type, entries, log)
-
-    # Step 3 — parse
-    parse_ok = run_parser(device_key, vendor, check_type, log)
-
-    # Step 4 — push to tracker
-    push_to_tracker(device_key, check_type, entries, parse_ok, log)
-
-    print(f"[{device_key}] ── execute_and_parse END — parse_ok={parse_ok} ─────")
-    return parse_ok
-
-
-# ═════════════════════════════════════════════════════════════
-# SIMPLE WRAPPER — called from main.py as execute_commands("pre", conn)
-# Reads device_key / vendor / commands from global_config
-# (set by main.py before calling this)
-# ═════════════════════════════════════════════════════════════
-def execute_commands(check_type: str, conn=None, logger=None):
-    """
-    Thin wrapper around execute_and_parse.
-    Reads device_key, vendor, and commands from global_config
-    so main.py only needs one line: execute_commands("pre", conn)
-
-    global_config must have set before calling:
-        global_config.device_key  — e.g. "juniper_mx204"
-        global_config.vendor      — e.g. "juniper"
-        global_config.commands    — list of CLI command strings
-    """
-    return execute_and_parse(
-        device_key = global_config.device_key,
-        vendor     = global_config.vendor,
-        commands   = global_config.commands,
-        check_type = check_type,
-        conn       = conn,
-        logger     = logger or logger,
-    )
-
-
-# ═════════════════════════════════════════════════════════════
-# STANDALONE — python run_checks.py
-# ═════════════════════════════════════════════════════════════
-def standalone_device(dev, all_commands, check_type):
-    vendor     = dev.get("vendor", "").lower()
-    model      = str(dev.get("model", "")).lower().replace("-", "")
-    host       = dev.get("host", "unknown")
-    device_key = f"{vendor}_{model}"
-
-    print(f"\n{'='*60}")
-    print(f"  Device : {host}  |  Key: {device_key}  |  Phase: {check_type.upper()}")
-    print(f"{'='*60}")
-
-    if device_key not in workflow_tracker:
-        init_device_tracker(device_key, host, vendor, model)
-        print(f"[{device_key}] Tracker slot created (standalone)")
-
-    commands = all_commands.get(vendor, [])
-    if not commands:
-        logger.error(f"[{device_key}] No commands for vendor='{vendor}'")
-        return False
-
-    ok = execute_and_parse(
-        device_key = device_key,
-        vendor     = vendor,
-        commands   = commands,
-        check_type = check_type,
-        conn       = None,
-        logger     = logger,
-    )
-
-    entries = global_config.device_results.get(device_key, {}).get(check_type, [])
-    print(f"\n  ┌─ [{device_key}] [{check_type.upper()}]")
-    for e in entries:
-        j    = e["json_output"]
-        icon = "✅" if (j and "error" not in j) else ("⏭ " if not e["output"] else "❌")
-        err  = f" → {j.get('error','')}" if isinstance(j, dict) and "error" in j else ""
-        print(f"  │   {icon}  {e['command']}{err}")
-    print(f"  └─ {'PASS' if ok else 'FAIL'}")
-    return ok
-
-
-def main():
-    print("=" * 60)
-    print("  run_checks.py — standalone mock run (PRE + POST)")
-    print("=" * 60)
-
-    device_cfg   = load_yaml("deviceDetails.yaml")
-    devices      = device_cfg.get("devices", [])
-    all_commands = load_yaml("show_cmd_list.yaml")
-
-    if not devices:
-        logger.critical("No devices in deviceDetails.yaml")
-        sys.exit(1)
-
-    overall = {}
-    for idx, dev in enumerate(devices, 1):
-        vendor     = dev.get("vendor", "").lower()
-        model      = str(dev.get("model", "")).lower().replace("-", "")
-        device_key = f"{vendor}_{model}"
-        print(f"\n[{idx}/{len(devices)}] {device_key}")
-
-        pre_ok  = standalone_device(dev, all_commands, "pre")
-        post_ok = standalone_device(dev, all_commands, "post")
-        overall[device_key] = {"pre": pre_ok, "post": post_ok}
-
-    print(f"\n{'='*60}  OVERALL")
-    for dk, r in overall.items():
-        print(f"  {dk}  PRE {'✅' if r['pre'] else '❌'}  POST {'✅' if r['post'] else '❌'}")
-
-    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
-    with open(OUTPUT_FILE, "w") as f:
-        json.dump(global_config.device_results, f, indent=2)
-    print(f"Debug JSON → {OUTPUT_FILE}")
-
-
-if __name__ == "__main__":
-    main()
-colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ cat lib/utilities.py
-import logging
-from netmiko import ConnectHandler
-from netmiko.exceptions import (
-    NetmikoTimeoutException,
-    NetmikoAuthenticationException
-)
-from paramiko.ssh_exception import SSHException
-import sys
-import time
-import os
-import yaml
-import json
-from datetime import datetime
-from parsers.junos.junos_mx204 import *
-
-# ─────────────────────────────────────────────────────────────
-# MockConnection  — REMOVED (confirmed unused)
-# ─────────────────────────────────────────────────────────────
-
-class GlobalConfig:
-    device_results: dict = {}
-    pre_check_timestamp = ""
-    vendor = ""
-    model = ""
-    version = ""
-    hostname = ""
-    session_log_path = ""
-    device_key = ""       # set by main.py before calling execute_commands()
-    commands: list = []   # set by main.py before calling execute_commands()
-
-global_config = GlobalConfig()
-
-logging.basicConfig(
-    level = logging.INFO,
-    format= "%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
-
-# ─────────────────────────────────────────────────────────────
-# workflow_tracker — per-device, keyed by device_key
-#
-# {
-#   "juniper_mx204": {
-#     "device_info": {"host","vendor","model","hostname","version","timestamp"},
-#     "pre-checks":  {"tasks": {task_name: {status,error,title,logs}}, "commands": [{cmd,output,json}]},
-#     "upgrade":     {"tasks": {...}},
-#     "post-checks": {"tasks": {...}, "commands": [...]}
-#   },
-#   "cisco_ncs5501": { ...same shape... }
-# }
-# ─────────────────────────────────────────────────────────────
-workflow_tracker = {}
-
-
-def init_device_tracker(device_key: str, host: str, vendor: str, model: str):
-    """Create a fresh workflow_tracker slot for one device."""
-    workflow_tracker[device_key] = {
-        "device_info": {
-            "host": host, "vendor": vendor, "model": model,
-            "hostname": "", "version": "",
-            "timestamp": datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
-        },
-        "pre-checks": {
-            "tasks": {
-                "read Yaml":                     {"status": "", "error": "", "title": "Load device config from YAML",          "logs": []},
-                "start logger":                  {"status": "", "error": "", "title": "Initialise log file for session",       "logs": []},
-                "connection using credentials":  {"status": "", "error": "", "title": "Establish SSH session to device",       "logs": []},
-                "show version":                  {"status": "", "error": "", "title": "Run show version",                      "logs": []},
-                "executing show commands":       {"status": "", "error": "", "title": "Collect pre-check show command output", "logs": []},
-                "Parsing the data":              {"status": "", "error": "", "title": "Parse and validate pre-check output",   "logs": []},
-                "Backup Config":                 {"status": "", "error": "", "title": "Save running config and device logs",   "logs": []},
-                "Validate MD5 checksum":         {"status": "", "error": "", "title": "Verify image integrity via MD5",        "logs": []},
-                "Storage Check (5GB threshold)": {"status": "", "error": "", "title": "Confirm sufficient disk space",         "logs": []},
-                "Disable Filter":                {"status": "", "error": "", "title": "Remove RE protection firewall filter",  "logs": []},
-            },
-            "commands": []
-        },
-        "upgrade": {
-            "tasks": {
-                "image installation": {"status": "", "error": "", "title": "Install target OS image on device",      "logs": []},
-                "reboot the device":  {"status": "", "error": "", "title": "Reboot and confirm device comes up",     "logs": []},
-                "ping the device":    {"status": "", "error": "", "title": "Verify device reachability after upgrade","logs": []},
-            }
-        },
-        "post-checks": {
-            "tasks": {
-                "Take snapshot":            {"status": "", "error": "", "title": "Snapshot primary disk to backup disk",       "logs": []},
-                "Execute show commands":    {"status": "", "error": "", "title": "Collect post-upgrade show command output",   "logs": []},
-                "parsing the commands":     {"status": "", "error": "", "title": "Parse and validate post-upgrade output",     "logs": []},
-                "Enable RE-PROTECT filter": {"status": "", "error": "", "title": "Re-apply RE protection firewall filter",     "logs": []},
-            },
-            "commands": []
-        }
-    }
-    logger.info(f"[tracker] Initialised slot for device_key='{device_key}'")
-
-
-def log_task(device_key: str, phase: str, task_name: str, status: str,
-             error: str = "", log_line: str = ""):
-    """Update a task entry in workflow_tracker[device_key][phase]['tasks']."""
-    device = workflow_tracker.get(device_key)
-    if device is None:
-        logger.warning(f"[log_task] device_key='{device_key}' not in workflow_tracker")
-        return
-    phase_data = device.get(phase)
-    if phase_data is None:
-        logger.warning(f"[log_task] phase='{phase}' not found for '{device_key}'")
-        return
-    tasks = phase_data.get("tasks", {})
-    if task_name not in tasks:
-        logger.warning(f"[log_task] task='{task_name}' not found under [{device_key}][{phase}]['tasks']")
-        return
-    tasks[task_name]["status"] = status
-    if error:
-        tasks[task_name]["error"] = error
-    if log_line:
-        tasks[task_name]["logs"].append(log_line)
-    logger.info(f"[tracker] {device_key} | {phase} | {task_name} -> {status}")
-
-
-def set_commands(device_key: str, phase: str, entries: list):
-    """Store executed command entries into workflow_tracker[device_key][phase]['commands']."""
-    device = workflow_tracker.get(device_key)
-    if not device:
-        logger.warning(f"[set_commands] device_key='{device_key}' not in tracker")
-        return
-    phase_data = device.get(phase)
-    if not phase_data:
-        logger.warning(f"[set_commands] phase='{phase}' not found for '{device_key}'")
-        return
-    phase_data["commands"] = entries
-    logger.info(f"[tracker] Stored {len(entries)} command entries -> [{device_key}][{phase}]['commands']")
-
-
-def get_pre_results(device_key: str) -> list:
-    return global_config.device_results.get(device_key, {}).get("pre", [])
-
-
-# ─────────────────────────────────────────────────────────────
-# setup_logger — UNCHANGED
-# ─────────────────────────────────────────────────────────────
-def setup_logger(name):
-    log_dir = os.path.join(os.getcwd(), "logging")
-    os.makedirs(log_dir, exist_ok=True)
-    log_file = f"{global_config.vendor}_{global_config.model}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-    log_path = os.path.join(log_dir, log_file)
-    logger = logging.getLogger(f"{global_config.vendor}_{global_config.model}")
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False
-    handler = logging.FileHandler(log_path)
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d_%H:%M:%S")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    return logger
-
-
-# ─────────────────────────────────────────────────────────────
-# _build_registries — UNCHANGED
-# ─────────────────────────────────────────────────────────────
-
-def build_registries():
-
-    #from parsers.cisco.cisco_ncs5501 import *
-    #CISCO_PARSER_REGISTRY = {
-    #    ("cisco", "show route summary"):   show_route_summary,
-     #   ("cisco", "show isis adjacency"): show_isis_adjacency,
-    #}
-    JUNOS_PARSER_REGISTRY = {
-    ("juniper", "show arp no-resolve | no-more"): parse_show_arp_no_resolve,
-    ("juniper", "show vrrp summary | no-more"): parse_show_vrrp_summary,
-    ("juniper", "show lldp neighbors | no-more"): parse_show_lldp_neighbors,
-    ("juniper", "show bfd session | no-more"): parse_show_bfd_session,
-    ("juniper", "show rsvp neighbor | no-more"): parse_show_rsvp_neighbor,
-    ("juniper", "show rsvp session | no-more"): parse_show_rsvp_session,
-    ("juniper", "show route table inet.0 | no-more"): parse_show_route_table_inet0,
-    ("juniper", "show route table inet.3 | no-more"): parse_show_route_table_inet3,
-    ("juniper", "show route table mpls.0 | no-more"): parse_show_route_table_mpls0,
-    ("juniper", "show mpls interface | no-more"): parse_show_mpls_interface,
-    ("juniper", "show mpls lsp | no-more"): parse_show_mpls_lsp,
-    ("juniper", "show mpls lsp p2mp | no-more"): parse_show_mpls_lsp_p2mp,
-    ("juniper", "show bgp summary | no-more"): parse_show_bgp_summary,
-    ("juniper", "show bgp neighbor | no-more"): parse_show_bgp_neighbor,
-    ("juniper", "show isis adjacency extensive | no-more"): parse_show_isis_adjacency_extensive,
-    ("juniper", "show route summary | no-more"): parse_show_route_summary,
-    ("juniper", "show rsvp session match DN | no-more"): parse_show_rsvp_session_match_DN,
-    ("juniper", "show mpls lsp unidirectional match DN | no-more"): parse_show_mpls_lsp_unidirectional_match_DN,
-    ("juniper", "show rsvp | no-more"): parse_show_rsvp,
-    ("juniper", "show mpls lsp unidirectional | no-more"): parse_show_mpls_lsp_unidirectional_no_more,
-    ("juniper", "show system uptime | no-more"): parse_21_show_system_uptime,
-    ("juniper", "show ntp associations no-resolve | no-more"): parse_22_show_ntp_associations,
-    ("juniper", "show vmhost version | no-more"): parse_23_show_vmhost_version,
-    ("juniper", "show vmhost snapshot | no-more"): parse_24_show_vmhost_snapshot,
-    ("juniper", "show chassis hardware | no-more"): parse_25_show_chassis_hardware,
-    ("juniper", "show chassis fpc detail | no-more"): parse_26_show_chassis_fpc_detail,
-    ("juniper", "show chassis alarms | no-more"): parse_27_show_chassis_alarms,
-    ("juniper", "show system alarms | no-more"): parse_28_show_system_alarms,
-    ("juniper", "show chassis routing-engine | no-more"): parse_29_show_chassis_routing_engine,
-    ("juniper", "show chassis environment | no-more"): parse_30_show_chassis_environment,
-    ("juniper", "show system resource-monitor fpc | no-more"): parse_31_show_system_resource_monitor_fpc,
-    ("juniper", "show krt table | no-more"): parse_32_show_krt_table,
-    ("juniper", "show system processes | no-more"): parse_33_show_system_processes,
-    ("juniper", "show interface descriptions | no-more"): parse_34_show_interface_descriptions,
-    ("juniper", "show oam ethernet connectivity-fault-management interfaces extensive | no-more"): parse_35_show_oam_cfm_interfaces,
-    ("juniper", "show ldp neighbor | no-more"): parse_36_show_ldp_neighbor,
-    ("juniper", "show connections | no-more"): parse_37_show_connections,
-    }
-    #eturn CISCO_PARSER_REGISTRY, JUNOS_PARSER_REGISTRY
-    return JUNOS_PARSER_REGISTRY
-#─────────────────────────────────────────────────────────────
-# write_json — UNCHANGED
-# ─────────────────────────────────────────────────────────────
-def write_json(command_name, vendor, model, json_data, json_file_path):
-    if not all([command_name, vendor, model]):
-        logger.error("Command name, vendor, and model cannot be empty")
-        raise ValueError("Invalid Parameters")
-    try:
-        logger.info("Writing to JSON file ...")
-        curr_dir = os.getcwd()
-        output_dir = os.path.join(curr_dir, json_file_path)
-        os.makedirs(output_dir, exist_ok=True)
-        filename = f"{vendor}_{model}_{global_config.pre_check_timestamp}.json"
-        file_path = os.path.join(output_dir, filename)
-        if os.path.exists(file_path):
-            with open(file_path, "r") as f:
-                data = json.load(f)
-        else:
-            data = {"metadata": {"timestamp": global_config.pre_check_timestamp, "vendor": vendor, "model": model, "version": global_config.version}, "commands": {}}
-        data["commands"][command_name] = json_data
-        with open(file_path, "w") as f:
-            json.dump(data, f, indent=2)
-        logger.info(f"JSON file written successfully: {file_path}")
-        return data
-    except Exception as e:
-        logger.error(f"Unexpected error while writing JSON: {e}")
-        raise
-
-
-# ─────────────────────────────────────────────────────────────
-# login_device — UNCHANGED
-# ─────────────────────────────────────────────────────────────
-def login_device(host, username, password, device_type, session_log_path, logger):
-    try:
-        logger.info(f"Connecting to {host} using Netmiko...")
-        device = {"device_type": device_type, "host": host, "username": username, "password": password, "session_log": session_log_path}
-        conn = ConnectHandler(**device)
-        logger.info(f"Login Successful to {host}")
-        return conn
-    except NetmikoTimeoutException:
-        logger.error(f"{host}: Connection Timed out"); raise
-    except NetmikoAuthenticationException:
-        logger.error(f"{host}: Authentication Failed"); raise
-    except SSHException as e:
-        logger.error(f"{host}: SSH error: {e}"); raise
-    except Exception as e:
-        logger.error(f"{host}: Unknown error: {e}"); raise
-
-
-# ─────────────────────────────────────────────────────────────
-# logout_device — UNCHANGED
-# ─────────────────────────────────────────────────────────────
-def logout_device(conn, host, logger):
-    try:
-        if conn:
-            conn.disconnect()
-            logger.info(f"Logout successful from {host}")
-        else:
-            logger.warning("Logout skipped: connection object is None")
-    except Exception as e:
-        logger.error(f"{host if host else 'Device'}: Logout failed for vendor {global_config.vendor}: {e}")
-
-
-# ─────────────────────────────────────────────────────────────
-# load_yaml — UNCHANGED
-# ─────────────────────────────────────────────────────────────
-def load_yaml(filename):
-    try:
-        curr_dir = os.getcwd()
-        file_path = os.path.join(curr_dir, "inputs", filename)
-        with open(file_path, "r") as f:
-            return yaml.safe_load(f)
-    except Exception as e:
-        logger.error(f"Failed to load YAML {filename}: {e}")
-        raise
-def export_device_summary(device_key: str):
-    """
-    Writes ONLY the global_config fields to a JSON file.
-    Does NOT use workflow_tracker.
-    Saves under: reports/<device_key>_<timestamp>.json
-    """
-
-    summary = {
-        "device_key": device_key,
-        "timestamp": datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
-        "vendor": global_config.vendor,
-        "model": global_config.model,
-        "hostname": global_config.hostname,
-        "version": global_config.version,
-        "pre_check_timestamp": global_config.pre_check_timestamp,
-        "session_log_path": global_config.session_log_path,
-        "commands": global_config.commands,
-    }
-
-    # build output path
-    reports_dir = os.path.join(os.getcwd(), "reports")
-    os.makedirs(reports_dir, exist_ok=True)
-
-    filename = f"{device_key}_{summary['timestamp']}.json"
-    file_path = os.path.join(reports_dir, filename)
-
-    # write JSON
-    with open(file_path, "w") as f:
-        json.dump(summary, f, indent=2)
-
-    print(f"[export] Summary written to {file_path}")
-
-colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ ll
-total 196
-drwxrwxr-x 15 colt colt  4096 Feb 26 09:36 ./
-drwxr-xr-x  3 colt colt  4096 Feb 24 20:59 ../
+colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation/lib$ p main
+python: can't open file '/home/colt/Documents/MS1Automation/lib/main': [Errno 2] No such file or directory
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation/lib$ ll
+total 60
+drwxrwxr-x  3 colt colt  4096 Feb 26 18:50 ./
+drwxrwxr-x 15 colt colt  4096 Feb 26 18:49 ../
+-rw-rw-r--  1 colt colt 13986 Feb 23 23:42 mock_outputs.py
+drwxrwxr-x  2 colt colt  4096 Feb 26 18:44 __pycache__/
+-rw-rw-r--  1 colt colt 30006 Feb 26 18:50 utilities.py
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation/lib$ cd ..
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ ll
+total 180
+drwxrwxr-x 15 colt colt  4096 Feb 26 18:49 ./
+drwxr-xr-x  4 colt colt  4096 Feb 26 13:35 ../
 -rw-rw-r--  1 colt colt    18 Feb 23 23:42 .gitignore
-drwxrwxr-x  2 colt colt  4096 Feb 25 14:43 inputs/
-drwxrwxr-x  3 colt colt  4096 Feb 25 16:00 lib/
-drwxrwxr-x  2 colt colt  4096 Feb 26 07:36 logging/
--rw-rw-r--  1 colt colt  8234 Feb 25 15:41 main.py
-drwxrwxr-x  4 colt colt  4096 Feb 26 09:36 models/
-drwxrwxr-x  2 colt colt  4096 Feb 26 07:38 outputs/
-drwxrwxr-x  5 colt colt  4096 Feb 24 21:12 parsers/
+drwxrwxr-x  2 colt colt  4096 Feb 26 15:57 inputs/
+drwxrwxr-x  3 colt colt  4096 Feb 26 18:50 lib/
+drwxrwxr-x  2 colt colt  4096 Feb 26 18:46 logging/
+-rw-rw-r--  1 colt colt 10845 Feb 26 18:49 main.py
+drwxrwxr-x  4 colt colt  4096 Feb 26 14:42 models/
+drwxrwxr-x  2 colt colt  4096 Feb 26 18:46 outputs/
+drwxrwxr-x  5 colt colt  4096 Feb 26 14:40 parsers/
 -rw-rw-r--  1 colt colt  8014 Feb 23 23:42 postchecks.py
-drwxrwxr-x  2 colt colt  4096 Feb 24 23:08 precheck_jsons/
--rw-rw-r--  1 colt colt 26496 Feb 25 08:19 prechecks.py
-drwxrwxr-x  2 colt colt  4096 Feb 25 14:46 __pycache__/
+drwxrwxr-x  2 colt colt  4096 Feb 26 18:44 precheck_jsons/
+-rw-rw-r--  1 colt colt 23129 Feb 26 14:57 prechecks.py
+drwxrwxr-x  2 colt colt  4096 Feb 26 14:58 __pycache__/
 -rw-rw-r--  1 colt colt     9 Feb 23 23:42 README.md
-drwxrwxr-x  2 colt colt  4096 Feb 26 09:26 reports/
--rw-rw-r--  1 colt colt 15517 Feb 25 14:46 run_checks.py
+drwxrwxr-x  2 colt colt  4096 Feb 26 18:46 reports/
 drwxrwxr-x  2 colt colt  4096 Feb 24 21:04 testing/
 -rw-rw-r--  1 colt colt  8193 Feb 23 23:42 upgrade.py
 drwxrwxr-x  5 colt colt  4096 Feb 24 20:59 .venv/
 drwxrwxr-x  5 colt colt  4096 Feb 24 21:02 venv/
 drwxrwxr-x  2 colt colt  4096 Feb 24 21:04 .vscode/
--rw-rw-r--  1 colt colt 27706 Feb 23 23:42 workflow_report_generator.py
+-rw-rw-r--  1 colt colt 32004 Feb 26 11:21 workflow_report_generator.py
 -rw-rw-r--  1 colt colt 21144 Feb 25 08:05 workflow_report.html
-colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ cat workflow_report_generator.py
-#!/usr/bin/env python3
-"""
-workflow_report_generator.py
-=============================
-Generates a dark-themed HTML report from the per-device workflow_tracker.
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ p main.py
+devicekey.... juniper_mx204
+2026-02-26 18:50:58,554 - INFO - [tracker] Initialised slot for device_key='juniper_mx204'
+workflow... {'juniper_mx204': {'device_info': {'host': '10.80.71.55', 'vendor': 'juniper', 'model': 'mx204', 'timestamp': '2026-02-26_18-50-58'}, 'pre-checks': {'tasks': {'read Yaml': {'status': '', 'error': '', 'title': 'Load device config from YAML', 'logs': ''}, 'start logger': {'status': '', 'error': '', 'title': 'Initialise log file for session', 'logs': ''}, 'connection using credentials': {'status': '', 'error': '', 'title': 'Establish SSH session to device', 'logs': ''}, 'show version': {'status': '', 'error': '', 'title': 'Run show version', 'logs': ''}, 'executing show commands': {'status': '', 'error': '', 'title': 'Collect pre-check show command output', 'logs': ''}, 'Parsing the data': {'status': '', 'error': '', 'title': 'Parse and validate pre-check output', 'logs': ''}, 'Backup Config': {'status': '', 'error': '', 'title': 'Save running config and device logs', 'logs': ''}, 'Validate MD5 checksum': {'status': '', 'error': '', 'title': 'Verify image integrity via MD5', 'logs': ''}, 'Storage Check (5GB threshold)': {'status': '', 'error': '', 'title': 'Confirm sufficient disk space', 'logs': ''}, 'Disable Filter': {'status': '', 'error': '', 'title': 'Remove RE protection firewall filter', 'logs': ''}}, 'commands': []}, 'upgrade': {'tasks': {'image installation': {'status': '', 'error': '', 'title': 'Install target OS image on device', 'logs': ''}, 'reboot the device': {'status': '', 'error': '', 'title': 'Reboot and confirm device comes up', 'logs': ''}, 'ping the device': {'status': '', 'error': '', 'title': 'Verify device reachability after upgrade', 'logs': ''}}}, 'post-checks': {'tasks': {'Take snapshot': {'status': '', 'error': '', 'title': 'Snapshot primary disk to backup disk', 'logs': ''}, 'Execute show commands': {'status': '', 'error': '', 'title': 'Collect post-upgrade show command output', 'logs': ''}, 'parsing the commands': {'status': '', 'error': '', 'title': 'Parse and validate post-upgrade output', 'logs': ''}, 'Enable RE-PROTECT filter': {'status': '', 'error': '', 'title': 'Re-apply RE protection firewall filter', 'logs': ''}}, 'commands': []}}}
+main devices... {'devices': [{'host': '10.80.71.55', 'vendor': 'juniper', 'model': 'mx204', 'device_type': 'juniper', 'current_image': 'junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz', 'expected_os': '23.4R2-S5.6', 'intermediate_os': False, 'min_disk_gb': 5, 'username': 'lab', 'password': 'lab123', 'target_image': 'junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz', 'remote_backup_server': 'sftp://backup@10.10.20.20/backups/', 'cleanup_files': ['list of files'], 'intermediate_image': 'junos-os-21.2R2-S5.bin', 'rollback': False, 'md5checksum_file': 'dec5349a0d238dad686dc01f468a0bbe'}]}
+10.80.71.55
+2026-02-26 18:50:58,554 - INFO - [tracker] juniper_mx204 | pre-checks | read Yaml -> Success
+2026-02-26 18:50:58,554 - INFO - [tracker] juniper_mx204 | pre-checks | start logger -> Success
+2026-02-26 18:50:58,599 - INFO - Connected (version 2.0, client OpenSSH_9.7)
+2026-02-26 18:50:58,843 - INFO - Authentication (password) successful!
+connection.. <netmiko.juniper.juniper.JuniperSSH object at 0x7e61ad221940>
+2026-02-26 18:50:59,103 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
+CONNECTION... <netmiko.juniper.juniper.JuniperSSH object at 0x7e61ad221940>
+2026-02-26 18:50:59,103 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
+Running show version
+ Device type: juniper
+show version
+10.80.71.55: Executing 'show version' for vendor: juniper
 
-New tracker structure:
+OP START
+ Hostname: EFFPER01
+Model: mx204
+Junos: 23.4R2-S6.9
+JUNOS OS Kernel 64-bit  [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS libs [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS runtime [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS time zone information [20250524.8b60e66_builder_stable_12_234]
+JUNOS network stack and utilities [20251112.130809_builder_junos_234_r2_s6]
+JUNOS libs [20251112.130809_builder_junos_234_r2_s6]
+JUNOS OS libs compat32 [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS 32-bit compatibility [20250524.8b60e66_builder_stable_12_234]
+JUNOS libs compat32 [20251112.130809_builder_junos_234_r2_s6]
+JUNOS runtime [20251112.130809_builder_junos_234_r2_s6]
+JUNOS sflow mx [20251112.130809_builder_junos_234_r2_s6]
+JUNOS py extensions [20251112.130809_builder_junos_234_r2_s6]
+JUNOS py base [20251112.130809_builder_junos_234_r2_s6]
+JUNOS OS vmguest [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS package [20250303.174934_builder_main]
+JUNOS OS network modules [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS crypto [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS boot-ve files [20250524.8b60e66_builder_stable_12_234]
+JUNOS na telemetry [23.4R2-S6.9]
+JUNOS vmguest  [20251112.130809_builder_junos_234_r2_s6]
+JUNOS vmguest (MTX) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS full sysmond [20251112.130809_builder_junos_234_r2_s6]
+JUNOS mx libs compat32 [20251112.130809_builder_junos_234_r2_s6]
+JUNOS mx runtime [20251112.130809_builder_junos_234_r2_s6]
+JUNOS RPD Telemetry Application [23.4R2-S6.9]
+JUNOS python routing scripts for consistency check in RIB/FIB/PFE [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing mpls-oam-basic [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing mpls-oam-advanced [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing lsys [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing controller-internal [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing controller-external [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing 32-bit Compatible Version [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing aggregated [20251112.130809_builder_junos_234_r2_s6]
+Redis [20251112.130809_builder_junos_234_r2_s6]
+JUNOS probe utility [20251112.130809_builder_junos_234_r2_s6]
+JUNOS common platform support [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Openconfig [23.4R2-S6.9]
+JUNOS mtx network modules [20251112.130809_builder_junos_234_r2_s6]
+JUNOS modules [20251112.130809_builder_junos_234_r2_s6]
+JUNOS mx modules [20251112.130809_builder_junos_234_r2_s6]
+JUNOS mx libs [20251112.130809_builder_junos_234_r2_s6]
+JUNOS L2 RSI Scripts [20251112.130809_builder_junos_234_r2_s6]
+JUNOS SQL Sync Daemon [20251112.130809_builder_junos_234_r2_s6]
+JUNOS mtx Data Plane Crypto Support [20251112.130809_builder_junos_234_r2_s6]
+JUNOS daemons [20251112.130809_builder_junos_234_r2_s6]
+JUNOS mx daemons [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Broadband Edge User Plane Apps [23.4R2-S6.9]
+Junos Remote Attestation package [1.0.0+20251112.130809_builder_junos_234_r2_s6]
+JUNOS appidd-mx application-identification daemon [20251112.130809_builder_junos_234_r2_s6]
+JUNOS TPM2 [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services URL Filter package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services TLB Service PIC package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Telemetry [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services TCP-LOG [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services SSL [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services SOFTWIRE [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Stateful Firewall [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services RTCOM [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services RPM [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services PCEF package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services NAT [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Mobile Subscriber Service Container package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services MobileNext Software package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Logging Report Framework package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services LL-PDF Container package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Jflow Container package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Deep Packet Inspection package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services IPSec [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services IDS [20251112.130809_builder_junos_234_r2_s6]
+JUNOS IDP Services [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services HTTP Content Management package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services DNS Filter package (i386) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Crypto [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Captive Portal and Content Delivery Container package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services COS [20251112.130809_builder_junos_234_r2_s6]
+JUNOS AppId Services [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Application Level Gateways [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services AACL Container package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS SDN Software Suite [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Extension Toolkit [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Phone-home [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Packet Forwarding Engine Support (wrlinux9) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Packet Forwarding Engine Support (MX/EX92XX Common) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Packet Forwarding Engine Support (M/T Common) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Packet Forwarding Engine Support (aft) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Packet Forwarding Engine Support (MX Common) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Juniper Malware Removal Tool (JMRT) [1.0.0+20251112.130809_builder_junos_234_r2_s6]
+JUNOS Juniper Malware Removal Tool (JMRT) Test [1.0.0+20251112.130809_builder_junos_234_r2_s6]
+JUNOS J-Insight [20251112.130809_builder_junos_234_r2_s6]
+JUNOS jfirmware [20250925.073009_builder_junos_234_r2_s6]
+JUNOS Online Documentation [20251112.130809_builder_junos_234_r2_s6]
+JUNOS jail runtime [20250524.8b60e66_builder_stable_12_234]
+JUNOS dsa [20251112.130809_builder_junos_234_r2_s6]
+
+OP END
+
+vendor.. juniper
+10.80.71.55: Executing 'show version' for vendor: juniper
+23.4R2-S6.9
+2026-02-26 18:50:59,517 - INFO - [tracker] juniper_mx204 | pre-checks | show version -> Success
+version... Hostname: EFFPER01
+Model: mx204
+Junos: 23.4R2-S6.9
+JUNOS OS Kernel 64-bit  [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS libs [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS runtime [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS time zone information [20250524.8b60e66_builder_stable_12_234]
+JUNOS network stack and utilities [20251112.130809_builder_junos_234_r2_s6]
+JUNOS libs [20251112.130809_builder_junos_234_r2_s6]
+JUNOS OS libs compat32 [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS 32-bit compatibility [20250524.8b60e66_builder_stable_12_234]
+JUNOS libs compat32 [20251112.130809_builder_junos_234_r2_s6]
+JUNOS runtime [20251112.130809_builder_junos_234_r2_s6]
+JUNOS sflow mx [20251112.130809_builder_junos_234_r2_s6]
+JUNOS py extensions [20251112.130809_builder_junos_234_r2_s6]
+JUNOS py base [20251112.130809_builder_junos_234_r2_s6]
+JUNOS OS vmguest [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS package [20250303.174934_builder_main]
+JUNOS OS network modules [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS crypto [20250524.8b60e66_builder_stable_12_234]
+JUNOS OS boot-ve files [20250524.8b60e66_builder_stable_12_234]
+JUNOS na telemetry [23.4R2-S6.9]
+JUNOS vmguest  [20251112.130809_builder_junos_234_r2_s6]
+JUNOS vmguest (MTX) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS full sysmond [20251112.130809_builder_junos_234_r2_s6]
+JUNOS mx libs compat32 [20251112.130809_builder_junos_234_r2_s6]
+JUNOS mx runtime [20251112.130809_builder_junos_234_r2_s6]
+JUNOS RPD Telemetry Application [23.4R2-S6.9]
+JUNOS python routing scripts for consistency check in RIB/FIB/PFE [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing mpls-oam-basic [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing mpls-oam-advanced [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing lsys [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing controller-internal [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing controller-external [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing 32-bit Compatible Version [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Routing aggregated [20251112.130809_builder_junos_234_r2_s6]
+Redis [20251112.130809_builder_junos_234_r2_s6]
+JUNOS probe utility [20251112.130809_builder_junos_234_r2_s6]
+JUNOS common platform support [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Openconfig [23.4R2-S6.9]
+JUNOS mtx network modules [20251112.130809_builder_junos_234_r2_s6]
+JUNOS modules [20251112.130809_builder_junos_234_r2_s6]
+JUNOS mx modules [20251112.130809_builder_junos_234_r2_s6]
+JUNOS mx libs [20251112.130809_builder_junos_234_r2_s6]
+JUNOS L2 RSI Scripts [20251112.130809_builder_junos_234_r2_s6]
+JUNOS SQL Sync Daemon [20251112.130809_builder_junos_234_r2_s6]
+JUNOS mtx Data Plane Crypto Support [20251112.130809_builder_junos_234_r2_s6]
+JUNOS daemons [20251112.130809_builder_junos_234_r2_s6]
+JUNOS mx daemons [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Broadband Edge User Plane Apps [23.4R2-S6.9]
+Junos Remote Attestation package [1.0.0+20251112.130809_builder_junos_234_r2_s6]
+JUNOS appidd-mx application-identification daemon [20251112.130809_builder_junos_234_r2_s6]
+JUNOS TPM2 [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services URL Filter package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services TLB Service PIC package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Telemetry [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services TCP-LOG [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services SSL [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services SOFTWIRE [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Stateful Firewall [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services RTCOM [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services RPM [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services PCEF package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services NAT [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Mobile Subscriber Service Container package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services MobileNext Software package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Logging Report Framework package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services LL-PDF Container package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Jflow Container package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Deep Packet Inspection package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services IPSec [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services IDS [20251112.130809_builder_junos_234_r2_s6]
+JUNOS IDP Services [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services HTTP Content Management package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services DNS Filter package (i386) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Crypto [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Captive Portal and Content Delivery Container package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services COS [20251112.130809_builder_junos_234_r2_s6]
+JUNOS AppId Services [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services Application Level Gateways [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Services AACL Container package [20251112.130809_builder_junos_234_r2_s6]
+JUNOS SDN Software Suite [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Extension Toolkit [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Phone-home [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Packet Forwarding Engine Support (wrlinux9) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Packet Forwarding Engine Support (MX/EX92XX Common) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Packet Forwarding Engine Support (M/T Common) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Packet Forwarding Engine Support (aft) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Packet Forwarding Engine Support (MX Common) [20251112.130809_builder_junos_234_r2_s6]
+JUNOS Juniper Malware Removal Tool (JMRT) [1.0.0+20251112.130809_builder_junos_234_r2_s6]
+JUNOS Juniper Malware Removal Tool (JMRT) Test [1.0.0+20251112.130809_builder_junos_234_r2_s6]
+JUNOS J-Insight [20251112.130809_builder_junos_234_r2_s6]
+JUNOS jfirmware [20250925.073009_builder_junos_234_r2_s6]
+JUNOS Online Documentation [20251112.130809_builder_junos_234_r2_s6]
+JUNOS jail runtime [20250524.8b60e66_builder_stable_12_234]
+JUNOS dsa [20251112.130809_builder_junos_234_r2_s6]
+
+2026-02-26 18:50:59,517 - INFO - [tracker] juniper_mx204 | pre-checks | show version -> Success
+2026-02-26 18:50:59,628 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:50:59,711 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:50:59,795 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:50:59,903 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:50:59,986 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:02,388 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:04,009 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:04,092 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:04,175 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:04,258 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:04,341 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:04,424 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:04,507 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:04,590 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:04,929 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:05,242 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:05,529 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:05,766 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:05,849 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:05,932 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:06,015 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:06,098 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:06,289 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:06,454 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:06,645 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:06,728 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:06,811 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:06,894 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:06,978 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:07,193 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:07,276 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:07,385 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:07,469 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Failed
+2026-02-26 18:51:07,552 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:07,635 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:07,718 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:07,803 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:08,289 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:08,532 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:08,752 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-26 18:51:08,753 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,754 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,757 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,757 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,757 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,758 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,758 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,758 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,760 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,760 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,760 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,760 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,762 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,763 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,764 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,765 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,765 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,766 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,766 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,766 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,767 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,767 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Failed
+2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,770 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,770 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-26 18:51:08,770 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Failed
+
+============================================================
+WORKFLOW ABORTED for juniper_mx204 — partial results (JSON):
+============================================================
 {
   "juniper_mx204": {
-    "device_info": {"host","vendor","model","hostname","version","timestamp"},
-    "pre-checks":  {"tasks": {task_name: {status,error,title,logs}}, "commands": [{cmd,output,json}]},
-    "upgrade":     {"tasks": {...}},
-    "post-checks": {"tasks": {...}, "commands": [...]}
-  },
-  "cisco_ncs5501": { ...same shape... }
-}
-
-HTML features:
-  - Dropdown device selector — one selection shows only that device's data
-  - Per-device: device info card, task table with log drawers, command output section
-  - Overall summary pill (all devices combined) in header
-"""
-
-from datetime import datetime
-import json
-
-
-PHASE_META = {
-    'pre-checks':  {'label': 'Pre-Checks',  'color': '#2563eb'},
-    'upgrade':     {'label': 'Upgrade',     'color': '#7c3aed'},
-    'post-checks': {'label': 'Post-Checks', 'color': '#059669'},
-}
-PHASES = ['pre-checks', 'upgrade', 'post-checks']
-
-
-def _esc(s):
-    return (str(s)
-            .replace('&', '&amp;')
-            .replace('<', '&lt;')
-            .replace('>', '&gt;')
-            .replace('"', '&quot;'))
-
-
-# ─────────────────────────────────────────────────────────────
-# Build task table tbody for ONE device
-# ─────────────────────────────────────────────────────────────
-def build_tbody(device_data: dict, device_key: str) -> tuple:
-    """Returns (tbody_html, total, success, failed)"""
-    rows   = []
-    total  = success = failed = 0
-    row_id = 0
-    prefix = device_key.replace('-', '_')
-
-    for phase_key in PHASES:
-        phase_block = device_data.get(phase_key, {})
-        tasks = phase_block.get('tasks', phase_block)
-        if not tasks:
-            continue
-
-        meta       = PHASE_META[phase_key]
-        task_count = len(tasks)
-
-        for idx, (task_name, td) in enumerate(tasks.items()):
-            status   = td.get('status', '')
-            is_ok    = status == 'Success'
-            is_blank = not status
-
-            total += 1
-            if is_ok:
-                success += 1
-            elif not is_blank:
-                failed += 1
-
-            display_name = td.get('title', task_name)
-            remark       = td.get('message', '') or td.get('error', '')
-            logs         = td.get('logs', [])
-            lid          = f'log-{prefix}-{row_id}'
-
-            if idx == 0:
-                phase_cell = (
-                    f'<td class="phase-cell" rowspan="{task_count}" '
-                    f'style="border-left:4px solid {meta["color"]};">'
-                    f'<span class="phase-name" style="color:{meta["color"]};">'
-                    f'{meta["label"]}</span></td>'
-                )
-            else:
-                phase_cell = ''
-
-            if remark:
-                rc = 'remark-ok' if is_ok else 'remark-err'
-                remark_html = f'<span class="{rc}">{_esc(remark)}</span>'
-            else:
-                remark_html = '<span class="remark-na">—</span>'
-
-            if logs:
-                log_lines = ''.join(f'<div class="log-line">{_esc(ln)}</div>' for ln in logs)
-                log_block = (
-                    f'<button class="log-btn" onclick="toggleLog(\'{lid}\')" '
-                    f'aria-expanded="false">View Logs</button>'
-                    f'<div id="{lid}" class="log-drawer" hidden>{log_lines}</div>'
-                )
-            else:
-                log_block = ''
-
-            if is_blank:
-                badge_html = '<span class="badge badge-blank">—</span>'
-            else:
-                status_cls = 'success' if is_ok else 'failed'
-                badge_html = f'<span class="badge badge-{status_cls}">{_esc(status)}</span>'
-
-            row_cls = ' failed-row' if (not is_ok and not is_blank) else ''
-            rows.append(
-                f'<tr class="task-row{row_cls}">'
-                f'{phase_cell}'
-                f'<td class="subtask-cell">{_esc(display_name)}{log_block}</td>'
-                f'<td class="status-cell">{badge_html}</td>'
-                f'<td class="remark-cell">{remark_html}</td>'
-                f'</tr>'
-            )
-            row_id += 1
-
-        rows.append('<tr class="phase-sep"><td colspan="4"></td></tr>')
-
-    return '\n'.join(rows), total, success, failed
-
-
-# ─────────────────────────────────────────────────────────────
-# Build command output section for ONE device
-# ─────────────────────────────────────────────────────────────
-def build_commands_section(device_data: dict, device_key: str) -> str:
-
-    prefix   = device_key.replace('-', '_')
-    sections = []
-
-    for phase_key in ('pre-checks', 'post-checks'):
-        cmds = device_data.get(phase_key, {}).get('commands', [])
-        if not cmds:
-            continue
-
-        meta  = PHASE_META[phase_key]
-        items = []
-        for i, entry in enumerate(cmds):
-            cmd_label = _esc(entry.get('cmd', ''))
-            raw_out   = _esc(entry.get('output', '') or '(empty)')
-            json_out  = entry.get('json', {})
-            json_str  = _esc(json.dumps(json_out, indent=2)) if json_out else '(not parsed)'
-            raw_id  = f'raw-{prefix}-{phase_key.replace("-","")}-{i}'
-            json_id = f'jsn-{prefix}-{phase_key.replace("-","")}-{i}'
-
-            items.append(f"""
-<div class="cmd-block">
-  <div class="cmd-label">{cmd_label}</div>
-  <div class="cmd-toggles">
-    <button class="log-btn" onclick="toggleLog('{raw_id}')">Raw Output</button>
-    <button class="log-btn" onclick="toggleLog('{json_id}')">Parsed JSON</button>
-  </div>
-  <div id="{raw_id}" class="log-drawer" hidden><div class="log-line">{raw_out}</div></div>
-  <div id="{json_id}" class="log-drawer" hidden><pre class="jb-inline">{json_str}</pre></div>
-</div>""")
-
-        sections.append(f"""
-<div class="cmd-phase-block">
-  <div class="cmd-phase-title" style="color:{meta['color']};">{meta['label']} — Command Outputs</div>
-  {''.join(items)}
-</div>""")
-
-    return '\n'.join(sections) if sections else ''
-
-
-# ─────────────────────────────────────────────────────────────
-# Build one full device panel
-# ─────────────────────────────────────────────────────────────
-def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> str:
-    info     = device_data.get('device_info', {})
-    host     = info.get('host',      '—')
-    vendor   = info.get('vendor',    '—').upper()
-    model    = info.get('model',     '—').upper()
-    ts       = info.get('timestamp', '—')
-    hostname = info.get('hostname',  '—')
-    version  = info.get('version',   '—')
-
-    tbody, total, success, failed = build_tbody(device_data, device_key)
-    cmd_section = build_commands_section(device_data, device_key)
-
-    pct      = round(success / total * 100) if total else 0
-    pill_cls = 'ok' if (failed == 0 and total > 0) else ('fail' if (success == 0 and total > 0) else 'partial')
-    pill_txt = 'ALL PASSED' if (failed == 0 and total > 0) else (f'{failed} FAILED' if total > 0 else 'NO TASKS')
-
-    display = 'block' if is_first else 'none'
-
-    return f"""
-<div class="device-panel" id="panel-{_esc(device_key)}" style="display:{display};">
-
-  <div class="dev-header">
-    <div>
-      <span class="dev-key">{_esc(device_key)}</span>
-      <span class="pill {pill_cls}" style="margin-left:1rem;">{pill_txt}</span>
-    </div>
-    <div class="meta-ts">Run: {_esc(ts)}</div>
-  </div>
-
-  <div class="dev-card">
-    <div class="df"><span class="lbl">Host / IP</span><span class="val">{_esc(host)}</span></div>
-    <div class="df"><span class="lbl">Vendor</span><span class="val">{_esc(vendor)}</span></div>
-    <div class="df"><span class="lbl">Model</span><span class="val">{_esc(model)}</span></div>
-    <div class="df"><span class="lbl">Hostname</span><span class="val">{_esc(hostname)}</span></div>
-    <div class="df"><span class="lbl">Version</span><span class="val">{_esc(version)}</span></div>
-  </div>
-
-  <div class="stats">
-    <div class="sc tot"><span class="n">{total}</span><span class="l">Total Tasks</span>
-      <div class="prog"><div class="progbar" style="width:{pct}%"></div></div></div>
-    <div class="sc ok"><span class="n">{success}</span><span class="l">Successful</span></div>
-    <div class="sc err"><span class="n">{failed}</span><span class="l">Failed</span></div>
-  </div>
-
-  <div class="tw">
-    <table>
-      <colgroup><col class="ct"><col class="cs"><col class="cst"><col class="cr"></colgroup>
-      <thead><tr><th>Task</th><th>Subtask</th><th>Status</th><th>Remark</th></tr></thead>
-      <tbody>
-{tbody}
-      </tbody>
-    </table>
-  </div>
-
-  {cmd_section}
-
-</div>"""
-
-
-def _overall_stats(workflow_data: dict) -> tuple:
-    total = success = failed = 0
-    for device_data in workflow_data.values():
-        for phase_key in PHASES:
-            phase_block = device_data.get(phase_key, {})
-            tasks = phase_block.get('tasks', phase_block)
-            for td in tasks.values():
-                st = td.get('status', '')
-                if st:
-                    total += 1
-                    if st == 'Success':
-                        success += 1
-                    else:
-                        failed += 1
-    return total, success, failed
-
-
-# ─────────────────────────────────────────────────────────────
-# Main generator — called from main.py
-# ─────────────────────────────────────────────────────────────
-def generate_html_report(workflow_data: dict, output_file: str = 'workflow_report.html') -> str:
-    device_keys = list(workflow_data.keys())
-    now         = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-    total_all, success_all, failed_all = _overall_stats(workflow_data)
-    pill_cls = 'ok' if failed_all == 0 else ('fail' if success_all == 0 else 'partial')
-    pill_txt = (f'ALL {total_all} TASKS PASSED' if failed_all == 0 else f'{failed_all} TASK(S) FAILED')
-
-    dropdown_options = '\n'.join(
-        f'<option value="{_esc(dk)}"{" selected" if i == 0 else ""}>{_esc(dk)}</option>'
-        for i, dk in enumerate(device_keys)
-    )
-
-    device_panels = '\n'.join(
-        build_device_panel(dk, workflow_data[dk], i == 0)
-        for i, dk in enumerate(device_keys)
-    )
-
-    json_html = _esc(json.dumps(workflow_data, indent=2))
-
-    html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Workflow Report — {len(device_keys)} Device(s)</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
-:root{{
-  --bg:#0d0f14;--surf:#13161e;--surf2:#1a1e28;
-  --border:#252a38;--border2:#2e3547;
-  --text:#e2e8f0;--muted:#64748b;--muted2:#94a3b8;
-  --accent:#38bdf8;--ok:#22c55e;--err:#f43f5e;--warn:#f59e0b;
-  --mono:"Fira Code",monospace;--sans:"Inter",sans-serif;
-  --r:8px;--shadow:0 4px 24px rgba(0,0,0,.5);
-}}
-html{{font-size:15px}}
-body{{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding:2.5rem 1.5rem 5rem}}
-.wrap{{max-width:1160px;margin:0 auto}}
-.hdr{{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}}
-.hdr h1{{font-size:1.6rem;font-weight:700;letter-spacing:-.01em;color:var(--text);line-height:1.25}}
-.hdr h1 span{{color:var(--accent)}}
-.hdr .meta{{font-family:var(--mono);font-size:.7rem;color:var(--muted);margin-top:.4rem;line-height:1.9}}
-.pill{{display:inline-block;padding:.28rem .85rem;border-radius:4px;font-family:var(--mono);font-size:.7rem;font-weight:600;letter-spacing:.06em;white-space:nowrap;margin-top:.35rem;text-transform:uppercase}}
-.pill.ok{{background:rgba(34,197,94,.1);color:var(--ok);border:1px solid rgba(34,197,94,.25)}}
-.pill.fail{{background:rgba(244,63,94,.1);color:var(--err);border:1px solid rgba(244,63,94,.25)}}
-.pill.partial{{background:rgba(245,158,11,.1);color:var(--warn);border:1px solid rgba(245,158,11,.25)}}
-.selector-bar{{display:flex;align-items:center;gap:1rem;background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:2rem;}}
-.selector-bar label{{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;white-space:nowrap;}}
-.device-select{{font-family:var(--mono);font-size:.82rem;font-weight:600;background:var(--surf2);color:var(--accent);border:1px solid var(--border2);border-radius:4px;padding:.4rem .75rem;cursor:pointer;min-width:220px;outline:none;}}
-.device-select:focus{{border-color:var(--accent)}}
-.device-select option{{background:var(--surf2);color:var(--text)}}
-.device-count{{font-family:var(--mono);font-size:.68rem;color:var(--muted)}}
-.dev-header{{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);}}
-.dev-key{{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--text)}}
-.meta-ts{{font-family:var(--mono);font-size:.68rem;color:var(--muted)}}
-.dev-card{{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem 1.5rem;display:flex;flex-wrap:wrap;gap:2.5rem;margin-bottom:1.5rem}}
-.df{{display:flex;flex-direction:column;gap:.25rem}}
-.df .lbl{{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}}
-.df .val{{font-family:var(--mono);font-size:.88rem;color:var(--accent)}}
-.stats{{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}}
-.sc{{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.3rem}}
-.sc .n{{font-size:2.1rem;font-weight:700;line-height:1;letter-spacing:-.02em;font-family:var(--mono)}}
-.sc.tot .n{{color:var(--accent)}} .sc.ok .n{{color:var(--ok)}} .sc.err .n{{color:var(--err)}}
-.sc .l{{font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}}
-.prog{{margin-top:.5rem;height:3px;background:var(--border);border-radius:99px;overflow:hidden}}
-.progbar{{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ok),#86efac)}}
-.tw{{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);margin-bottom:2rem}}
-table{{width:100%;border-collapse:collapse}}
-col.ct{{width:12%}} col.cs{{width:24%}} col.cst{{width:10%}} col.cr{{width:54%}}
-thead tr{{background:var(--surf2);border-bottom:2px solid var(--border)}}
-thead th{{padding:.75rem 1.25rem;font-size:.65rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600;text-align:left}}
-.task-row td{{padding:.75rem 1.25rem;vertical-align:top;border-bottom:1px solid var(--border);font-size:.84rem;line-height:1.5}}
-.task-row:hover td{{background:var(--surf2);transition:background .1s}}
-.task-row.failed-row{{background:rgba(244,63,94,.02)}}
-.phase-sep td{{padding:0!important;height:6px;background:var(--bg);border:none!important}}
-.phase-cell{{vertical-align:middle!important;text-align:center;padding:.75rem .75rem!important;border-right:1px solid var(--border);background:rgba(255,255,255,.008)}}
-.phase-name{{font-size:.62rem;text-transform:uppercase;letter-spacing:.09em;font-weight:700;line-height:1.3}}
-.subtask-cell{{font-family:var(--mono);font-size:.77rem!important;color:#cbd5e1;word-break:break-word}}
-.status-cell{{text-align:center;vertical-align:middle!important}}
-.badge{{display:inline-block;padding:.2rem .6rem;border-radius:3px;font-size:.65rem;font-weight:600;letter-spacing:.05em;font-family:var(--mono);white-space:nowrap;text-transform:uppercase}}
-.badge-success{{background:rgba(34,197,94,.12);color:var(--ok);border:1px solid rgba(34,197,94,.28)}}
-.badge-failed{{background:rgba(244,63,94,.12);color:var(--err);border:1px solid rgba(244,63,94,.28)}}
-.badge-blank{{background:transparent;color:var(--muted);border:1px solid var(--border)}}
-.remark-cell{{font-family:var(--mono);font-size:.75rem!important;color:var(--muted2);word-break:break-word}}
-.remark-ok{{color:#86efac}} .remark-err{{color:#fca5a5}} .remark-na{{color:var(--border)}}
-.log-btn{{display:inline-block;margin-top:.4rem;margin-right:.3rem;padding:.14rem .5rem;background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.18);border-radius:3px;font-family:var(--mono);font-size:.62rem;font-weight:600;color:var(--accent);cursor:pointer;user-select:none;transition:background .12s;letter-spacing:.04em;}}
-.log-btn:hover{{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.38)}}
-.log-drawer{{margin-top:.42rem;background:#08090e;border:1px solid var(--border2);border-radius:4px;padding:.5rem .8rem;overflow-x:auto;}}
-.log-line{{font-family:var(--mono);font-size:.69rem;line-height:1.9;color:#7dd3fc;white-space:pre-wrap;word-break:break-all;border-bottom:1px solid rgba(255,255,255,.03);}}
-.log-line:last-child{{border-bottom:none}}
-.cmd-phase-block{{margin-bottom:2rem}}
-.cmd-phase-title{{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;font-family:var(--mono);}}
-.cmd-block{{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:.75rem;}}
-.cmd-label{{font-family:var(--mono);font-size:.82rem;color:var(--text);font-weight:600;margin-bottom:.5rem}}
-.cmd-toggles{{display:flex;gap:.5rem;flex-wrap:wrap}}
-.jb-inline{{margin-top:.5rem;font-family:var(--mono);font-size:.7rem;line-height:1.7;color:#94a3b8;white-space:pre;overflow-x:auto;}}
-.json-sec{{margin-top:1.5rem}}
-.json-sec summary{{cursor:pointer;user-select:none;list-style:none;display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);padding:.5rem 0;transition:color .12s;font-family:var(--mono);}}
-.json-sec summary::-webkit-details-marker{{display:none}}
-.json-sec[open] summary{{color:var(--accent)}}
-.json-sec summary:hover{{color:var(--accent)}}
-pre.jb{{margin-top:.7rem;background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem 1.4rem;font-family:var(--mono);font-size:.73rem;line-height:1.75;color:#94a3b8;overflow-x:auto;white-space:pre;box-shadow:var(--shadow);}}
-.ft{{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);font-size:.67rem;color:var(--muted);font-family:var(--mono);text-align:center}}
-@media(max-width:640px){{.stats{{grid-template-columns:1fr}}.hdr{{flex-direction:column}}.selector-bar{{flex-direction:column;align-items:flex-start}}.device-select{{width:100%}}}}
-</style>
-</head>
-<body>
-<div class="wrap">
-
-<header class="hdr">
-  <div>
-    <h1>Network Device <span>Workflow Report</span></h1>
-    <p class="meta">Generated: {now}<br>{len(device_keys)} device(s) processed</p>
-  </div>
-  <div><span class="pill {pill_cls}">{_esc(pill_txt)}</span></div>
-</header>
-
-<div class="selector-bar">
-  <label for="device-select">Device</label>
-  <select id="device-select" class="device-select" onchange="selectDevice(this.value)">
-    {dropdown_options}
-  </select>
-  <span class="device-count">{len(device_keys)} device(s) in this report</span>
-</div>
-
-{device_panels}
-
-<details class="json-sec">
-  <summary>Raw Workflow JSON (all devices)</summary>
-  <pre class="jb">{json_html}</pre>
-</details>
-
-<footer class="ft">workflow_report_generator.py / {now}</footer>
-
-</div>
-<script>
-function selectDevice(key) {{
-  document.querySelectorAll('.device-panel').forEach(function(p) {{
-    p.style.display = 'none';
-  }});
-  var panel = document.getElementById('panel-' + key);
-  if (panel) panel.style.display = 'block';
-}}
-function toggleLog(id) {{
-  var el = document.getElementById(id);
-  if (!el) return;
-  el.hidden = !el.hidden;
-  var parent = el.parentElement;
-  parent.querySelectorAll('.log-btn').forEach(function(btn) {{
-    var oc = btn.getAttribute('onclick') || '';
-    if (oc.indexOf(id) !== -1) {{
-      btn.textContent = el.hidden
-        ? btn.textContent.replace('Hide', 'View')
-        : btn.textContent.replace('View', 'Hide');
-    }}
-  }});
-}}
-</script>
-</body>
-</html>"""
-
-    with open(output_file, 'w') as f:
-        f.write(html)
-    return output_file
-
-
-# ─────────────────────────────────────────────────────────────
-# Standalone test — same dummy data format as production
-# ─────────────────────────────────────────────────────────────
-def generate_artificial_workflow_data():
-    return {
-        'juniper_mx204': {
-            'device_info': {'host': '10.80.71.55', 'vendor': 'juniper', 'model': 'mx204', 'hostname': 'router-test-01', 'version': '23.4R2-S5.6', 'timestamp': '2026-02-23_09-00-00'},
-            'pre-checks': {
-                'tasks': {
-                    'read Yaml':                     {'status': 'Success', 'error': '', 'title': 'Load device config from YAML',          'logs': ['Loaded OK']},
-                    'start logger':                  {'status': 'Success', 'error': '', 'title': 'Initialise log file for session',       'logs': ['Logger ready']},
-                    'connection using credentials':  {'status': 'Success', 'error': 'Connected to 10.80.71.55', 'title': 'Establish SSH session', 'logs': ['SSH connected']},
-                    'show version':                  {'status': 'Success', 'error': '', 'title': 'Run show version', 'logs': ['Junos: 23.4R2-S5.6']},
-                    'executing show commands':       {'status': 'Success', 'error': '2 cmds collected', 'title': 'Collect pre-check show commands', 'logs': ['show arp OK', 'show lldp OK']},
-                    'Parsing the data':              {'status': 'Success', 'error': '', 'title': 'Parse and validate pre-check output',   'logs': ['All parsers OK']},
-                    'Backup Config':                 {'status': 'Success', 'error': '', 'title': 'Save running config and device logs',   'logs': ['Backup saved']},
-                    'Validate MD5 checksum':         {'status': 'Success', 'error': '', 'title': 'Verify image integrity via MD5',        'logs': ['MD5 match']},
-                    'Storage Check (5GB threshold)': {'status': 'Success', 'error': '12 GB free', 'title': 'Confirm sufficient disk space', 'logs': ['12 GB available']},
-                    'Disable Filter':                {'status': 'Success', 'error': '', 'title': 'Remove RE protection firewall filter',  'logs': ['commit complete']},
-                },
-                'commands': [
-                    {'cmd': 'show arp no-resolve | no-more', 'output': 'sample arp...', 'json': {'entries': [], 'total_entries': 25}},
-                    {'cmd': 'show lldp neighbors | no-more', 'output': 'sample lldp...', 'json': {'entries': []}},
-                ]
-            },
-            'upgrade':     {'tasks': {'image installation': {'status': '', 'error': '', 'title': 'Install target OS', 'logs': []}, 'reboot the device': {'status': '', 'error': '', 'title': 'Reboot device', 'logs': []}, 'ping the device': {'status': '', 'error': '', 'title': 'Verify reachability', 'logs': []}}},
-            'post-checks': {'tasks': {'Take snapshot': {'status': '', 'error': '', 'title': 'Snapshot disk', 'logs': []}, 'Execute show commands': {'status': '', 'error': '', 'title': 'Post show commands', 'logs': []}, 'parsing the commands': {'status': '', 'error': '', 'title': 'Parse post output', 'logs': []}, 'Enable RE-PROTECT filter': {'status': '', 'error': '', 'title': 'Re-apply filter', 'logs': []}}, 'commands': []}
+    "device_info": {
+      "host": "10.80.71.55",
+      "vendor": "juniper",
+      "model": "mx204",
+      "timestamp": "2026-02-26_18-50-58"
+    },
+    "pre-checks": {
+      "tasks": {
+        "read Yaml": {
+          "status": "Success",
+          "error": "deviceDetails.yaml loaded successfully",
+          "title": "Load device config from YAML",
+          "logs": ""
         },
-        'cisco_ncs5501': {
-            'device_info': {'host': '10.80.71.60', 'vendor': 'cisco', 'model': 'ncs5501', 'hostname': '', 'version': '7.9.1', 'timestamp': '2026-02-23_09-01-00'},
-            'pre-checks': {
-                'tasks': {
-                    'read Yaml':                     {'status': 'Success', 'error': '', 'title': 'Load device config from YAML', 'logs': []},
-                    'start logger':                  {'status': 'Success', 'error': '', 'title': 'Initialise log file for session', 'logs': []},
-                    'connection using credentials':  {'status': 'Failed',  'error': '10.80.71.60: Connection timed out', 'title': 'Establish SSH session', 'logs': ['Timeout after 30s']},
-                    'show version':                  {'status': '', 'error': '', 'title': 'Run show version', 'logs': []},
-                    'executing show commands':       {'status': '', 'error': '', 'title': 'Collect pre-check show commands', 'logs': []},
-                    'Parsing the data':              {'status': '', 'error': '', 'title': 'Parse pre-check output', 'logs': []},
-                    'Backup Config':                 {'status': '', 'error': '', 'title': 'Save running config', 'logs': []},
-                    'Validate MD5 checksum':         {'status': '', 'error': '', 'title': 'Verify MD5', 'logs': []},
-                    'Storage Check (5GB threshold)': {'status': '', 'error': '', 'title': 'Storage check', 'logs': []},
-                    'Disable Filter':                {'status': '', 'error': '', 'title': 'Remove firewall filter', 'logs': []},
-                },
-                'commands': []
-            },
-            'upgrade':     {'tasks': {'image installation': {'status': '', 'error': '', 'title': 'Install target OS', 'logs': []}, 'reboot the device': {'status': '', 'error': '', 'title': 'Reboot device', 'logs': []}, 'ping the device': {'status': '', 'error': '', 'title': 'Verify reachability', 'logs': []}}},
-            'post-checks': {'tasks': {'Take snapshot': {'status': '', 'error': '', 'title': 'Snapshot disk', 'logs': []}, 'Execute show commands': {'status': '', 'error': '', 'title': 'Post show commands', 'logs': []}, 'parsing the commands': {'status': '', 'error': '', 'title': 'Parse post output', 'logs': []}, 'Enable RE-PROTECT filter': {'status': '', 'error': '', 'title': 'Re-apply filter', 'logs': []}}, 'commands': []}
+        "start logger": {
+          "status": "Success",
+          "error": "Logger initialised",
+          "title": "Initialise log file for session",
+          "logs": ""
+        },
+        "connection using credentials": {
+          "status": "Success",
+          "error": "10.80.71.55: Connected successfully",
+          "title": "Establish SSH session to device",
+          "logs": "DEVICE IN"
+        },
+        "show version": {
+          "status": "Success",
+          "error": "10.80.71.55: show version retrieved",
+          "title": "Run show version",
+          "logs": "ABC"
+        },
+        "executing show commands": {
+          "status": "Success",
+          "error": "show configuration | display set | count: collected=True",
+          "title": "Collect pre-check show command output",
+          "logs": "show arp no-resolve | no-more: collected=True\nshow lldp neighbors | no-more: collected=True\nshow chassis routing-engine | no-more: collected=True\nshow system uptime | no-more: collected=True\nshow ntp associations no-resolve | no-more: collected=True\nshow vmhost version | no-more: collected=True\nshow vmhost snapshot | no-more: collected=True\nshow chassis hardware | no-more: collected=True\nshow chassis fpc detail | no-more: collected=True\nshow chassis alarms | no-more: collected=True\nshow system alarms | no-more: collected=True\nshow chassis environment | no-more: collected=True\nshow system resource-monitor fpc | no-more: collected=True\nshow system processes extensive | match rpd | no-more: collected=True\nshow interface terse | match \"up    up\" | no-more: collected=True\nshow interface terse | no-more: collected=True\nshow interfaces descriptions | no-more: collected=True\nshow oam ethernet connectivity-fault-management interfaces extensive | no-more: collected=True\nshow vrrp summary | no-more: collected=True\nshow bfd session | no-more: collected=True\nshow rsvp neighbor | no-more: collected=True\nshow rsvp session | no-more: collected=True\nshow route table inet.0 | no-more: collected=True\nshow route table inet.3 | no-more: collected=True\nshow route table mpls.0 | no-more: collected=True\nshow mpls interface | no-more: collected=True\nshow mpls lsp | no-more: collected=True\nshow mpls lsp p2mp | no-more: collected=True\nshow bgp summary | no-more: collected=True\nshow bgp neighbor | no-more: collected=True\nshow isis adjacency extensive | no-more: collected=True\nshow route summary | no-more: collected=True\nshow rsvp session | match DN | no-more: collected=False\nshow mpls lsp unidirectional | match Dn | no-more: collected=True\nshow ldp neighbor | no-more: collected=True\nshow connections | no-more: collected=True\nshow log messages | last 200 | no-more: collected=True\nshow configuration | no-more: collected=True\nshow configuration | no-more | display set: collected=True\nshow configuration | display set | count: collected=True"
+        },
+        "Parsing the data": {
+          "status": "Failed",
+          "error": "10.80.71.55: parse_outputs() \u2014 one or more parsers failed",
+          "title": "Parse and validate pre-check output",
+          "logs": "show arp no-resolve | no-more: json=True\nshow lldp neighbors | no-more: json=True\nshow chassis routing-engine | no-more: json=True\nshow system uptime | no-more: json=True\nshow ntp associations no-resolve | no-more: json=True\nshow vmhost version | no-more: json=True\nshow vmhost snapshot | no-more: json=True\nshow chassis hardware | no-more: json=True\nshow chassis fpc detail | no-more: json=True\nshow chassis alarms | no-more: json=True\nshow system alarms | no-more: json=True\nshow chassis environment | no-more: json=True\nshow system resource-monitor fpc | no-more: json=True\nshow system processes extensive | match rpd | no-more: json=False (no parser)\nshow interface terse | match \"up    up\" | no-more: json=False (no parser)\nshow interface terse | no-more: json=False (no parser)\nshow interfaces descriptions | no-more: json=False (no parser)\nshow oam ethernet connectivity-fault-management interfaces extensive | no-more: json=True\nshow vrrp summary | no-more: json=True\nshow bfd session | no-more: json=True\nshow rsvp neighbor | no-more: json=True\nshow rsvp session | no-more: json=True\nshow route table inet.0 | no-more: json=True\nshow route table inet.3 | no-more: json=True\nshow route table mpls.0 | no-more: json=True\nshow mpls interface | no-more: json=True\nshow mpls lsp | no-more: json=True\nshow mpls lsp p2mp | no-more: json=True\nshow bgp summary | no-more: json=True\nshow bgp neighbor | no-more: json=True\nshow isis adjacency extensive | no-more: json=True\nshow route summary | no-more: json=True\nshow rsvp session | match DN | no-more: json=False (output empty)\nshow mpls lsp unidirectional | match Dn | no-more: json=False (no parser)\nshow ldp neighbor | no-more: json=True\nshow connections | no-more: json=True\nshow log messages | last 200 | no-more: json=False (no parser)\nshow configuration | no-more: json=False (no parser)\nshow configuration | no-more | display set: json=False (no parser)\nshow configuration | display set | count: json=False (no parser)"
+        },
+        "Backup Config": {
+          "status": "",
+          "error": "",
+          "title": "Save running config and device logs",
+          "logs": ""
+        },
+        "Validate MD5 checksum": {
+          "status": "",
+          "error": "",
+          "title": "Verify image integrity via MD5",
+          "logs": ""
+        },
+        "Storage Check (5GB threshold)": {
+          "status": "",
+          "error": "",
+          "title": "Confirm sufficient disk space",
+          "logs": ""
+        },
+        "Disable Filter": {
+          "status": "",
+          "error": "",
+          "title": "Remove RE protection firewall filter",
+          "logs": ""
         }
+      },
+      "commands": []
+    },
+    "upgrade": {
+      "tasks": {
+        "image installation": {
+          "status": "",
+          "error": "",
+          "title": "Install target OS image on device",
+          "logs": ""
+        },
+        "reboot the device": {
+          "status": "",
+          "error": "",
+          "title": "Reboot and confirm device comes up",
+          "logs": ""
+        },
+        "ping the device": {
+          "status": "",
+          "error": "",
+          "title": "Verify device reachability after upgrade",
+          "logs": ""
+        }
+      }
+    },
+    "post-checks": {
+      "tasks": {
+        "Take snapshot": {
+          "status": "",
+          "error": "",
+          "title": "Snapshot primary disk to backup disk",
+          "logs": ""
+        },
+        "Execute show commands": {
+          "status": "",
+          "error": "",
+          "title": "Collect post-upgrade show command output",
+          "logs": ""
+        },
+        "parsing the commands": {
+          "status": "",
+          "error": "",
+          "title": "Parse and validate post-upgrade output",
+          "logs": ""
+        },
+        "Enable RE-PROTECT filter": {
+          "status": "",
+          "error": "",
+          "title": "Re-apply RE protection firewall filter",
+          "logs": ""
+        }
+      },
+      "commands": []
     }
+  }
+}
+============================================================
 
-
-def main():
-    print("=" * 60)
-    print("workflow_report_generator.py — standalone test")
-    print("=" * 60)
-    data = generate_artificial_workflow_data()
-    out  = generate_html_report(data, 'workflow_report.html')
-    print(f"Report -> {out}")
-    print("=" * 60)
-
-
-if __name__ == "__main__":
-    main()
-
-
-
-saketh@saketh-T480:~/.../upgrade$ tree
-.
-├── README.md
-├── __pycache__
-│   └── prechecks.cpython-312.pyc
-├── a.html
-├── inputs
-│   ├── deviceDetails.yaml
-│   └── show_cmd_list.yaml
-├── lib
-│   ├── __pycache__
-│   │   └── utilities.cpython-312.pyc
-│   └── utilities.py
-├── logging
-│   └── juniper_mx204_2026-02-23_17-15-43.log
-├── main.py
-├── models
-│   ├── cisco
-│   │   ├── __init__.py
-│   │   ├── __pycache__
-│   │   │   ├── __init__.cpython-38.pyc
-│   │   │   └── cisco_ncs5501.cpython-38.pyc
-│   │   ├── cisco_asr9910.py
-│   │   └── cisco_ncs5501.py
-│   └── junos
-│       ├── __pycache__
-│       │   └── junos_mx80.cpython-312.pyc
-│       └── junos_mx80.py
-├── outputs
-│   └── juniper_mx204_2026-02-23_17-15-43.log
-├── parsers
-│   ├── cisco
-│   │   ├── __pycache__
-│   │   │   └── cisco_ncs5501.cpython-38.pyc
-│   │   ├── cisco_asr9910.py
-│   │   └── cisco_ncs5501.py
-│   └── junos
-│       ├── __pycache__
-│       │   └── junos_mx80.cpython-312.pyc
-│       ├── junos_mx204.py
-│       ├── junos_mx80.py
-│       ├── new 1.txt
-│       └── new 1.txt:Zone.Identifier
-├── postchecks.py
-├── prechecks.py
-├── prompts.txt
-├── run_checks.py
-├── upgrade.py
-└── workflow_report_generator.py
-
-17 directories, 31 files
-saketh@saketh-T480:~/.../upgrade$ 
-
-
+Report saved -> reports/workflow_report_26_02_26_18_51_08.html
+2026-02-26 18:51:08,770 - INFO - Logging out from device
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
