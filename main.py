@@ -9,7 +9,7 @@ from lib.utilities import *
 from parsers.juniper.juniper_mx204 import *
 from pprint import pformat
 from workflow_report_generator import generate_html_report
-from run_checks import execute_commands
+# run_checks.py is REMOVED — pipeline lives in lib/utilities.py
 import os
 
 MAX_THREADS = 5
@@ -31,15 +31,12 @@ def abort(device_key, phase, subtask, error, logger, exc: Exception = None):
         If provided, the full traceback is captured and stored in the task's
         'logs' field so it appears in the "View Logs" drawer in the report.
     """
-    # Build log_line from the exception traceback if one was passed
     log_line = ""
     if exc is not None:
         log_line = traceback.format_exc()
 
-    # Mark the failed subtask in the tracker (error = short message, logs = full traceback)
     log_task(device_key, phase, subtask, 'Failed', error, log_line)
 
-    # Log + console
     logger.error(f"[{device_key}] FATAL [{phase}] '{subtask}': {error}")
     if log_line:
         logger.error(f"[{device_key}] Traceback:\n{log_line}")
@@ -53,7 +50,6 @@ def abort(device_key, phase, subtask, error, logger, exc: Exception = None):
     print(j)
     print("=" * 60 + "\n")
 
-    # Generate HTML report here (centralized on failure)
     try:
         path = generate_html_report(workflow_tracker, output_dir='reports')
         logger.info(f"[{device_key}] Report saved -> {path}")
@@ -76,11 +72,9 @@ def run_prechecks(device, logger):
     start_time = datetime.now()
     logger.info(f"[{device_key}] Prechecks started at {start_time}")
 
-    # For filenames/JSON stamps if needed
     pre_check_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     global_config.pre_check_timestamp = pre_check_timestamp
 
-    # These are displayed in the report; log them here (not in main)
     log_task(device_key, 'pre-checks', 'read Yaml',    'Success', 'deviceDetails.yaml loaded successfully')
     log_task(device_key, 'pre-checks', 'start logger', 'Success', 'Logger initialised')
 
@@ -115,27 +109,56 @@ def run_prechecks(device, logger):
         log_task(device_key, 'pre-checks', 'show version', 'Success',
                  f'{host}: show version retrieved', 'ABC')
 
-        # 3) Execute Commands (+ parse) — via run_checks wrapper
+        # 3) Execute Commands — 3-step pipeline (replaces execute_commands / run_checks.py)
         try:
             global_config.vendor     = vendor_lc
             global_config.device_key = device_key
             all_cmds                 = load_yaml("show_cmd_list.yaml")
             global_config.commands   = all_cmds[device_key]
 
-            logger.info(f"[{device_key}] Executing pre-check show commands")
-            exec_ok = execute_commands("pre", conn=conn, logger=logger)
-            if not exec_ok:
+            logger.info(f"[{device_key}] Starting command pipeline — "
+                        f"{len(global_config.commands)} command(s)")
+
+            # ── STEP 1: collect raw output from device ────────────────
+            entries = collect_outputs(
+                device_key = device_key,
+                vendor     = vendor_lc,
+                commands   = global_config.commands,
+                check_type = "pre",
+                conn       = conn,
+                log        = logger,
+            )
+            if not entries:
                 abort(device_key, 'pre-checks', 'executing show commands',
-                      f'{host}: execute_commands() failed (collection/parsing)', logger)
-            # NOTE: run_checks.push_to_tracker() logs:
-            #   - 'executing show commands'
-            #   - 'Parsing the data'
+                      f'{host}: collect_outputs() returned no entries', logger)
+
+            # ── STEP 2: parse collected output ────────────────────────
+            parse_ok = parse_outputs(
+                device_key = device_key,
+                vendor     = vendor_lc,
+                check_type = "pre",
+                log        = logger,
+            )
+            if not parse_ok:
+                abort(device_key, 'pre-checks', 'Parsing the data',
+                      f'{host}: parse_outputs() — one or more parsers failed', logger)
+
+            # ── STEP 3: push results into workflow_tracker ────────────
+            push_to_tracker(
+                device_key = device_key,
+                check_type = "pre",
+                entries    = entries,
+                parse_ok   = parse_ok,
+                log        = logger,
+            )
+
         except KeyError as e:
             abort(device_key, 'pre-checks', 'executing show commands',
-                  f"{host}: Missing command list for vendor='{vendor_lc}' — {e}", logger, exc=e)
+                  f"{host}: Missing command list for device_key='{device_key}' — {e}",
+                  logger, exc=e)
         except Exception as e:
             abort(device_key, 'pre-checks', 'executing show commands',
-                  f"{host}: execute_commands() exception — {e}", logger, exc=e)
+                  f"{host}: command pipeline exception — {e}", logger, exc=e)
 
         '''
         # 4) Backup (config + logs)
@@ -207,29 +230,26 @@ def run_prechecks(device, logger):
 
 
 # ----------------------------------------------------
-# Main Function — call ONLY prechecks (guarded)
+# Main Function
 # ----------------------------------------------------
 
 def main():
-    devices   = load_yaml("deviceDetails.yaml")
-    dev       = devices["devices"][0]
-    host      = dev["host"]
-    vendor_lc = dev["vendor"].lower()
-    model_lc  = str(dev["model"]).lower().replace("-", "")
+    devices    = load_yaml("deviceDetails.yaml")
+    dev        = devices["devices"][0]
+    host       = dev["host"]
+    vendor_lc  = dev["vendor"].lower()
+    model_lc   = str(dev["model"]).lower().replace("-", "")
     device_key = f"{vendor_lc}_{model_lc}"
 
-    # Logger
     global_config.vendor = vendor_lc
     global_config.model  = dev["model"]
     logger = setup_logger("main")
     print("devicekey....", device_key)
 
-    # Init tracker slot for this device
     if device_key not in workflow_tracker:
         init_device_tracker(device_key, host, vendor_lc, model_lc)
     print("workflow...", workflow_tracker)
 
-    # Run prechecks (owns all log_task updates)
     logger.info(f"[{device_key}] Running pre-checks …")
     print("main devices...", devices)
 
