@@ -1,305 +1,17 @@
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ p main.py
 devicekey.... juniper_mx204
-2026-02-28 10:31:53,372 - INFO - [tracker] Initialised slot for device_key='juniper_mx204'
-workflow... {'juniper_mx204': {'device_info': {'host': '10.80.71.55', 'vendor': 'juniper', 'model': 'mx204', 'timestamp': '2026-02-28_10-31-53'}, 'pre-checks': {'tasks': {'read Yaml': {'status': '', 'error': '', 'title': 'Load device config from YAML', 'logs': ''}, 'start logger': {'status': '', 'error': '', 'title': 'Initialise log file for session', 'logs': ''}, 'connection using credentials': {'status': '', 'error': '', 'title': 'Establish SSH session to device', 'logs': ''}, 'show version': {'status': '', 'error': '', 'title': 'Run show version', 'logs': ''}, 'executing show commands': {'status': '', 'error': '', 'title': 'Collect pre-check show command output', 'logs': ''}, 'Parsing the data': {'status': '', 'error': '', 'title': 'Parse and validate pre-check output', 'logs': ''}, 'Backup Config': {'status': '', 'error': '', 'title': 'Save running config and device logs', 'logs': ''}, 'Validate MD5 checksum': {'status': '', 'error': '', 'title': 'Verify image integrity via MD5', 'logs': ''}, 'Storage Check (5GB threshold)': {'status': '', 'error': '', 'title': 'Confirm sufficient disk space', 'logs': ''}, 'Disable Filter': {'status': '', 'error': '', 'title': 'Remove RE protection firewall filter', 'logs': ''}}, 'commands': []}, 'upgrade': {'tasks': {'image installation': {'status': '', 'error': '', 'title': 'Install target OS image on device', 'logs': ''}, 'reboot the device': {'status': '', 'error': '', 'title': 'Reboot and confirm device comes up', 'logs': ''}, 'ping the device': {'status': '', 'error': '', 'title': 'Verify device reachability after upgrade', 'logs': ''}}}, 'post-checks': {'tasks': {'Take snapshot': {'status': '', 'error': '', 'title': 'Snapshot primary disk to backup disk', 'logs': ''}, 'Execute show commands': {'status': '', 'error': '', 'title': 'Collect post-upgrade show command output', 'logs': ''}, 'parsing the commands': {'status': '', 'error': '', 'title': 'Parse and validate post-upgrade output', 'logs': ''}, 'Enable RE-PROTECT filter': {'status': '', 'error': '', 'title': 'Re-apply RE protection firewall filter', 'logs': ''}}, 'commands': []}}}
+2026-02-28 10:55:16,008 - INFO - [tracker] Initialised slot for device_key='juniper_mx204'
+workflow... {'juniper_mx204': {'device_info': {'host': '10.80.71.55', 'vendor': 'juniper', 'model': 'mx204', 'timestamp': '2026-02-28_10-55-16'}, 'pre-checks': {'tasks': {'read Yaml': {'status': '', 'error': '', 'title': 'Load device config from YAML', 'logs': ''}, 'start logger': {'status': '', 'error': '', 'title': 'Initialise log file for session', 'logs': ''}, 'connection using credentials': {'status': '', 'error': '', 'title': 'Establish SSH session to device', 'logs': ''}, 'show version': {'status': '', 'error': '', 'title': 'Run show version', 'logs': ''}, 'executing show commands': {'status': '', 'error': '', 'title': 'Collect pre-check show command output', 'logs': ''}, 'Parsing the data': {'status': '', 'error': '', 'title': 'Parse and validate pre-check output', 'logs': ''}, 'Backup Config': {'status': '', 'error': '', 'title': 'Save running config and device logs', 'logs': ''}, 'Validate MD5 checksum': {'status': '', 'error': '', 'title': 'Verify image integrity via MD5', 'logs': ''}, 'Storage Check (5GB threshold)': {'status': '', 'error': '', 'title': 'Confirm sufficient disk space', 'logs': ''}, 'Disable Filter': {'status': '', 'error': '', 'title': 'Remove RE protection firewall filter', 'logs': ''}}, 'commands': []}, 'upgrade': {'tasks': {'image installation': {'status': '', 'error': '', 'title': 'Install target OS image on device', 'logs': ''}, 'reboot the device': {'status': '', 'error': '', 'title': 'Reboot and confirm device comes up', 'logs': ''}, 'ping the device': {'status': '', 'error': '', 'title': 'Verify device reachability after upgrade', 'logs': ''}}}, 'post-checks': {'tasks': {'Take snapshot': {'status': '', 'error': '', 'title': 'Snapshot primary disk to backup disk', 'logs': ''}, 'Execute show commands': {'status': '', 'error': '', 'title': 'Collect post-upgrade show command output', 'logs': ''}, 'parsing the commands': {'status': '', 'error': '', 'title': 'Parse and validate post-upgrade output', 'logs': ''}, 'Enable RE-PROTECT filter': {'status': '', 'error': '', 'title': 'Re-apply RE protection firewall filter', 'logs': ''}}, 'commands': []}}}
 main devices... {'devices': [{'host': '10.80.71.55', 'vendor': 'juniper', 'model': 'mx204', 'device_type': 'juniper', 'current_image': 'junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz', 'expected_os': '23.4R2-S5.6', 'intermediate_os': False, 'min_disk_gb': 5, 'username': 'lab', 'password': 'lab123', 'target_image': 'junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz', 'remote_backup_server': 'sftp://backup@10.10.20.20/backups/', 'cleanup_files': ['list of files'], 'intermediate_image': 'junos-os-21.2R2-S5.bin', 'rollback': False, 'md5checksum_file': 'dec5349a0d238dad686dc01f468a0bbe'}]}
 10.80.71.55
-2026-02-28 10:31:53,372 - INFO - [tracker] juniper_mx204 | pre-checks | read Yaml -> Success
-2026-02-28 10:31:53,372 - INFO - [tracker] juniper_mx204 | pre-checks | start logger -> Success
-2026-02-28 10:31:53,418 - INFO - Connected (version 2.0, client OpenSSH_9.7)
-2026-02-28 10:31:53,654 - INFO - Authentication (password) successful!
-connection.. <netmiko.juniper.juniper.JuniperSSH object at 0x79b3d3d77f20>
-2026-02-28 10:31:53,913 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
-CONNECTION... <netmiko.juniper.juniper.JuniperSSH object at 0x79b3d3d77f20>
-2026-02-28 10:31:53,913 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
-Running show version
- Device type: juniper
-show version
-10.80.71.55: Executing 'show version' for vendor: juniper
-
-OP START
- Hostname: EFFPER01
-Model: mx204
-Junos: 23.4R2-S6.9
-JUNOS OS Kernel 64-bit  [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS libs [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS runtime [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS time zone information [20250524.8b60e66_builder_stable_12_234]
-JUNOS network stack and utilities [20251112.130809_builder_junos_234_r2_s6]
-JUNOS libs [20251112.130809_builder_junos_234_r2_s6]
-JUNOS OS libs compat32 [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS 32-bit compatibility [20250524.8b60e66_builder_stable_12_234]
-JUNOS libs compat32 [20251112.130809_builder_junos_234_r2_s6]
-JUNOS runtime [20251112.130809_builder_junos_234_r2_s6]
-JUNOS sflow mx [20251112.130809_builder_junos_234_r2_s6]
-JUNOS py extensions [20251112.130809_builder_junos_234_r2_s6]
-JUNOS py base [20251112.130809_builder_junos_234_r2_s6]
-JUNOS OS vmguest [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS package [20250303.174934_builder_main]
-JUNOS OS network modules [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS crypto [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS boot-ve files [20250524.8b60e66_builder_stable_12_234]
-JUNOS na telemetry [23.4R2-S6.9]
-JUNOS vmguest  [20251112.130809_builder_junos_234_r2_s6]
-JUNOS vmguest (MTX) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS full sysmond [20251112.130809_builder_junos_234_r2_s6]
-JUNOS mx libs compat32 [20251112.130809_builder_junos_234_r2_s6]
-JUNOS mx runtime [20251112.130809_builder_junos_234_r2_s6]
-JUNOS RPD Telemetry Application [23.4R2-S6.9]
-JUNOS python routing scripts for consistency check in RIB/FIB/PFE [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing mpls-oam-basic [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing mpls-oam-advanced [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing lsys [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing controller-internal [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing controller-external [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing 32-bit Compatible Version [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing aggregated [20251112.130809_builder_junos_234_r2_s6]
-Redis [20251112.130809_builder_junos_234_r2_s6]
-JUNOS probe utility [20251112.130809_builder_junos_234_r2_s6]
-JUNOS common platform support [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Openconfig [23.4R2-S6.9]
-JUNOS mtx network modules [20251112.130809_builder_junos_234_r2_s6]
-JUNOS modules [20251112.130809_builder_junos_234_r2_s6]
-JUNOS mx modules [20251112.130809_builder_junos_234_r2_s6]
-JUNOS mx libs [20251112.130809_builder_junos_234_r2_s6]
-JUNOS L2 RSI Scripts [20251112.130809_builder_junos_234_r2_s6]
-JUNOS SQL Sync Daemon [20251112.130809_builder_junos_234_r2_s6]
-JUNOS mtx Data Plane Crypto Support [20251112.130809_builder_junos_234_r2_s6]
-JUNOS daemons [20251112.130809_builder_junos_234_r2_s6]
-JUNOS mx daemons [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Broadband Edge User Plane Apps [23.4R2-S6.9]
-Junos Remote Attestation package [1.0.0+20251112.130809_builder_junos_234_r2_s6]
-JUNOS appidd-mx application-identification daemon [20251112.130809_builder_junos_234_r2_s6]
-JUNOS TPM2 [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services URL Filter package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services TLB Service PIC package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Telemetry [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services TCP-LOG [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services SSL [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services SOFTWIRE [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Stateful Firewall [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services RTCOM [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services RPM [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services PCEF package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services NAT [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Mobile Subscriber Service Container package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services MobileNext Software package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Logging Report Framework package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services LL-PDF Container package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Jflow Container package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Deep Packet Inspection package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services IPSec [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services IDS [20251112.130809_builder_junos_234_r2_s6]
-JUNOS IDP Services [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services HTTP Content Management package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services DNS Filter package (i386) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Crypto [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Captive Portal and Content Delivery Container package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services COS [20251112.130809_builder_junos_234_r2_s6]
-JUNOS AppId Services [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Application Level Gateways [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services AACL Container package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS SDN Software Suite [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Extension Toolkit [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Phone-home [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Packet Forwarding Engine Support (wrlinux9) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Packet Forwarding Engine Support (MX/EX92XX Common) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Packet Forwarding Engine Support (M/T Common) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Packet Forwarding Engine Support (aft) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Packet Forwarding Engine Support (MX Common) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Juniper Malware Removal Tool (JMRT) [1.0.0+20251112.130809_builder_junos_234_r2_s6]
-JUNOS Juniper Malware Removal Tool (JMRT) Test [1.0.0+20251112.130809_builder_junos_234_r2_s6]
-JUNOS J-Insight [20251112.130809_builder_junos_234_r2_s6]
-JUNOS jfirmware [20250925.073009_builder_junos_234_r2_s6]
-JUNOS Online Documentation [20251112.130809_builder_junos_234_r2_s6]
-JUNOS jail runtime [20250524.8b60e66_builder_stable_12_234]
-JUNOS dsa [20251112.130809_builder_junos_234_r2_s6]
-
-OP END
-
-vendor.. juniper
-10.80.71.55: Executing 'show version' for vendor: juniper
-23.4R2-S6.9
-2026-02-28 10:31:54,327 - INFO - [tracker] juniper_mx204 | pre-checks | show version -> Success
-version... Hostname: EFFPER01
-Model: mx204
-Junos: 23.4R2-S6.9
-JUNOS OS Kernel 64-bit  [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS libs [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS runtime [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS time zone information [20250524.8b60e66_builder_stable_12_234]
-JUNOS network stack and utilities [20251112.130809_builder_junos_234_r2_s6]
-JUNOS libs [20251112.130809_builder_junos_234_r2_s6]
-JUNOS OS libs compat32 [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS 32-bit compatibility [20250524.8b60e66_builder_stable_12_234]
-JUNOS libs compat32 [20251112.130809_builder_junos_234_r2_s6]
-JUNOS runtime [20251112.130809_builder_junos_234_r2_s6]
-JUNOS sflow mx [20251112.130809_builder_junos_234_r2_s6]
-JUNOS py extensions [20251112.130809_builder_junos_234_r2_s6]
-JUNOS py base [20251112.130809_builder_junos_234_r2_s6]
-JUNOS OS vmguest [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS package [20250303.174934_builder_main]
-JUNOS OS network modules [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS crypto [20250524.8b60e66_builder_stable_12_234]
-JUNOS OS boot-ve files [20250524.8b60e66_builder_stable_12_234]
-JUNOS na telemetry [23.4R2-S6.9]
-JUNOS vmguest  [20251112.130809_builder_junos_234_r2_s6]
-JUNOS vmguest (MTX) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS full sysmond [20251112.130809_builder_junos_234_r2_s6]
-JUNOS mx libs compat32 [20251112.130809_builder_junos_234_r2_s6]
-JUNOS mx runtime [20251112.130809_builder_junos_234_r2_s6]
-JUNOS RPD Telemetry Application [23.4R2-S6.9]
-JUNOS python routing scripts for consistency check in RIB/FIB/PFE [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing mpls-oam-basic [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing mpls-oam-advanced [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing lsys [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing controller-internal [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing controller-external [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing 32-bit Compatible Version [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Routing aggregated [20251112.130809_builder_junos_234_r2_s6]
-Redis [20251112.130809_builder_junos_234_r2_s6]
-JUNOS probe utility [20251112.130809_builder_junos_234_r2_s6]
-JUNOS common platform support [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Openconfig [23.4R2-S6.9]
-JUNOS mtx network modules [20251112.130809_builder_junos_234_r2_s6]
-JUNOS modules [20251112.130809_builder_junos_234_r2_s6]
-JUNOS mx modules [20251112.130809_builder_junos_234_r2_s6]
-JUNOS mx libs [20251112.130809_builder_junos_234_r2_s6]
-JUNOS L2 RSI Scripts [20251112.130809_builder_junos_234_r2_s6]
-JUNOS SQL Sync Daemon [20251112.130809_builder_junos_234_r2_s6]
-JUNOS mtx Data Plane Crypto Support [20251112.130809_builder_junos_234_r2_s6]
-JUNOS daemons [20251112.130809_builder_junos_234_r2_s6]
-JUNOS mx daemons [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Broadband Edge User Plane Apps [23.4R2-S6.9]
-Junos Remote Attestation package [1.0.0+20251112.130809_builder_junos_234_r2_s6]
-JUNOS appidd-mx application-identification daemon [20251112.130809_builder_junos_234_r2_s6]
-JUNOS TPM2 [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services URL Filter package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services TLB Service PIC package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Telemetry [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services TCP-LOG [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services SSL [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services SOFTWIRE [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Stateful Firewall [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services RTCOM [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services RPM [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services PCEF package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services NAT [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Mobile Subscriber Service Container package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services MobileNext Software package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Logging Report Framework package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services LL-PDF Container package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Jflow Container package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Deep Packet Inspection package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services IPSec [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services IDS [20251112.130809_builder_junos_234_r2_s6]
-JUNOS IDP Services [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services HTTP Content Management package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services DNS Filter package (i386) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Crypto [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Captive Portal and Content Delivery Container package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services COS [20251112.130809_builder_junos_234_r2_s6]
-JUNOS AppId Services [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services Application Level Gateways [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Services AACL Container package [20251112.130809_builder_junos_234_r2_s6]
-JUNOS SDN Software Suite [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Extension Toolkit [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Phone-home [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Packet Forwarding Engine Support (wrlinux9) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Packet Forwarding Engine Support (MX/EX92XX Common) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Packet Forwarding Engine Support (M/T Common) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Packet Forwarding Engine Support (aft) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Packet Forwarding Engine Support (MX Common) [20251112.130809_builder_junos_234_r2_s6]
-JUNOS Juniper Malware Removal Tool (JMRT) [1.0.0+20251112.130809_builder_junos_234_r2_s6]
-JUNOS Juniper Malware Removal Tool (JMRT) Test [1.0.0+20251112.130809_builder_junos_234_r2_s6]
-JUNOS J-Insight [20251112.130809_builder_junos_234_r2_s6]
-JUNOS jfirmware [20250925.073009_builder_junos_234_r2_s6]
-JUNOS Online Documentation [20251112.130809_builder_junos_234_r2_s6]
-JUNOS jail runtime [20250524.8b60e66_builder_stable_12_234]
-JUNOS dsa [20251112.130809_builder_junos_234_r2_s6]
-
-2026-02-28 10:31:54,327 - INFO - [tracker] juniper_mx204 | pre-checks | show version -> Success
-2026-02-28 10:31:54,438 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:31:54,521 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:31:54,604 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:31:54,712 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:31:54,795 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:31:57,247 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:31:59,246 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:31:59,329 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:31:59,412 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:31:59,495 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:31:59,578 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:31:59,661 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:31:59,744 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:31:59,828 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:00,166 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:00,504 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:00,791 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:01,027 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:01,111 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:01,194 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:01,277 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:01,360 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:01,550 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:01,715 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:01,906 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:01,989 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:02,072 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:02,155 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:02,239 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:02,454 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:02,537 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:02,647 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:02,730 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Failed
-2026-02-28 10:32:02,813 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:02,896 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:02,979 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:03,215 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:03,702 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:03,944 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:04,163 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-28 10:32:04,166 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,166 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,167 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,168 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,168 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,168 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,168 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,169 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,169 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,169 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,169 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,169 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,169 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,170 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,170 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,170 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,170 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,170 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,170 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,171 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,171 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,171 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,172 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,173 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,174 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,175 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,175 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,176 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,176 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,176 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,177 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,178 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,178 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Failed
-2026-02-28 10:32:04,178 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,178 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,178 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,178 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,179 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,179 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,179 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-28 10:32:04,179 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Failed
+2026-02-28 10:55:16,008 - INFO - [tracker] juniper_mx204 | pre-checks | read Yaml -> Success
+2026-02-28 10:55:16,008 - INFO - [tracker] juniper_mx204 | pre-checks | start logger -> Success
+2026-02-28 10:55:16,053 - INFO - Connected (version 2.0, client OpenSSH_9.7)
+2026-02-28 10:55:16,292 - INFO - Authentication (password) successful!
+connection.. <netmiko.juniper.juniper.JuniperSSH object at 0x7a1b49ca7b00>
+2026-02-28 10:55:16,552 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
+CONNECTION... <netmiko.juniper.juniper.JuniperSSH object at 0x7a1b49ca7b00>
+2026-02-28 10:55:16,552 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
+2026-02-28 10:55:16,560 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Failed
 
 ============================================================
 WORKFLOW ABORTED for juniper_mx204 — partial results (JSON):
@@ -310,7 +22,7 @@ WORKFLOW ABORTED for juniper_mx204 — partial results (JSON):
       "host": "10.80.71.55",
       "vendor": "juniper",
       "model": "mx204",
-      "timestamp": "2026-02-28_10-31-53"
+      "timestamp": "2026-02-28_10-55-16"
     },
     "pre-checks": {
       "tasks": {
@@ -333,22 +45,22 @@ WORKFLOW ABORTED for juniper_mx204 — partial results (JSON):
           "logs": "DEVICE IN"
         },
         "show version": {
-          "status": "Success",
-          "error": "10.80.71.55: show version retrieved",
+          "status": "",
+          "error": "",
           "title": "Run show version",
-          "logs": "ABC"
+          "logs": ""
         },
         "executing show commands": {
-          "status": "Success",
-          "error": "show configuration | display set | count: collected=True",
+          "status": "Failed",
+          "error": "10.80.71.55: command pipeline exception \u2014 name 'MIN_OUTPUT_CHARS' is not defined",
           "title": "Collect pre-check show command output",
-          "logs": "show arp no-resolve | no-more: collected=True\nshow lldp neighbors | no-more: collected=True\nshow chassis routing-engine | no-more: collected=True\nshow system uptime | no-more: collected=True\nshow ntp associations no-resolve | no-more: collected=True\nshow vmhost version | no-more: collected=True\nshow vmhost snapshot | no-more: collected=True\nshow chassis hardware | no-more: collected=True\nshow chassis fpc detail | no-more: collected=True\nshow chassis alarms | no-more: collected=True\nshow system alarms | no-more: collected=True\nshow chassis environment | no-more: collected=True\nshow system resource-monitor fpc | no-more: collected=True\nshow system processes extensive | match rpd | no-more: collected=True\nshow interface terse | match \"up    up\" | no-more: collected=True\nshow interface terse | no-more: collected=True\nshow interfaces descriptions | no-more: collected=True\nshow oam ethernet connectivity-fault-management interfaces extensive | no-more: collected=True\nshow vrrp summary | no-more: collected=True\nshow bfd session | no-more: collected=True\nshow rsvp neighbor | no-more: collected=True\nshow rsvp session | no-more: collected=True\nshow route table inet.0 | no-more: collected=True\nshow route table inet.3 | no-more: collected=True\nshow route table mpls.0 | no-more: collected=True\nshow mpls interface | no-more: collected=True\nshow mpls lsp | no-more: collected=True\nshow mpls lsp p2mp | no-more: collected=True\nshow bgp summary | no-more: collected=True\nshow bgp neighbor | no-more: collected=True\nshow isis adjacency extensive | no-more: collected=True\nshow route summary | no-more: collected=True\nshow rsvp session | match DN | no-more: collected=False\nshow mpls lsp unidirectional | match Dn | no-more: collected=True\nshow ldp neighbor | no-more: collected=True\nshow connections | no-more: collected=True\nshow log messages | last 200 | no-more: collected=True\nshow configuration | no-more: collected=True\nshow configuration | no-more | display set: collected=True\nshow configuration | display set | count: collected=True"
+          "logs": "Traceback (most recent call last):\n  File \"/home/colt/Documents/MS1Automation/main.py\", line 125, in run_prechecks\n    entries = collect_outputs(\n              ^^^^^^^^^^^^^^^^\n  File \"/home/colt/Documents/MS1Automation/lib/utilities.py\", line 255, in collect_outputs\n    f\"MIN_OUTPUT_CHARS={MIN_OUTPUT_CHARS}\")\n                        ^^^^^^^^^^^^^^^^\nNameError: name 'MIN_OUTPUT_CHARS' is not defined. Did you mean: 'MIN_OUTUPUT_CHARS'?\n"
         },
         "Parsing the data": {
-          "status": "Failed",
-          "error": "10.80.71.55: parse_outputs() \u2014 one or more parsers failed",
+          "status": "",
+          "error": "",
           "title": "Parse and validate pre-check output",
-          "logs": "show arp no-resolve | no-more: json=True\nshow lldp neighbors | no-more: json=True\nshow chassis routing-engine | no-more: json=True\nshow system uptime | no-more: json=True\nshow ntp associations no-resolve | no-more: json=True\nshow vmhost version | no-more: json=True\nshow vmhost snapshot | no-more: json=True\nshow chassis hardware | no-more: json=True\nshow chassis fpc detail | no-more: json=True\nshow chassis alarms | no-more: json=True\nshow system alarms | no-more: json=True\nshow chassis environment | no-more: json=True\nshow system resource-monitor fpc | no-more: json=True\nshow system processes extensive | match rpd | no-more: json=False (no parser)\nshow interface terse | match \"up    up\" | no-more: json=False (no parser)\nshow interface terse | no-more: json=False (no parser)\nshow interfaces descriptions | no-more: json=False (no parser)\nshow oam ethernet connectivity-fault-management interfaces extensive | no-more: json=True\nshow vrrp summary | no-more: json=True\nshow bfd session | no-more: json=True\nshow rsvp neighbor | no-more: json=True\nshow rsvp session | no-more: json=True\nshow route table inet.0 | no-more: json=True\nshow route table inet.3 | no-more: json=True\nshow route table mpls.0 | no-more: json=True\nshow mpls interface | no-more: json=True\nshow mpls lsp | no-more: json=True\nshow mpls lsp p2mp | no-more: json=True\nshow bgp summary | no-more: json=True\nshow bgp neighbor | no-more: json=True\nshow isis adjacency extensive | no-more: json=True\nshow route summary | no-more: json=True\nshow rsvp session | match DN | no-more: json=False (output empty)\nshow mpls lsp unidirectional | match Dn | no-more: json=False (no parser)\nshow ldp neighbor | no-more: json=True\nshow connections | no-more: json=True\nshow log messages | last 200 | no-more: json=False (no parser)\nshow configuration | no-more: json=False (no parser)\nshow configuration | no-more | display set: json=False (no parser)\nshow configuration | display set | count: json=False (no parser)"
+          "logs": ""
         },
         "Backup Config": {
           "status": "",
@@ -432,7 +144,6 @@ WORKFLOW ABORTED for juniper_mx204 — partial results (JSON):
 }
 ============================================================
 
-Report saved -> reports/workflow_report_28_02_26_10_32_04.html
-2026-02-28 10:32:04,179 - INFO - Logging out from device
+Report saved -> reports/workflow_report_28_02_26_10_55_16.html
+2026-02-28 10:55:16,561 - INFO - Logging out from device
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
-
