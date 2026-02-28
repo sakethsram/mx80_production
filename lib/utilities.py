@@ -1,6 +1,7 @@
 import logging
 import sys
 import os
+import re
 import yaml
 import json
 from datetime import datetime
@@ -22,10 +23,15 @@ class GlobalConfig:
     vendor = ""
     model = ""
     session_log_path = ""
-    device_key = ""       # set by main.py before calling pipeline functions
-    commands: list = []   # set by main.py before calling pipeline functions
+    device_key = ""
+    commands: list = []
 
 global_config = GlobalConfig()
+
+# ─────────────────────────────────────────────────────────────
+# Global threshold — outputs <= this length are treated as empty
+# ─────────────────────────────────────────────────────────────
+MIN_OUTPUT_CHARS = 5
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,22 +40,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────
-# workflow_tracker — per-device, keyed by device_key
-#
-# {
-#   "juniper_mx204": {
-#     "device_info": {"host","vendor","model","timestamp"},
-#     "pre-checks":  {"tasks": {task_name: {status,error,title,logs}}, "commands": [...]},
-#     "upgrade":     {"tasks": {...}},
-#     "post-checks": {"tasks": {...}, "commands": [...]}
-#   }
-# }
+# workflow_tracker
 # ─────────────────────────────────────────────────────────────
 workflow_tracker = {}
 
 
 def init_device_tracker(device_key: str, host: str, vendor: str, model: str):
-    """Create a fresh workflow_tracker slot for one device."""
     workflow_tracker[device_key] = {
         "device_info": {
             "host": host, "vendor": vendor, "model": model,
@@ -92,11 +88,6 @@ def init_device_tracker(device_key: str, host: str, vendor: str, model: str):
 
 def log_task(device_key: str, phase: str, task_name: str, status: str,
              error: str = "", log_line: str = ""):
-    """Update a task entry in workflow_tracker[device_key][phase]['tasks'].
-
-    logs is stored as a plain string — multiple calls append lines separated
-    by newlines so the HTML report can render them verbatim.
-    """
     device = workflow_tracker.get(device_key)
     if device is None:
         logger.warning(f"[log_task] device_key='{device_key}' not in workflow_tracker")
@@ -119,14 +110,6 @@ def log_task(device_key: str, phase: str, task_name: str, status: str,
 
 
 def set_commands(device_key: str, phase: str, entries: list):
-    """Store executed command entries into workflow_tracker[device_key][phase]['commands'].
-
-    Each entry dict keys:
-        cmd        : str  — the CLI command string
-        output     : str  — raw text output from the device
-        json       : dict — parsed structured output ({} if parse failed)
-        exception  : str  — traceback/error if collection or parsing raised; "" if OK
-    """
     device = workflow_tracker.get(device_key)
     if not device:
         logger.warning(f"[set_commands] device_key='{device_key}' not in tracker")
@@ -144,54 +127,77 @@ def get_pre_results(device_key: str) -> list:
 
 
 # ─────────────────────────────────────────────────────────────
-# build_registries — parser lookup table, no hardcoded commands
+# _normalise — canonical command string for registry lookups
+#
+# Rules:
+#   1. Strip leading/trailing whitespace
+#   2. Collapse all internal whitespace runs to a single space
+#   3. Ensure exactly one space on each side of every pipe "|"
+#
+# Examples:
+#   "show rsvp session | match DN |no-more"   → "show rsvp session | match DN | no-more"
+#   "show vmhost version |no-more"             → "show vmhost version | no-more"
+# ─────────────────────────────────────────────────────────────
+
+def _normalise(cmd: str) -> str:
+    cmd = re.sub(r'\s+', ' ', cmd.strip())
+    cmd = re.sub(r'\s*\|\s*', ' | ', cmd)
+    return cmd
+
+
+# ─────────────────────────────────────────────────────────────
+# build_registries — all keys normalised at build time
 # ─────────────────────────────────────────────────────────────
 
 def build_registries():
-    JUNIPER_PARSER_REGISTRY = {
-        ("juniper", "show arp no-resolve | no-more"):                                            parse_show_arp_no_resolve,
-        ("juniper", "show vrrp summary | no-more"):                                              parse_show_vrrp_summary,
-        ("juniper", "show lldp neighbors | no-more"):                                            parse_show_lldp_neighbors,
-        ("juniper", "show bfd session | no-more"):                                               parse_show_bfd_session,
-        ("juniper", "show rsvp neighbor | no-more"):                                             parse_show_rsvp_neighbor,
-        ("juniper", "show rsvp session | no-more"):                                              parse_show_rsvp_session,
-        ("juniper", "show route table inet.0 | no-more"):                                        parse_show_route_table_inet0,
-        ("juniper", "show route table inet.3 | no-more"):                                        parse_show_route_table_inet3,
-        ("juniper", "show route table mpls.0 | no-more"):                                        parse_show_route_table_mpls0,
-        ("juniper", "show mpls interface | no-more"):                                            parse_show_mpls_interface,
-        ("juniper", "show mpls lsp | no-more"):                                                  parse_show_mpls_lsp,
-        ("juniper", "show mpls lsp p2mp | no-more"):                                             parse_show_mpls_lsp_p2mp,
-        ("juniper", "show bgp summary | no-more"):                                               parse_show_bgp_summary,
-        ("juniper", "show bgp neighbor | no-more"):                                              parse_show_bgp_neighbor,
-        ("juniper", "show isis adjacency extensive | no-more"):                                  parse_show_isis_adjacency_extensive,
-        ("juniper", "show route summary | no-more"):                                             parse_show_route_summary,
-        ("juniper", "show rsvp session match DN | no-more"):                                     parse_show_rsvp_session_match_DN,
-        ("juniper", "show mpls lsp unidirectional match DN | no-more"):                          parse_show_mpls_lsp_unidirectional_match_DN,
-        ("juniper", "show rsvp | no-more"):                                                      parse_show_rsvp,
-        ("juniper", "show mpls lsp unidirectional | no-more"):                                   parse_show_mpls_lsp_unidirectional_no_more,
-        ("juniper", "show system uptime | no-more"):                                             parse_21_show_system_uptime,
-        ("juniper", "show ntp associations no-resolve | no-more"):                               parse_22_show_ntp_associations,
-        ("juniper", "show vmhost version | no-more"):                                            parse_23_show_vmhost_version,
-        ("juniper", "show vmhost snapshot | no-more"):                                           parse_24_show_vmhost_snapshot,
-        ("juniper", "show chassis hardware | no-more"):                                          parse_25_show_chassis_hardware,
-        ("juniper", "show chassis fpc detail | no-more"):                                        parse_26_show_chassis_fpc_detail,
-        ("juniper", "show chassis alarms | no-more"):                                            parse_27_show_chassis_alarms,
-        ("juniper", "show system alarms | no-more"):                                             parse_28_show_system_alarms,
-        ("juniper", "show chassis routing-engine | no-more"):                                    parse_29_show_chassis_routing_engine,
-        ("juniper", "show chassis environment | no-more"):                                       parse_30_show_chassis_environment,
-        ("juniper", "show system resource-monitor fpc | no-more"):                               parse_31_show_system_resource_monitor_fpc,
-        ("juniper", "show krt table | no-more"):                                                 parse_32_show_krt_table,
-        ("juniper", "show system processes | no-more"):                                          parse_33_show_system_processes,
-        ("juniper", "show interface descriptions | no-more"):                                    parse_34_show_interface_descriptions,
+    raw = {
+        ("juniper", "show arp no-resolve | no-more"):                                                  parse_show_arp_no_resolve,
+        ("juniper", "show vrrp summary | no-more"):                                                    parse_show_vrrp_summary,
+        ("juniper", "show lldp neighbors | no-more"):                                                  parse_show_lldp_neighbors,
+        ("juniper", "show bfd session | no-more"):                                                     parse_show_bfd_session,
+        ("juniper", "show rsvp neighbor | no-more"):                                                   parse_show_rsvp_neighbor,
+        ("juniper", "show rsvp session | no-more"):                                                    parse_show_rsvp_session,
+        ("juniper", "show route table inet.0 | no-more"):                                              parse_show_route_table_inet0,
+        ("juniper", "show route table inet.3 | no-more"):                                              parse_show_route_table_inet3,
+        ("juniper", "show route table mpls.0 | no-more"):                                              parse_show_route_table_mpls0,
+        ("juniper", "show mpls interface | no-more"):                                                  parse_show_mpls_interface,
+        ("juniper", "show mpls lsp | no-more"):                                                        parse_show_mpls_lsp,
+        ("juniper", "show mpls lsp p2mp | no-more"):                                                   parse_show_mpls_lsp_p2mp,
+        ("juniper", "show bgp summary | no-more"):                                                     parse_show_bgp_summary,
+        ("juniper", "show bgp neighbor | no-more"):                                                    parse_show_bgp_neighbor,
+        ("juniper", "show isis adjacency extensive | no-more"):                                        parse_show_isis_adjacency_extensive,
+        ("juniper", "show route summary | no-more"):                                                   parse_show_route_summary,
+        ("juniper", "show rsvp session match DN | no-more"):                                           parse_show_rsvp_session_match_DN,
+        ("juniper", "show mpls lsp unidirectional match DN | no-more"):                                parse_show_mpls_lsp_unidirectional_match_DN,
+        ("juniper", "show rsvp | no-more"):                                                            parse_show_rsvp,
+        ("juniper", "show mpls lsp unidirectional | no-more"):                                         parse_show_mpls_lsp_unidirectional_no_more,
+        ("juniper", "show system uptime | no-more"):                                                   parse_21_show_system_uptime,
+        ("juniper", "show ntp associations no-resolve | no-more"):                                     parse_22_show_ntp_associations,
+        ("juniper", "show vmhost version | no-more"):                                                  parse_23_show_vmhost_version,
+        ("juniper", "show vmhost snapshot | no-more"):                                                 parse_24_show_vmhost_snapshot,
+        ("juniper", "show chassis hardware | no-more"):                                                parse_25_show_chassis_hardware,
+        ("juniper", "show chassis fpc detail | no-more"):                                              parse_26_show_chassis_fpc_detail,
+        ("juniper", "show chassis alarms | no-more"):                                                  parse_27_show_chassis_alarms,
+        ("juniper", "show system alarms | no-more"):                                                   parse_28_show_system_alarms,
+        ("juniper", "show chassis routing-engine | no-more"):                                          parse_29_show_chassis_routing_engine,
+        ("juniper", "show chassis environment | no-more"):                                             parse_30_show_chassis_environment,
+        ("juniper", "show system resource-monitor fpc | no-more"):                                     parse_31_show_system_resource_monitor_fpc,
+        ("juniper", "show krt table | no-more"):                                                       parse_32_show_krt_table,
+        ("juniper", "show system processes | no-more"):                                                parse_33_show_system_processes,
+        ("juniper", "show interface descriptions | no-more"):                                          parse_34_show_interface_descriptions,
         ("juniper", "show oam ethernet connectivity-fault-management interfaces extensive | no-more"): parse_35_show_oam_cfm_interfaces,
-        ("juniper", "show ldp neighbor | no-more"):                                              parse_36_show_ldp_neighbor,
-        ("juniper", "show connections | no-more"):                                               parse_37_show_connections,
+        ("juniper", "show ldp neighbor | no-more"):                                                    parse_36_show_ldp_neighbor,
+        ("juniper", "show connections | no-more"):                                                     parse_37_show_connections,
     }
-    return JUNIPER_PARSER_REGISTRY
+    # Normalise every key at build time
+    return {
+        (vendor, _normalise(cmd)): fn
+        for (vendor, cmd), fn in raw.items()
+    }
 
 
 # ─────────────────────────────────────────────────────────────
-# VENDOR_REGISTRY  — built once at module load, used by parsers
+# VENDOR_REGISTRY  — built once at module load
 # ─────────────────────────────────────────────────────────────
 VENDOR_REGISTRY = {
     "juniper": build_registries(),
@@ -201,38 +207,23 @@ VENDOR_REGISTRY = {
 # ═════════════════════════════════════════════════════════════
 # PIPELINE STEP 1 — collect_outputs
 #
-# Sends each command to the device over the live conn.
-# Stores raw entries in global_config.device_results.
-# Calls log_task once per command: "{cmd}: collected=True/False"
+# For each command in the list:
+#   - Send command to device via conn.send_command()
+#   - collected = True  only when len(output.strip()) > MIN_OUTPUT_CHARS
+#   - Store entry: { cmd, output, json_output, exception }
+#     exception = actual traceback if send_command raised, else ""
 #
-# Returns: list of entry dicts  (cmd / output / json_output / exception)
+# Returns: list of entry dicts
 # ═════════════════════════════════════════════════════════════
 
 def collect_outputs(device_key: str, vendor: str, commands: list,
                     check_type: str, conn, log) -> list:
-    """
-    STEP 1 — Send each CLI command and capture raw output.
 
-    Args:
-        device_key : e.g. 'juniper_mx204'
-        vendor     : e.g. 'juniper'
-        commands   : list of CLI strings (from show_cmd_list.yaml via global_config)
-        check_type : 'pre' | 'post'
-        conn       : live Netmiko connection
-        log        : caller's logger
-
-    Returns:
-        list of dicts — one per command:
-            {
-                "command"    : str,
-                "output"     : str,   # raw device output; "" on failure
-                "json_output": {},    # filled by parse_outputs later
-                "exception"  : str    # traceback string; "" if OK
-            }
-    """
     phase = "pre-checks" if check_type == "pre" else "post-checks"
 
-    log.info(f"[{device_key}] STEP 1 collect_outputs — {len(commands)} command(s), phase={phase}")
+    log.info(f"[{device_key}] STEP 1 collect_outputs — "
+             f"{len(commands)} command(s), phase={phase}, "
+             f"MIN_OUTPUT_CHARS={MIN_OUTPUT_CHARS}")
 
     if device_key not in global_config.device_results:
         global_config.device_results[device_key] = {}
@@ -242,60 +233,74 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
     for cmd in commands:
         log.info(f"[{device_key}] Sending: '{cmd}'")
         exception_str = ""
-        output = ""
+        output        = ""
 
         try:
             output = conn.send_command(cmd)
-            collected = bool(output and output.strip())
             log.debug(f"[{device_key}] '{cmd}' — {len(output)} chars received")
 
-        except Exception as exc:
+        except Exception:
             import traceback as _tb
-            exception_str = _tb.format_exc()
-            collected = False
-            log.error(f"[{device_key}] '{cmd}' send_command raised: {exc}")
+            exception_str = _tb.format_exc()          # actual traceback string
+            log.error(f"[{device_key}] '{cmd}' send_command raised:\n{exception_str}")
+
+        stripped  = output.strip() if output else ""
+        collected = len(stripped) > MIN_OUTPUT_CHARS
 
         entry = {
-            "command":     cmd,
-            "output":      output,
-            "json_output": {},
-            "exception":   exception_str,
+            "cmd":       cmd,
+            "output":    output,
+            "json":      {},
+            "exception": exception_str,               # "" if OK, traceback if send_command failed
         }
         entries.append(entry)
 
-        # ── log_task once per command ──────────────────────────────────
-        cmd_status  = "Success" if collected else "Failed"
-        cmd_log_msg = f"{cmd}: collected={collected}"
-        log_task(device_key, phase, "executing show commands",
-                 cmd_status, cmd_log_msg, log_line=cmd_log_msg)
+        log.info(f"[{device_key}] '{cmd}' collected={collected} "
+                 f"({len(stripped)} chars)")
 
-    # persist raw entries so parse_outputs can read them
     global_config.device_results[device_key][check_type] = entries
 
     log.info(f"[{device_key}] STEP 1 done — {len(entries)} entries stored")
     return entries
 
 
+# ═════════════════════════════════════════════════════════════
+# PIPELINE STEP 2 — parse_outputs
+#
+# Traverses the entries list built by collect_outputs.
+# For each entry, nested-if logic determines what to do:
+#
+#   Level 1 — is a parser registered for this command?
+#       NO  → exception = "no parser registered"
+#             json stays {}
+#             continue (collect-only, not a failure)
+#
+#       YES → Level 2 — is output > MIN_OUTPUT_CHARS?
+#                 NO  → exception = "output too short (N chars)"
+#                       json stays {}
+#                       continue (skip silently, not a failure)
+#
+#                 YES → Level 3 — call the parser function
+#                           RAISES   → exception = actual traceback string
+#                                      json stays {}
+#                                      continue (log, keep going)
+#
+#                           RETURNS empty → exception = "parser returned empty result"
+#                                           json stays {}
+#                                           continue
+#
+#                           RETURNS data  → json = result
+#                                           exception = ""
+#
+# json populated  → exception = ""
+# json empty      → exception = reason string (see levels above)
+#
+# Returns True only if every parser-registered, output-present command succeeded.
+# Individual failures do NOT abort the run.
+# ═════════════════════════════════════════════════════════════
+
 def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
-    """
-    STEP 2 — Run registered parser functions over collected raw output.
 
-    Reads from  : global_config.device_results[device_key][check_type]
-    Writes back : entry["json_output"]  for each entry in-place
-
-    Failure rules:
-        - No parser registered for a command  → SKIP (collect-only cmd), never a failure
-        - Parser registered but output empty  → FAIL  (we expected data)
-        - Parser registered, output present, parser crashes or returns {} → FAIL
-        - Parser registered, output present, parser returns data → SUCCESS
-
-    log_task called once per command with:
-        task_name = "Parsing the data"
-        log_line  = "{cmd}: json=True"  or  "{cmd}: json=False (<reason>)"
-
-    Returns True only when every command that HAS a registered parser
-    returned a non-empty dict without raising an exception.
-    """
     phase = "pre-checks" if check_type == "pre" else "post-checks"
 
     registry = VENDOR_REGISTRY.get(vendor)
@@ -308,108 +313,97 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
         log.warning(f"[{device_key}] STEP 2 — Nothing in device_results to parse")
         return False
 
-    log.info(f"[{device_key}] STEP 2 parse_outputs — {len(entries)} entry(ies), vendor={vendor}")
+    log.info(f"[{device_key}] STEP 2 parse_outputs — "
+             f"{len(entries)} entry(ies), vendor={vendor}")
 
     all_ok = True
 
     for entry in entries:
-        cmd    = entry["command"]
-        output = entry["output"]
+        cmd      = entry["cmd"]
+        output   = entry["output"]
+        norm_cmd = _normalise(cmd)
 
-        # ── no parser registered → collect-only command, skip entirely ─
-        # This is NOT a failure — many commands (config, logs, etc.)
-        # are collected for storage/report only and have no parser.
-        parser_fn = registry.get((vendor, cmd))
+        # ── LEVEL 1: is a parser registered? ─────────────────────────
+        parser_fn = registry.get((vendor, norm_cmd))
+
         if parser_fn is None:
-            log.debug(f"[{device_key}] '{cmd}' — no parser registered, collect-only, skipping")
-            log_task(device_key, phase, "Parsing the data",
-                     "Success", f"{cmd}: collect-only (no parser)",
-                     log_line=f"{cmd}: json=False (no parser, collect-only — OK)")
+            # No parser → collect-only command, not a failure
+            entry["json"]      = {}
+            entry["exception"] = "no parser registered"
+            log.debug(f"[{device_key}] '{cmd}' — no parser registered, collect-only")
             continue
 
-        # ── parser IS registered but output is empty → FAIL ───────────
-        if not output or not output.strip():
-            log.warning(f"[{device_key}] '{cmd}' — parser registered but output is EMPTY")
-            log_task(device_key, phase, "Parsing the data",
-                     "Failed", f"{cmd}: output empty but parser expected",
-                     log_line=f"{cmd}: json=False (output empty)")
-            all_ok = False
+        # ── LEVEL 2: is output long enough to parse? ─────────────────
+        stripped = output.strip() if output else ""
+
+        if len(stripped) <= MIN_OUTPUT_CHARS:
+            # Parser exists but nothing useful came back — skip silently
+            entry["json"]      = {}
+            entry["exception"] = f"output too short ({len(stripped)} chars)"
+            log.info(f"[{device_key}] '{cmd}' — output too short "
+                     f"({len(stripped)} chars ≤ {MIN_OUTPUT_CHARS}), skipping")
             continue
 
-        # ── run parser ─────────────────────────────────────────────────
+        # ── LEVEL 3: call the parser ──────────────────────────────────
         log.info(f"[{device_key}] Running {parser_fn.__name__}() for '{cmd}'")
+
         try:
             result = parser_fn(output)
 
-            # treat empty result as a parse failure
             if not result:
-                raise ValueError(f"{parser_fn.__name__}() returned empty result")
+                # Parser ran without raising but returned nothing useful
+                entry["json"]      = {}
+                entry["exception"] = "parser returned empty result"
+                all_ok = False
+                log.warning(f"[{device_key}] {parser_fn.__name__}() returned "
+                             f"empty result for '{cmd}'")
+                continue
 
-            entry["json_output"] = result
-            json_ok = True
-            log.info(f"[{device_key}] '{cmd}' parsed OK — keys: {list(result.keys()) if isinstance(result, dict) else type(result).__name__}")
+            # ── SUCCESS ──────────────────────────────────────────────
+            entry["json"]      = result
+            entry["exception"] = ""
+            log.info(
+                f"[{device_key}] '{cmd}' parsed OK — "
+                f"keys: {list(result.keys()) if isinstance(result, dict) else type(result).__name__}"
+            )
 
-        except Exception as exc:
+        except Exception:
             import traceback as _tb
-            exc_str = _tb.format_exc()
-            entry["json_output"] = {}
-            entry["exception"]   = (entry.get("exception") or "") + "\n" + exc_str
-            json_ok = False
-            all_ok  = False
-            log.error(f"[{device_key}] {parser_fn.__name__}() failed for '{cmd}': {exc}")
+            exc_str = _tb.format_exc()                # actual traceback string
+            entry["json"]      = {}
+            entry["exception"] = exc_str              # full traceback in exception field
+            all_ok = False
+            log.error(f"[{device_key}] {parser_fn.__name__}() FAILED for "
+                      f"'{cmd}':\n{exc_str}")
+            continue                                  # keep going — do NOT abort
 
-        # ── log_task once per command that has a parser ────────────────
-        parse_status = "Success" if json_ok else "Failed"
-        cmd_log_msg  = f"{cmd}: json={json_ok}"
-        log_task(device_key, phase, "Parsing the data",
-                 parse_status, cmd_log_msg, log_line=cmd_log_msg)
-
-    verdict = "all parsers OK" if all_ok else "one or more parsers FAILED"
+    verdict = "all parsers OK" if all_ok else "one or more parsers FAILED (continued)"
     log.info(f"[{device_key}] STEP 2 done — {verdict}")
     return all_ok
+
+
 # ═════════════════════════════════════════════════════════════
 # PIPELINE STEP 3 — push_to_tracker
 #
-# Converts entries to tracker format and writes them into
-# workflow_tracker via set_commands().
-# No additional log_task calls here — steps 1 & 2 already logged
-# per-command; this just finalises the commands list.
+# Entries from collect_outputs are already in tracker format:
+#   { "cmd", "output", "json", "exception" }
+# Just calls set_commands() to write them into workflow_tracker.
 # ═════════════════════════════════════════════════════════════
 
 def push_to_tracker(device_key: str, check_type: str, entries: list,
                     parse_ok: bool, log) -> None:
-    """
-    STEP 3 — Push collected + parsed entries into workflow_tracker.
 
-    Converts internal entry dicts to tracker format:
-        { "cmd": ..., "output": ..., "json": ..., "exception": ... }
-
-    Then calls set_commands() to store them under the correct phase.
-
-    Args:
-        device_key : e.g. 'juniper_mx204'
-        check_type : 'pre' | 'post'
-        entries    : list returned by collect_outputs (mutated in-place by parse_outputs)
-        parse_ok   : overall parse result (True = all OK)
-        log        : caller's logger
-    """
     phase = "pre-checks" if check_type == "pre" else "post-checks"
 
-    tracker_entries = [
-        {
-            "cmd":       e["command"],
-            "output":    e["output"],
-            "json":      e["json_output"],
-            "exception": e.get("exception", ""),
-        }
-        for e in entries
-    ]
+    set_commands(device_key, phase, entries)
 
-    set_commands(device_key, phase, tracker_entries)
+    parsed_count  = sum(1 for e in entries if e["json"])
+    skipped_count = sum(1 for e in entries if not e["json"])
 
     log.info(
         f"[{device_key}] STEP 3 push_to_tracker — "
-        f"{len(tracker_entries)} entries -> [{device_key}][{phase}]['commands']  "
+        f"{len(entries)} total -> [{device_key}][{phase}]['commands'] | "
+        f"parsed={parsed_count}, skipped/collect-only={skipped_count}, "
         f"parse_ok={parse_ok}"
     )
 
@@ -444,10 +438,10 @@ def write_json(command_name, vendor, model, json_data):
         raise ValueError("Invalid Parameters")
     try:
         logger.info("Writing to pre_checks JSON file ...")
-        curr_dir = os.getcwd()
+        curr_dir   = os.getcwd()
         output_dir = os.path.join(curr_dir, "pre_checks")
         os.makedirs(output_dir, exist_ok=True)
-        filename = f"{vendor}_{model}_{global_config.pre_check_timestamp}.json"
+        filename  = f"{vendor}_{model}_{global_config.pre_check_timestamp}.json"
         file_path = os.path.join(output_dir, filename)
         if os.path.exists(file_path):
             with open(file_path, "r") as f:
@@ -456,8 +450,8 @@ def write_json(command_name, vendor, model, json_data):
             data = {
                 "metadata": {
                     "timestamp": global_config.pre_check_timestamp,
-                    "vendor": vendor,
-                    "model": model,
+                    "vendor":    vendor,
+                    "model":     model,
                 },
                 "commands": {}
             }
@@ -479,11 +473,11 @@ def login_device(host, username, password, device_type, session_log_path, logger
     try:
         logger.info(f"Connecting to {host} using Netmiko...")
         device = {
-            "device_type":   device_type,
-            "host":          host,
-            "username":      username,
-            "password":      password,
-            "session_log":   session_log_path,
+            "device_type": device_type,
+            "host":        host,
+            "username":    username,
+            "password":    password,
+            "session_log": session_log_path,
         }
         conn = ConnectHandler(**device)
         logger.info(f"Login Successful to {host}")
@@ -519,7 +513,7 @@ def logout_device(conn, host, logger):
 
 def load_yaml(filename):
     try:
-        curr_dir = os.getcwd()
+        curr_dir  = os.getcwd()
         file_path = os.path.join(curr_dir, "inputs", filename)
         with open(file_path, "r") as f:
             return yaml.safe_load(f)
@@ -533,13 +527,8 @@ def load_yaml(filename):
 # ─────────────────────────────────────────────────────────────
 
 def export_device_summary():
-    """
-    Traverses all device keys in global_config.device_results and writes
-    a single JSON file with device_details + pre_checks (cmd, first line, json).
-    Saved to: precheck_jsons/<DD_MM_YY_HH_MM>.json
-    """
     timestamp = datetime.now().strftime("%d_%m_%y_%H_%M")
-    output = {}
+    output    = {}
 
     for device_key, phases in global_config.device_results.items():
         device_details = {
@@ -550,14 +539,14 @@ def export_device_summary():
         }
 
         pre_entries = phases.get("pre", [])
-        pre_checks = []
+        pre_checks  = []
         for entry in pre_entries:
             raw_output = entry.get("output", "") or ""
             first_line = raw_output.strip().splitlines()[0] if raw_output.strip() else ""
             pre_checks.append({
-                "cmd":       entry.get("command", ""),
+                "cmd":       entry.get("cmd", ""),
                 "output":    first_line,
-                "json":      entry.get("json_output", {}),
+                "json":      entry.get("json", {}),
                 "exception": entry.get("exception", ""),
             })
 
