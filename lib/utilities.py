@@ -127,7 +127,7 @@ def get_pre_results(device_key: str) -> list:
 
 
 # ─────────────────────────────────────────────────────────────
-# _normalise — canonical command string for registry lookups
+# normalise — canonical command string for registry lookups
 #
 # Rules:
 #   1. Strip leading/trailing whitespace
@@ -139,7 +139,7 @@ def get_pre_results(device_key: str) -> list:
 #   "show vmhost version |no-more"             → "show vmhost version | no-more"
 # ─────────────────────────────────────────────────────────────
 
-def _normalise(cmd: str) -> str:
+def normalise(cmd: str) -> str:
     cmd = re.sub(r'\s+', ' ', cmd.strip())
     cmd = re.sub(r'\s*\|\s*', ' | ', cmd)
     return cmd
@@ -191,7 +191,7 @@ def build_registries():
     }
     # Normalise every key at build time
     return {
-        (vendor, _normalise(cmd)): fn
+        (vendor, normalise(cmd)): fn
         for (vendor, cmd), fn in raw.items()
     }
 
@@ -240,8 +240,8 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
             log.debug(f"[{device_key}] '{cmd}' — {len(output)} chars received")
 
         except Exception:
-            import traceback as _tb
-            exception_str = _tb.format_exc()          # actual traceback string
+            import traceback as tb
+            exception_str = tb.format_exc()          # actual traceback string
             log.error(f"[{device_key}] '{cmd}' send_command raised:\n{exception_str}")
 
         stripped  = output.strip() if output else ""
@@ -251,8 +251,8 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
             "cmd":       cmd,
             "output":    output,
             "json":      {},
-            "exception": exception_str,               # "" if OK, traceback if send_command failed
-        }
+            "exception": f"send_command failed for '{cmd}'" if exception_str else "",
+               }
         entries.append(entry)
 
         log.info(f"[{device_key}] '{cmd}' collected={collected} "
@@ -321,14 +321,14 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
     for entry in entries:
         cmd      = entry["cmd"]
         output   = entry["output"]
-        norm_cmd = _normalise(cmd)
+        norm_cmd = normalise(cmd)
 
         # ── LEVEL 1: is a parser registered? ─────────────────────────
         parser_fn = registry.get((vendor, norm_cmd))
 
         if parser_fn is None:
             # No parser → collect-only command, not a failure
-            entry["json"]      = {}
+
             entry["exception"] = "no parser registered"
             log.debug(f"[{device_key}] '{cmd}' — no parser registered, collect-only")
             continue
@@ -338,10 +338,9 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
 
         if len(stripped) <= MIN_OUTPUT_CHARS:
             # Parser exists but nothing useful came back — skip silently
-            entry["json"]      = {}
-            entry["exception"] = f"output too short ({len(stripped)} chars)"
-            log.info(f"[{device_key}] '{cmd}' — output too short "
-                     f"({len(stripped)} chars ≤ {MIN_OUTPUT_CHARS}), skipping")
+
+            entry["exception"] = f"output too short )"
+            log.info(f"[{device_key}] '{cmd}' — output too short ")
             continue
 
         # ── LEVEL 3: call the parser ──────────────────────────────────
@@ -350,9 +349,9 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
         try:
             result = parser_fn(output)
 
-            if not result:
+            if not result or all(not v for v in result.values()):
                 # Parser ran without raising but returned nothing useful
-                entry["json"]      = {}
+
                 entry["exception"] = "parser returned empty result"
                 all_ok = False
                 log.warning(f"[{device_key}] {parser_fn.__name__}() returned "
@@ -360,22 +359,18 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
                 continue
 
             # ── SUCCESS ──────────────────────────────────────────────
-            entry["json"]      = result
+            entry["json"]=result
             entry["exception"] = ""
             log.info(
                 f"[{device_key}] '{cmd}' parsed OK — "
                 f"keys: {list(result.keys()) if isinstance(result, dict) else type(result).__name__}"
             )
 
-        except Exception:
-            import traceback as _tb
-            exc_str = _tb.format_exc()                # actual traceback string
-            entry["json"]      = {}
-            entry["exception"] = exc_str              # full traceback in exception field
+        except Exception as e :
+            entry["exception"] = f"parser failed for '{cmd}'"
             all_ok = False
-            log.error(f"[{device_key}] {parser_fn.__name__}() FAILED for "
-                      f"'{cmd}':\n{exc_str}")
-            continue                                  # keep going — do NOT abort
+            log.error(f"[{device_key}] {parser_fn.__name__}() FAILED for '{cmd}': {e}")
+            continue
 
     verdict = "all parsers OK" if all_ok else "one or more parsers FAILED (continued)"
     log.info(f"[{device_key}] STEP 2 done — {verdict}")
@@ -395,10 +390,14 @@ def push_to_tracker(device_key: str, check_type: str, entries: list,
 
     phase = "pre-checks" if check_type == "pre" else "post-checks"
 
-    set_commands(device_key, phase, entries)
+    # Read from device_results — parse_outputs mutates entries in-place there.
+    # This guarantees json and exception fields are fully populated before storing.
+    final_entries = global_config.device_results.get(device_key, {}).get(check_type, entries)
 
-    parsed_count  = sum(1 for e in entries if e["json"])
-    skipped_count = sum(1 for e in entries if not e["json"])
+    set_commands(device_key, phase, final_entries)
+
+    parsed_count  = sum(1 for e in final_entries if e["json"])
+    skipped_count = sum(1 for e in final_entries if not e["json"])
 
     log.info(
         f"[{device_key}] STEP 3 push_to_tracker — "
@@ -417,15 +416,15 @@ def setup_logger(name):
     os.makedirs(log_dir, exist_ok=True)
     log_file = f"{global_config.vendor}_{global_config.model}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
     log_path = os.path.join(log_dir, log_file)
-    _logger = logging.getLogger(f"{global_config.vendor}_{global_config.model}")
-    _logger.setLevel(logging.DEBUG)
-    _logger.propagate = False
+    file_logger = logging.getLogger(f"{global_config.vendor}_{global_config.model}")
+    file_logger.setLevel(logging.DEBUG)
+    file_logger.propagate = False
     handler = logging.FileHandler(log_path)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s",
                                   datefmt="%Y-%m-%d_%H:%M:%S")
     handler.setFormatter(formatter)
-    _logger.addHandler(handler)
-    return _logger
+    file_logger.addHandler(handler)
+    return file_logger
 
 
 # ─────────────────────────────────────────────────────────────
