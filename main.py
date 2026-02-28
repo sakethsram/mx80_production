@@ -96,18 +96,18 @@ def run_prechecks(device, logger):
                  f'{host}: Connected successfully', '')
 
         # 2) Show Version
-        try:
-            version_output = precheck.showVersion(conn, device_type, logger)
-        except Exception as e:
-            abort(device_key, 'pre-checks', 'show version',
-                  f'{host}: showVersion() raised exception — {e}', logger, exc=e)
+        # try:
+        #     version_output = precheck.showVersion(conn, device_type, logger)
+        # except Exception as e:
+        #     abort(device_key, 'pre-checks', 'show version',
+        #           f'{host}: showVersion() raised exception — {e}', logger, exc=e)
 
-        print('version...', version_output)
-        if not version_output:
-            abort(device_key, 'pre-checks', 'show version',
-                  f'{host}: showVersion() returned empty/False', logger)
-        log_task(device_key, 'pre-checks', 'show version', 'Success',
-                 f'{host}: show version retrieved', 'ABC')
+        # print('version...', version_output)
+        # if not version_output:
+        #     abort(device_key, 'pre-checks', 'show version',
+        #           f'{host}: showVersion() returned empty/False', logger)
+        # log_task(device_key, 'pre-checks', 'show version', 'Success',
+        #          f'{host}: show version retrieved', 'ABC')
 
         # 3) Execute Commands — 3-step pipeline (replaces execute_commands / run_checks.py)
         try:
