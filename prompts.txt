@@ -997,5 +997,153 @@ def export_device_summary():
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
 
 
-
 why isnt the .json being generated ?
+devicekey.... juniper_mx204
+2026-02-28 13:55:17,370 - INFO - [tracker] Initialised slot for device_key='juniper_mx204'
+workflow... {'juniper_mx204': {'device_info': {'host': '10.80.71.55', 'vendor': 'juniper', 'model': 'mx204', 'timestamp': '2026-02-28_13-55-17'}, 'pre-checks': {'tasks': {'read Yaml': {'status': '', 'error': '', 'title': 'Load device config from YAML', 'logs': ''}, 'start logger': {'status': '', 'error': '', 'title': 'Initialise log file for session', 'logs': ''}, 'connection using credentials': {'status': '', 'error': '', 'title': 'Establish SSH session to device', 'logs': ''}, 'show version': {'status': '', 'error': '', 'title': 'Run show version', 'logs': ''}, 'executing show commands': {'status': '', 'error': '', 'title': 'Collect pre-check show command output', 'logs': ''}, 'Parsing the data': {'status': '', 'error': '', 'title': 'Parse and validate pre-check output', 'logs': ''}, 'Backup Config': {'status': '', 'error': '', 'title': 'Save running config and device logs', 'logs': ''}, 'Validate MD5 checksum': {'status': '', 'error': '', 'title': 'Verify image integrity via MD5', 'logs': ''}, 'Storage Check (5GB threshold)': {'status': '', 'error': '', 'title': 'Confirm sufficient disk space', 'logs': ''}, 'Disable Filter': {'status': '', 'error': '', 'title': 'Remove RE protection firewall filter', 'logs': ''}}, 'commands': []}, 'upgrade': {'tasks': {'image installation': {'status': '', 'error': '', 'title': 'Install target OS image on device', 'logs': ''}, 'reboot the device': {'status': '', 'error': '', 'title': 'Reboot and confirm device comes up', 'logs': ''}, 'ping the device': {'status': '', 'error': '', 'title': 'Verify device reachability after upgrade', 'logs': ''}}}, 'post-checks': {'tasks': {'Take snapshot': {'status': '', 'error': '', 'title': 'Snapshot primary disk to backup disk', 'logs': ''}, 'Execute show commands': {'status': '', 'error': '', 'title': 'Collect post-upgrade show command output', 'logs': ''}, 'parsing the commands': {'status': '', 'error': '', 'title': 'Parse and validate post-upgrade output', 'logs': ''}, 'Enable RE-PROTECT filter': {'status': '', 'error': '', 'title': 'Re-apply RE protection firewall filter', 'logs': ''}}, 'commands': []}}}
+main devices... {'devices': [{'host': '10.80.71.55', 'vendor': 'juniper', 'model': 'mx204', 'device_type': 'juniper', 'current_image': 'junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz', 'expected_os': '23.4R2-S5.6', 'intermediate_os': False, 'min_disk_gb': 5, 'username': 'lab', 'password': 'lab123', 'target_image': 'junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz', 'remote_backup_server': 'sftp://backup@10.10.20.20/backups/', 'cleanup_files': ['list of files'], 'intermediate_image': 'junos-os-21.2R2-S5.bin', 'rollback': False, 'md5checksum_file': 'dec5349a0d238dad686dc01f468a0bbe'}]}
+10.80.71.55
+2026-02-28 13:55:17,371 - INFO - [tracker] juniper_mx204 | pre-checks | read Yaml -> Success
+2026-02-28 13:55:17,371 - INFO - [tracker] juniper_mx204 | pre-checks | start logger -> Success
+2026-02-28 13:55:17,416 - INFO - Connected (version 2.0, client OpenSSH_9.7)
+2026-02-28 13:55:17,658 - INFO - Authentication (password) successful!
+connection.. <netmiko.juniper.juniper.JuniperSSH object at 0x75a67c2efc20>
+2026-02-28 13:55:17,916 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
+CONNECTION... <netmiko.juniper.juniper.JuniperSSH object at 0x75a67c2efc20>
+2026-02-28 13:55:17,917 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
+2026-02-28 13:55:27,005 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Failed
+
+============================================================
+WORKFLOW ABORTED for juniper_mx204 — partial results (JSON):
+============================================================
+{
+  "juniper_mx204": {
+    "device_info": {
+      "host": "10.80.71.55",
+      "vendor": "juniper",
+      "model": "mx204",
+      "timestamp": "2026-02-28_13-55-17"
+    },
+    "pre-checks": {
+      "tasks": {
+        "read Yaml": {
+          "status": "Success",
+          "error": "deviceDetails.yaml loaded successfully",
+          "title": "Load device config from YAML",
+          "logs": ""
+        },
+        "start logger": {
+          "status": "Success",
+          "error": "Logger initialised",
+          "title": "Initialise log file for session",
+          "logs": ""
+        },
+        "connection using credentials": {
+          "status": "Success",
+          "error": "10.80.71.55: Connected successfully",
+          "title": "Establish SSH session to device",
+          "logs": "DEVICE IN"
+        },
+        "show version": {
+          "status": "",
+          "error": "",
+          "title": "Run show version",
+          "logs": ""
+        },
+        "executing show commands": {
+          "status": "",
+          "error": "",
+          "title": "Collect pre-check show command output",
+          "logs": ""
+        },
+        "Parsing the data": {
+          "status": "Failed",
+          "error": "10.80.71.55: parse_outputs() \u2014 one or more parsers failed",
+          "title": "Parse and validate pre-check output",
+          "logs": ""
+        },
+        "Backup Config": {
+          "status": "",
+          "error": "",
+          "title": "Save running config and device logs",
+          "logs": ""
+        },
+        "Validate MD5 checksum": {
+          "status": "",
+          "error": "",
+          "title": "Verify image integrity via MD5",
+          "logs": ""
+        },
+        "Storage Check (5GB threshold)": {
+          "status": "",
+          "error": "",
+          "title": "Confirm sufficient disk space",
+          "logs": ""
+        },
+        "Disable Filter": {
+          "status": "",
+          "error": "",
+          "title": "Remove RE protection firewall filter",
+          "logs": ""
+        }
+      },
+      "commands": []
+    },
+    "upgrade": {
+      "tasks": {
+        "image installation": {
+          "status": "",
+          "error": "",
+          "title": "Install target OS image on device",
+          "logs": ""
+        },
+        "reboot the device": {
+          "status": "",
+          "error": "",
+          "title": "Reboot and confirm device comes up",
+          "logs": ""
+        },
+        "ping the device": {
+          "status": "",
+          "error": "",
+          "title": "Verify device reachability after upgrade",
+          "logs": ""
+        }
+      }
+    },
+    "post-checks": {
+      "tasks": {
+        "Take snapshot": {
+          "status": "",
+          "error": "",
+          "title": "Snapshot primary disk to backup disk",
+          "logs": ""
+        },
+        "Execute show commands": {
+          "status": "",
+          "error": "",
+          "title": "Collect post-upgrade show command output",
+          "logs": ""
+        },
+        "parsing the commands": {
+          "status": "",
+          "error": "",
+          "title": "Parse and validate post-upgrade output",
+          "logs": ""
+        },
+        "Enable RE-PROTECT filter": {
+          "status": "",
+          "error": "",
+          "title": "Re-apply RE protection firewall filter",
+          "logs": ""
+        }
+      },
+      "commands": []
+    }
+  }
+}
+============================================================
+
+Report saved -> reports/workflow_report_28_02_26_13_55_27.html
+2026-02-28 13:55:27,006 - INFO - Logging out from device
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
