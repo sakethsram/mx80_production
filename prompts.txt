@@ -569,4 +569,4 @@ def export_device_summary():
     with open(file_path, "w") as f:
         json.dump(output, f, indent=2)
 
-    print(f"[export] Summary written to {file_path}")
+    print(f"[export] Summary written to {file_path}")    wserwqer
