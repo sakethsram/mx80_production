@@ -1,7 +1,25 @@
-<<<<<<< HEAD
 
-=======
->>>>>>> e7b0a39d66d8872c76523960e11129dc02fb5d74
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ p main.py
+devicekey.... juniper_mx204
+2026-02-28 13:33:52,534 - INFO - [tracker] Initialised slot for device_key='juniper_mx204'
+workflow... {'juniper_mx204': {'device_info': {'host': '10.80.71.55', 'vendor': 'juniper', 'model': 'mx204', 'timestamp': '2026-02-28_13-33-52'}, 'pre-checks': {'tasks': {'read Yaml': {'status': '', 'error': '', 'title': 'Load device config from YAML', 'logs': ''}, 'start logger': {'status': '', 'error': '', 'title': 'Initialise log file for session', 'logs': ''}, 'connection using credentials': {'status': '', 'error': '', 'title': 'Establish SSH session to device', 'logs': ''}, 'show version': {'status': '', 'error': '', 'title': 'Run show version', 'logs': ''}, 'executing show commands': {'status': '', 'error': '', 'title': 'Collect pre-check show command output', 'logs': ''}, 'Parsing the data': {'status': '', 'error': '', 'title': 'Parse and validate pre-check output', 'logs': ''}, 'Backup Config': {'status': '', 'error': '', 'title': 'Save running config and device logs', 'logs': ''}, 'Validate MD5 checksum': {'status': '', 'error': '', 'title': 'Verify image integrity via MD5', 'logs': ''}, 'Storage Check (5GB threshold)': {'status': '', 'error': '', 'title': 'Confirm sufficient disk space', 'logs': ''}, 'Disable Filter': {'status': '', 'error': '', 'title': 'Remove RE protection firewall filter', 'logs': ''}}, 'commands': []}, 'upgrade': {'tasks': {'image installation': {'status': '', 'error': '', 'title': 'Install target OS image on device', 'logs': ''}, 'reboot the device': {'status': '', 'error': '', 'title': 'Reboot and confirm device comes up', 'logs': ''}, 'ping the device': {'status': '', 'error': '', 'title': 'Verify device reachability after upgrade', 'logs': ''}}}, 'post-checks': {'tasks': {'Take snapshot': {'status': '', 'error': '', 'title': 'Snapshot primary disk to backup disk', 'logs': ''}, 'Execute show commands': {'status': '', 'error': '', 'title': 'Collect post-upgrade show command output', 'logs': ''}, 'parsing the commands': {'status': '', 'error': '', 'title': 'Parse and validate post-upgrade output', 'logs': ''}, 'Enable RE-PROTECT filter': {'status': '', 'error': '', 'title': 'Re-apply RE protection firewall filter', 'logs': ''}}, 'commands': []}}}
+main devices... {'devices': [{'host': '10.80.71.55', 'vendor': 'juniper', 'model': 'mx204', 'device_type': 'juniper', 'current_image': 'junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz', 'expected_os': '23.4R2-S5.6', 'intermediate_os': False, 'min_disk_gb': 5, 'username': 'lab', 'password': 'lab123', 'target_image': 'junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz', 'remote_backup_server': 'sftp://backup@10.10.20.20/backups/', 'cleanup_files': ['list of files'], 'intermediate_image': 'junos-os-21.2R2-S5.bin', 'rollback': False, 'md5checksum_file': 'dec5349a0d238dad686dc01f468a0bbe'}]}
+10.80.71.55
+2026-02-28 13:33:52,534 - INFO - [tracker] juniper_mx204 | pre-checks | read Yaml -> Success
+2026-02-28 13:33:52,534 - INFO - [tracker] juniper_mx204 | pre-checks | start logger -> Success
+2026-02-28 13:33:52,579 - INFO - Connected (version 2.0, client OpenSSH_9.7)
+2026-02-28 13:33:52,819 - INFO - Authentication (password) successful!
+connection.. <netmiko.juniper.juniper.JuniperSSH object at 0x7871d5e8fd40>
+2026-02-28 13:33:53,080 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
+CONNECTION... <netmiko.juniper.juniper.JuniperSSH object at 0x7871d5e8fd40>
+2026-02-28 13:33:53,080 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
+2026-02-28 13:34:02,876 - INFO - [tracker] Stored 39 command entries -> [juniper_mx204][pre-checks]['commands']
+2026-02-28 13:34:02,876 - INFO - Logging out from device
+[export] Summary written to /home/colt/Documents/MS1Automation/precheck_jsons/28_02_26_13_34.json
+Report saved -> reports/workflow_report_28_02_26_13_34_02.html
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ nano precheck_jsons/28_02_26_13_34.json
+
+I MANUALL DID THE CHANGES YOU ASKED ME TO DO =
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ cat lib/utilities.py
 import logging
 import sys
@@ -364,19 +382,18 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
                 continue
 
             # ── SUCCESS ──────────────────────────────────────────────
-            entry[json]=result
+            entry["json"]=result
             entry["exception"] = ""
             log.info(
                 f"[{device_key}] '{cmd}' parsed OK — "
                 f"keys: {list(result.keys()) if isinstance(result, dict) else type(result).__name__}"
             )
 
-        except Exception:
+        except Exception as e :
             entry["exception"] = f"parser failed for '{cmd}'"
             all_ok = False
-            log.error(f"[{device_key}] {parser_fn.__name__}() FAILED for "
-                      f"'{cmd}':\n{exc_str}")
-            continue                                  # keep going — do NOT abort
+            log.error(f"[{device_key}] {parser_fn.__name__}() FAILED for '{cmd}': {e}")
+            continue
 
     verdict = "all parsers OK" if all_ok else "one or more parsers FAILED (continued)"
     log.info(f"[{device_key}] STEP 2 done — {verdict}")
@@ -571,261 +588,21 @@ def export_device_summary():
         json.dump(output, f, indent=2)
 
     print(f"[export] Summary written to {file_path}")
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
 
-
-
-
-json that is being printed - {
+json that is being printed -
   "juniper_mx204": {
     "device_details": {
       "device_key": "juniper_mx204",
       "vendor": "juniper",
       "model": "mx204",
-      "pre_check_timestamp": "2026-02-28_13-15-10"
+      "pre_check_timestamp": "2026-02-28_13-33-52"
     },
     "pre_checks": [
       {
-        "cmd": "show arp no-resolve | no-more",
-        "output": "MAC Address       Address         Interface                Flags",
-        "json": {},
-        "exception": ""
-      },
-      {
         "cmd": "show lldp neighbors | no-more",
         "output": "Local Interface    Parent Interface    Chassis Id                               Port info          System Name",
-        "json": {},
+        "json": {
+          "entries": []
+        },
         "exception": ""
       },
-      {
-        "cmd": "show chassis routing-engine | no-more",
-        "output": "Routing Engine status:",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show system uptime | no-more",
-        "output": "Current time: 2026-02-28 07:47:37 UTC",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show ntp associations no-resolve | no-more",
-        "output": "remote               refid           auth  st  t  when  poll reach  delay     offset   jitter rootdelay rootdisp",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show vmhost version | no-more",
-        "output": "Current root details,                   Device sda, Label: jrootp_P, Partition: sda3,",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show vmhost snapshot | no-more",
-        "output": "UEFI \tVersion: CBEP_P_SUM1_00.15.01",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show chassis hardware | no-more",
-        "output": "Hardware inventory:",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show chassis fpc detail | no-more",
-        "output": "Slot 0 information:",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show chassis alarms | no-more",
-        "output": "No alarms currently active",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show system alarms | no-more",
-        "output": "No alarms currently active",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show chassis environment | no-more",
-        "output": "Class Item                           Status     Measurement",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show system resource-monitor fpc | no-more",
-        "output": "FPC Resource Usage Summary",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show system processes extensive | match rpd | no-more",
-        "output": "15914 root         20    0  1174M   268M kqread   0   0:06   0.00% rpd{rpd}",
-        "json": {},
-        "exception": "no parser registered"
-      },
-      {
-        "cmd": "show interface terse | match \"up    up\" | no-more",
-        "output": "gr-0/0/0                up    up",
-        "json": {},
-        "exception": "no parser registered"
-      },
-      {
-        "cmd": "show interface terse | no-more",
-        "output": "Interface               Admin Link Proto    Local                 Remote",
-        "json": {},
-        "exception": "no parser registered"
-      },
-      {
-        "cmd": "show interfaces descriptions | no-more",
-        "output": "Interface       Admin Link Description",
-        "json": {},
-        "exception": "no parser registered"
-      },
-      {
-        "cmd": "show oam ethernet connectivity-fault-management interfaces extensive | no-more",
-        "output": "Interface name: xe-0/1/0.112 , Interface status: Inactive, Link status: Down",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show vrrp summary | no-more",
-        "output": "warning: vrrp subsystem not running - not needed by configuration.",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show bfd session | no-more",
-        "output": "Detect   Transmit",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show rsvp neighbor | no-more",
-        "output": "RSVP neighbor: 5 learned",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show rsvp session | no-more",
-        "output": "Ingress RSVP: 2 sessions",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show route table inet.0 | no-more",
-        "output": "inet.0: 110 destinations, 111 routes (110 active, 0 holddown, 0 hidden)",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show route table inet.3 | no-more",
-        "output": "inet.3: 43 destinations, 59 routes (9 active, 0 holddown, 43 hidden)",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show route table mpls.0 | no-more",
-        "output": "mpls.0: 122 destinations, 122 routes (122 active, 0 holddown, 0 hidden)",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show mpls interface | no-more",
-        "output": "Interface        State       Administrative groups (x: extended)",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show mpls lsp | no-more",
-        "output": "Ingress LSP: 4 sessions",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show mpls lsp p2mp | no-more",
-        "output": "Ingress LSP: 7 sessions",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show bgp summary | no-more",
-        "output": "Threading mode: BGP I/O",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show bgp neighbor | no-more",
-        "output": "Peer: 9.9.117.2 AS 117         Local: unspecified AS 8220 ",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show isis adjacency extensive | no-more",
-        "output": "ESLPER01",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show route summary | no-more",
-        "output": "Autonomous system number: 8220",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show rsvp session | match DN | no-more",
-        "output": "",
-        "json": {},
-        "exception": "no parser registered"
-      },
-      {
-        "cmd": "show mpls lsp unidirectional | match Dn | no-more",
-        "output": "109.74.16.10    0.0.0.0         Dn     0       -                EFF01-BME01",
-        "json": {},
-        "exception": "no parser registered"
-      },
-      {
-        "cmd": "show ldp neighbor | no-more",
-        "output": "Address                             Interface       Label space ID     Hold time",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show connections | no-more",
-        "output": "No matching connections found.",
-        "json": {},
-        "exception": ""
-      },
-      {
-        "cmd": "show log messages | last 200 | no-more",
-        "output": "Feb 28 07:27:57.747  EFFPER01 rpd[15914]: bgp_pp_recv:5726: NOTIFICATION sent to 172.16.172.2+50150 (proto): code 6 (Cease) subcode 5 (Connection Rejected), Reason: no group for 172.16.172.2+50150 (proto) from AS 8220 found (Unconfigured Peer) in master(ae0.172), dropping him",
-        "json": {},
-        "exception": "no parser registered"
-      },
-      {
-        "cmd": "show configuration | no-more",
-        "output": "## Last commit: 2026-02-27 10:17:10 UTC by lab",
-        "json": {},
-        "exception": "no parser registered"
-      },
-      {
-        "cmd": "show configuration | no-more | display set",
-        "output": "set version 23.4R2-S6.9",
-        "json": {},
-        "exception": "no parser registered"
-      },
-      {
-        "cmd": "show configuration | display set | count",
-        "output": "Count: 5960 lines",
-        "json": {},
-        "exception": "no parser registered"
-      }
-    ]
-  }
-}
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
