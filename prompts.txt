@@ -606,3 +606,53 @@ json that is being printed -
         },
         "exception": ""
       },
+
+
+
+
+
+  "juniper_mx204": {
+    "device_details": {
+      "device_key": "juniper_mx204",
+      "vendor": "juniper",
+      "model": "mx204",
+      "pre_check_timestamp": "2026-02-28_13-38-52"
+    },
+    "pre_checks": [
+      {
+        "cmd": "show lldp neighbors | no-more",
+        "output": "Local Interface    Parent Interface    Chassis Id                               Port info          System Name",
+        "json": {
+          "entries": []
+        },
+        "exception": ""
+      },
+      {
+        "cmd": "show chassis routing-engine | no-more",
+        "output": "Routing Engine status:",
+        "json": {
+          "routing_engines": [
+            {
+              "temperature": "46 degrees C / 114 degrees F",
+              "cpu_temperature": "46 degrees C / 114 degrees F",
+              "dram": "16328 MB (16384 MB installed)",
+              "memory_utilization": 11,
+              "cpu_util_5_sec": {
+                "user": 1,
+                "background": 0,
+                "kernel": 0,
+                "interrupt": 0,
+                "idle": 99
+              },
+              "cpu_util_1_min": {
+                "user": 0,
+                "background": 0,
+                "kernel": 0,
+                "interrupt": 0,
+                "idle": 99
+              },
+              "cpu_util_5_min": {
+                "user": 1,
+                "background": 0,
+                "kernel": 0,
+                "interrupt": 0,
