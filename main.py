@@ -1,4 +1,3 @@
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ cat main.py
 import logging
 import sys
 import json
@@ -190,4 +189,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ cat
