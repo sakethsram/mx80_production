@@ -1,52 +1,17 @@
-colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation/lib$ p main
-python: can't open file '/home/colt/Documents/MS1Automation/lib/main': [Errno 2] No such file or directory
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation/lib$ ll
-total 60
-drwxrwxr-x  3 colt colt  4096 Feb 26 18:50 ./
-drwxrwxr-x 15 colt colt  4096 Feb 26 18:49 ../
--rw-rw-r--  1 colt colt 13986 Feb 23 23:42 mock_outputs.py
-drwxrwxr-x  2 colt colt  4096 Feb 26 18:44 __pycache__/
--rw-rw-r--  1 colt colt 30006 Feb 26 18:50 utilities.py
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation/lib$ cd ..
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ ll
-total 180
-drwxrwxr-x 15 colt colt  4096 Feb 26 18:49 ./
-drwxr-xr-x  4 colt colt  4096 Feb 26 13:35 ../
--rw-rw-r--  1 colt colt    18 Feb 23 23:42 .gitignore
-drwxrwxr-x  2 colt colt  4096 Feb 26 15:57 inputs/
-drwxrwxr-x  3 colt colt  4096 Feb 26 18:50 lib/
-drwxrwxr-x  2 colt colt  4096 Feb 26 18:46 logging/
--rw-rw-r--  1 colt colt 10845 Feb 26 18:49 main.py
-drwxrwxr-x  4 colt colt  4096 Feb 26 14:42 models/
-drwxrwxr-x  2 colt colt  4096 Feb 26 18:46 outputs/
-drwxrwxr-x  5 colt colt  4096 Feb 26 14:40 parsers/
--rw-rw-r--  1 colt colt  8014 Feb 23 23:42 postchecks.py
-drwxrwxr-x  2 colt colt  4096 Feb 26 18:44 precheck_jsons/
--rw-rw-r--  1 colt colt 23129 Feb 26 14:57 prechecks.py
-drwxrwxr-x  2 colt colt  4096 Feb 26 14:58 __pycache__/
--rw-rw-r--  1 colt colt     9 Feb 23 23:42 README.md
-drwxrwxr-x  2 colt colt  4096 Feb 26 18:46 reports/
-drwxrwxr-x  2 colt colt  4096 Feb 24 21:04 testing/
--rw-rw-r--  1 colt colt  8193 Feb 23 23:42 upgrade.py
-drwxrwxr-x  5 colt colt  4096 Feb 24 20:59 .venv/
-drwxrwxr-x  5 colt colt  4096 Feb 24 21:02 venv/
-drwxrwxr-x  2 colt colt  4096 Feb 24 21:04 .vscode/
--rw-rw-r--  1 colt colt 32004 Feb 26 11:21 workflow_report_generator.py
--rw-rw-r--  1 colt colt 21144 Feb 25 08:05 workflow_report.html
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ p main.py
 devicekey.... juniper_mx204
-2026-02-26 18:50:58,554 - INFO - [tracker] Initialised slot for device_key='juniper_mx204'
-workflow... {'juniper_mx204': {'device_info': {'host': '10.80.71.55', 'vendor': 'juniper', 'model': 'mx204', 'timestamp': '2026-02-26_18-50-58'}, 'pre-checks': {'tasks': {'read Yaml': {'status': '', 'error': '', 'title': 'Load device config from YAML', 'logs': ''}, 'start logger': {'status': '', 'error': '', 'title': 'Initialise log file for session', 'logs': ''}, 'connection using credentials': {'status': '', 'error': '', 'title': 'Establish SSH session to device', 'logs': ''}, 'show version': {'status': '', 'error': '', 'title': 'Run show version', 'logs': ''}, 'executing show commands': {'status': '', 'error': '', 'title': 'Collect pre-check show command output', 'logs': ''}, 'Parsing the data': {'status': '', 'error': '', 'title': 'Parse and validate pre-check output', 'logs': ''}, 'Backup Config': {'status': '', 'error': '', 'title': 'Save running config and device logs', 'logs': ''}, 'Validate MD5 checksum': {'status': '', 'error': '', 'title': 'Verify image integrity via MD5', 'logs': ''}, 'Storage Check (5GB threshold)': {'status': '', 'error': '', 'title': 'Confirm sufficient disk space', 'logs': ''}, 'Disable Filter': {'status': '', 'error': '', 'title': 'Remove RE protection firewall filter', 'logs': ''}}, 'commands': []}, 'upgrade': {'tasks': {'image installation': {'status': '', 'error': '', 'title': 'Install target OS image on device', 'logs': ''}, 'reboot the device': {'status': '', 'error': '', 'title': 'Reboot and confirm device comes up', 'logs': ''}, 'ping the device': {'status': '', 'error': '', 'title': 'Verify device reachability after upgrade', 'logs': ''}}}, 'post-checks': {'tasks': {'Take snapshot': {'status': '', 'error': '', 'title': 'Snapshot primary disk to backup disk', 'logs': ''}, 'Execute show commands': {'status': '', 'error': '', 'title': 'Collect post-upgrade show command output', 'logs': ''}, 'parsing the commands': {'status': '', 'error': '', 'title': 'Parse and validate post-upgrade output', 'logs': ''}, 'Enable RE-PROTECT filter': {'status': '', 'error': '', 'title': 'Re-apply RE protection firewall filter', 'logs': ''}}, 'commands': []}}}
+2026-02-28 10:31:53,372 - INFO - [tracker] Initialised slot for device_key='juniper_mx204'
+workflow... {'juniper_mx204': {'device_info': {'host': '10.80.71.55', 'vendor': 'juniper', 'model': 'mx204', 'timestamp': '2026-02-28_10-31-53'}, 'pre-checks': {'tasks': {'read Yaml': {'status': '', 'error': '', 'title': 'Load device config from YAML', 'logs': ''}, 'start logger': {'status': '', 'error': '', 'title': 'Initialise log file for session', 'logs': ''}, 'connection using credentials': {'status': '', 'error': '', 'title': 'Establish SSH session to device', 'logs': ''}, 'show version': {'status': '', 'error': '', 'title': 'Run show version', 'logs': ''}, 'executing show commands': {'status': '', 'error': '', 'title': 'Collect pre-check show command output', 'logs': ''}, 'Parsing the data': {'status': '', 'error': '', 'title': 'Parse and validate pre-check output', 'logs': ''}, 'Backup Config': {'status': '', 'error': '', 'title': 'Save running config and device logs', 'logs': ''}, 'Validate MD5 checksum': {'status': '', 'error': '', 'title': 'Verify image integrity via MD5', 'logs': ''}, 'Storage Check (5GB threshold)': {'status': '', 'error': '', 'title': 'Confirm sufficient disk space', 'logs': ''}, 'Disable Filter': {'status': '', 'error': '', 'title': 'Remove RE protection firewall filter', 'logs': ''}}, 'commands': []}, 'upgrade': {'tasks': {'image installation': {'status': '', 'error': '', 'title': 'Install target OS image on device', 'logs': ''}, 'reboot the device': {'status': '', 'error': '', 'title': 'Reboot and confirm device comes up', 'logs': ''}, 'ping the device': {'status': '', 'error': '', 'title': 'Verify device reachability after upgrade', 'logs': ''}}}, 'post-checks': {'tasks': {'Take snapshot': {'status': '', 'error': '', 'title': 'Snapshot primary disk to backup disk', 'logs': ''}, 'Execute show commands': {'status': '', 'error': '', 'title': 'Collect post-upgrade show command output', 'logs': ''}, 'parsing the commands': {'status': '', 'error': '', 'title': 'Parse and validate post-upgrade output', 'logs': ''}, 'Enable RE-PROTECT filter': {'status': '', 'error': '', 'title': 'Re-apply RE protection firewall filter', 'logs': ''}}, 'commands': []}}}
 main devices... {'devices': [{'host': '10.80.71.55', 'vendor': 'juniper', 'model': 'mx204', 'device_type': 'juniper', 'current_image': 'junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz', 'expected_os': '23.4R2-S5.6', 'intermediate_os': False, 'min_disk_gb': 5, 'username': 'lab', 'password': 'lab123', 'target_image': 'junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz', 'remote_backup_server': 'sftp://backup@10.10.20.20/backups/', 'cleanup_files': ['list of files'], 'intermediate_image': 'junos-os-21.2R2-S5.bin', 'rollback': False, 'md5checksum_file': 'dec5349a0d238dad686dc01f468a0bbe'}]}
 10.80.71.55
-2026-02-26 18:50:58,554 - INFO - [tracker] juniper_mx204 | pre-checks | read Yaml -> Success
-2026-02-26 18:50:58,554 - INFO - [tracker] juniper_mx204 | pre-checks | start logger -> Success
-2026-02-26 18:50:58,599 - INFO - Connected (version 2.0, client OpenSSH_9.7)
-2026-02-26 18:50:58,843 - INFO - Authentication (password) successful!
-connection.. <netmiko.juniper.juniper.JuniperSSH object at 0x7e61ad221940>
-2026-02-26 18:50:59,103 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
-CONNECTION... <netmiko.juniper.juniper.JuniperSSH object at 0x7e61ad221940>
-2026-02-26 18:50:59,103 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
+2026-02-28 10:31:53,372 - INFO - [tracker] juniper_mx204 | pre-checks | read Yaml -> Success
+2026-02-28 10:31:53,372 - INFO - [tracker] juniper_mx204 | pre-checks | start logger -> Success
+2026-02-28 10:31:53,418 - INFO - Connected (version 2.0, client OpenSSH_9.7)
+2026-02-28 10:31:53,654 - INFO - Authentication (password) successful!
+connection.. <netmiko.juniper.juniper.JuniperSSH object at 0x79b3d3d77f20>
+2026-02-28 10:31:53,913 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
+CONNECTION... <netmiko.juniper.juniper.JuniperSSH object at 0x79b3d3d77f20>
+2026-02-28 10:31:53,913 - INFO - [tracker] juniper_mx204 | pre-checks | connection using credentials -> Success
 Running show version
  Device type: juniper
 show version
@@ -155,7 +120,7 @@ OP END
 vendor.. juniper
 10.80.71.55: Executing 'show version' for vendor: juniper
 23.4R2-S6.9
-2026-02-26 18:50:59,517 - INFO - [tracker] juniper_mx204 | pre-checks | show version -> Success
+2026-02-28 10:31:54,327 - INFO - [tracker] juniper_mx204 | pre-checks | show version -> Success
 version... Hostname: EFFPER01
 Model: mx204
 Junos: 23.4R2-S6.9
@@ -253,88 +218,88 @@ JUNOS Online Documentation [20251112.130809_builder_junos_234_r2_s6]
 JUNOS jail runtime [20250524.8b60e66_builder_stable_12_234]
 JUNOS dsa [20251112.130809_builder_junos_234_r2_s6]
 
-2026-02-26 18:50:59,517 - INFO - [tracker] juniper_mx204 | pre-checks | show version -> Success
-2026-02-26 18:50:59,628 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:50:59,711 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:50:59,795 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:50:59,903 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:50:59,986 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:02,388 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:04,009 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:04,092 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:04,175 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:04,258 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:04,341 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:04,424 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:04,507 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:04,590 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:04,929 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:05,242 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:05,529 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:05,766 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:05,849 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:05,932 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:06,015 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:06,098 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:06,289 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:06,454 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:06,645 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:06,728 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:06,811 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:06,894 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:06,978 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:07,193 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:07,276 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:07,385 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:07,469 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Failed
-2026-02-26 18:51:07,552 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:07,635 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:07,718 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:07,803 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:08,289 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:08,532 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:08,752 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
-2026-02-26 18:51:08,753 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,754 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,757 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,757 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,757 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,758 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,758 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,758 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,759 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,760 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,760 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,760 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,760 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,762 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,763 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,764 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,765 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,765 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,766 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,766 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,766 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,767 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,767 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Failed
-2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,769 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,770 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,770 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
-2026-02-26 18:51:08,770 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Failed
+2026-02-28 10:31:54,327 - INFO - [tracker] juniper_mx204 | pre-checks | show version -> Success
+2026-02-28 10:31:54,438 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:31:54,521 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:31:54,604 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:31:54,712 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:31:54,795 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:31:57,247 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:31:59,246 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:31:59,329 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:31:59,412 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:31:59,495 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:31:59,578 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:31:59,661 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:31:59,744 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:31:59,828 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:00,166 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:00,504 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:00,791 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:01,027 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:01,111 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:01,194 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:01,277 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:01,360 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:01,550 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:01,715 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:01,906 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:01,989 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:02,072 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:02,155 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:02,239 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:02,454 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:02,537 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:02,647 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:02,730 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Failed
+2026-02-28 10:32:02,813 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:02,896 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:02,979 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:03,215 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:03,702 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:03,944 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:04,163 - INFO - [tracker] juniper_mx204 | pre-checks | executing show commands -> Success
+2026-02-28 10:32:04,166 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,166 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,167 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,168 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,168 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,168 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,168 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,169 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,169 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,169 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,169 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,169 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,169 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,170 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,170 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,170 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,170 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,170 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,170 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,171 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,171 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,171 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,172 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,173 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,174 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,175 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,175 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,176 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,176 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,176 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,177 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,178 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,178 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Failed
+2026-02-28 10:32:04,178 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,178 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,178 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,178 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,179 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,179 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,179 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Success
+2026-02-28 10:32:04,179 - INFO - [tracker] juniper_mx204 | pre-checks | Parsing the data -> Failed
 
 ============================================================
 WORKFLOW ABORTED for juniper_mx204 — partial results (JSON):
@@ -345,7 +310,7 @@ WORKFLOW ABORTED for juniper_mx204 — partial results (JSON):
       "host": "10.80.71.55",
       "vendor": "juniper",
       "model": "mx204",
-      "timestamp": "2026-02-26_18-50-58"
+      "timestamp": "2026-02-28_10-31-53"
     },
     "pre-checks": {
       "tasks": {
@@ -467,6 +432,7 @@ WORKFLOW ABORTED for juniper_mx204 — partial results (JSON):
 }
 ============================================================
 
-Report saved -> reports/workflow_report_26_02_26_18_51_08.html
-2026-02-26 18:51:08,770 - INFO - Logging out from device
+Report saved -> reports/workflow_report_28_02_26_10_32_04.html
+2026-02-28 10:32:04,179 - INFO - Logging out from device
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
+
