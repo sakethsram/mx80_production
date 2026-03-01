@@ -217,7 +217,7 @@ def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> st
   <div class="stats">
       <div class="sc tot"><span class="n">{total}</span><span class="l">Total Tasks</span>
         <div class="prog"><div class="progbar" style="width:{pct}%"></div></div></div>
-      <div class="sc ok"><span class="n">{success}/{total}</span><span class="l">Passed</span></div>
+      <div class="sc ok"><span class="n`">{success}/{total}</span><span class="l">Passed</span></div>
       <div class="sc err"><span class="n">{failed}</span><span class="l">Failed</span></div>
     </div>
 
@@ -270,10 +270,11 @@ def generate_html_report(workflow_data: dict, output_dir: str = '.') -> str:
     pill_txt = (f'ALL {total_all} TASKS PASSED' if failed_all == 0 else f'{failed_all} TASK(S) FAILED')
 
     dropdown_options = '\n'.join(
-        f'<option value="{_esc(dk)}"{" selected" if i == 0 else ""}>{_esc(dk)}</option>'
-        for i, dk in enumerate(device_keys)
-    )
-
+      f'<option value="{_esc(dk)}"{" selected" if i == 0 else ""}>'
+      f'{_esc(dk)} — {_esc(workflow_data[dk].get("device_info", {}).get("host", "—"))}'
+      f'</option>'
+      for i, dk in enumerate(device_keys)
+  )
     device_panels = '\n'.join(
         build_device_panel(dk, workflow_data[dk], i == 0)
         for i, dk in enumerate(device_keys)
