@@ -14,6 +14,8 @@ import os
 MAX_THREADS = 5
 PRECHECKS_ONLY = True   # <--- Run prechecks only; skip upgrade in main()
 
+class DeviceAbortError(Exception):
+    pass
 
 # ----------------------------------------------------
 # Abort helper — call when any step fails
@@ -25,110 +27,77 @@ def abort(device_key, phase, subtask, error, logger, exc: Exception = None):
         log_line = traceback.format_exc()
 
     log_task(device_key, phase, subtask, 'Failed', error, log_line)
-
     logger.error(f"[{device_key}] FATAL [{phase}] '{subtask}': {error}")
     if log_line:
         logger.error(f"[{device_key}] Traceback:\n{log_line}")
-    logger.error(f"[{device_key}] Aborting workflow — generating report")
-
-    j = json.dumps(workflow_tracker, indent=2)
-    logger.info(f"\n{j}")
-    print("\n" + "=" * 60)
-    print(f"WORKFLOW ABORTED for {device_key} — partial results (JSON):")
-    print("=" * 60)
-    print(j)
-    print("=" * 60 + "\n")
+    logger.error(f"[{device_key}] Aborting device — generating partial report")
 
     try:
         path = generate_html_report(workflow_tracker, output_dir='reports')
-        logger.info(f"[{device_key}] Report saved -> {path}")
-        print(f"Report saved -> {path}")
+        logger.info(f"[{device_key}] Partial report saved -> {path}")
     except Exception as e:
-        logger.error(f"[{device_key}] Could not write HTML report:-{e}")
+        logger.error(f"[{device_key}] Could not write HTML report: {e}")
 
-    sys.exit(1)
-
-
-def run_prechecks(device, logger):
-    dev        = device["devices"][0]
-    host       = dev["host"]
-    vendor_lc  = dev["vendor"].lower()
-    model_lc   = str(dev["model"]).lower().replace("-", "")
-    device_key = f"{vendor_lc}_{model_lc}"
+    raise DeviceAbortError(device_key)
+def run_prechecks(dev, device_key, logger):
+    host        = dev["host"]
+    vendor_lc   = dev["vendor"].lower()
+    model_lc    = str(dev["model"]).lower().replace("-", "")
     device_type = dev.get("device_type")
-    model       = dev.get("model")
-    print(host)
-    start_time = datetime.now()
-    logger.info(f"[{device_key}] Prechecks started at {start_time}")
 
-    pre_check_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    global_config.pre_check_timestamp = pre_check_timestamp
+    logger.info(f"[{device_key}] Prechecks started at {datetime.now()}")
+    global_config.pre_check_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
     log_task(device_key, 'pre-checks', 'read Yaml',    'Success', 'deviceDetails.yaml loaded successfully')
     log_task(device_key, 'pre-checks', 'start logger', 'Success', 'Logger initialised')
 
-    precheck = PreCheck(device)
+    precheck = PreCheck({"devices": [dev]})
 
     try:
-        # 1) Connect
         try:
             conn = precheck.connect(logger)
         except Exception as e:
             abort(device_key, 'pre-checks', 'connection using credentials',
                   f'{host}: connect() raised exception — {e}', logger, exc=e)
 
-        print("CONNECTION...", conn)
         if not conn:
             abort(device_key, 'pre-checks', 'connection using credentials',
                   f'{host}: connect() returned None', logger)
+
         log_task(device_key, 'pre-checks', 'connection using credentials', 'Success',
                  f'{host}: Connected successfully', '')
 
-        # 3) Execute Commands — 3-step pipeline
         try:
             global_config.vendor     = vendor_lc
             global_config.device_key = device_key
             all_cmds                 = load_yaml("show_cmd_list.yaml")
             global_config.commands   = all_cmds[device_key]
 
-            logger.info(f"[{device_key}] Starting command pipeline — "
-                        f"{len(global_config.commands)} command(s)")
+            logger.info(f"[{device_key}] Starting command pipeline — {len(global_config.commands)} command(s)")
 
-            # ── STEP 1: collect raw output from device ────────────────
             entries = collect_outputs(
-                device_key = device_key,
-                vendor     = vendor_lc,
-                commands   = global_config.commands,
-                check_type = "pre",
-                conn       = conn,
-                log        = logger,
+                device_key=device_key, vendor=vendor_lc,
+                commands=global_config.commands, check_type="pre",
+                conn=conn, log=logger,
             )
             if not entries:
                 logger.warning(f"[{device_key}] collect_outputs() returned no entries")
 
-            # ── STEP 2: parse collected output ────────────────────────
             parse_ok = parse_outputs(
-                device_key = device_key,
-                vendor     = vendor_lc,
-                check_type = "pre",
-                log        = logger,
+                device_key=device_key, vendor=vendor_lc,
+                check_type="pre", log=logger,
             )
             if not parse_ok:
-                logger.warning(f"[{device_key}] one or more parsers failed — check JSON for details")
+                logger.warning(f"[{device_key}] one or more parsers failed — continuing")
 
-            # ── STEP 3: push results into workflow_tracker ────────────
             push_to_tracker(
-                device_key = device_key,
-                check_type = "pre",
-                entries    = entries,
-                parse_ok   = parse_ok,
-                log        = logger,
+                device_key=device_key, check_type="pre",
+                entries=entries, parse_ok=parse_ok, log=logger,
             )
 
         except KeyError as e:
             abort(device_key, 'pre-checks', 'executing show commands',
-                  f"{host}: Missing command list for device_key='{device_key}' — {e}",
-                  logger, exc=e)
+                  f"{host}: Missing command list for device_key='{device_key}' — {e}", logger, exc=e)
         except Exception as e:
             abort(device_key, 'pre-checks', 'executing show commands',
                   f"{host}: command pipeline exception — {e}", logger, exc=e)
@@ -136,55 +105,51 @@ def run_prechecks(device, logger):
         logger.info(f"[{device_key}] All pre-checks passed")
         return True
 
-    except SystemExit:
-        raise
+    except DeviceAbortError:
+        return False
     except Exception as e:
-        logger.error(f"[{device_key}] Precheck failed with unhandled exception: {e}")
+        logger.error(f"[{device_key}] Unhandled exception: {e}")
         abort(device_key, 'pre-checks', 'unexpected error',
               f'{host}: Unhandled exception — {e}', logger, exc=e)
         return False
     finally:
         precheck.disconnect(logger)
-        end_time = datetime.now()
-        logger.info(f"[{device_key}] Prechecks completed at {end_time}")
-
-
+        logger.info(f"[{device_key}] Prechecks completed at {datetime.now()}")
 # ----------------------------------------------------
 # Main Function
 # ----------------------------------------------------
-
 def main():
     devices    = load_yaml("deviceDetails.yaml")
-    dev        = devices["devices"][0]
-    host       = dev["host"]
-    vendor_lc  = dev["vendor"].lower()
-    model_lc   = str(dev["model"]).lower().replace("-", "")
-    device_key = f"{vendor_lc}_{model_lc}"
+    all_devs   = devices["devices"]
 
-    global_config.vendor = vendor_lc
-    global_config.model  = dev["model"]
+    global_config.vendor = all_devs[0]["vendor"].lower()
+    global_config.model  = all_devs[0]["model"]
     logger = setup_logger("main")
-    print("devicekey....", device_key)
 
-    if device_key not in workflow_tracker:
-        init_device_tracker(device_key, host, vendor_lc, model_lc)
-    print("workflow...", workflow_tracker)
+    for dev in all_devs:
+        vendor_lc  = dev["vendor"].lower()
+        model_lc   = str(dev["model"]).lower().replace("-", "")
+        device_key = f"{vendor_lc}_{model_lc}"
 
-    logger.info(f"[{device_key}] Running pre-checks …")
-    print("main devices...", devices)
+        global_config.vendor = vendor_lc
+        global_config.model  = dev["model"]
 
-    ok = run_prechecks(devices, logger)
+        logger.info(f"[{device_key}] Starting workflow")
 
-    export_device_summary()
+        if device_key not in workflow_tracker:
+            init_device_tracker(device_key, dev["host"], vendor_lc, model_lc)
 
+        run_prechecks(dev, device_key, logger)
+
+    # All devices done — generate final report
     try:
         path = generate_html_report(workflow_tracker, output_dir='reports')
-        logger.info(f"[{device_key}] HTML report saved -> {path}")
+        logger.info(f"All devices done. Report saved -> {path}")
         print(f"Report saved -> {path}")
     except Exception as e:
-        logger.error(f"[{device_key}] Could not write HTML report: {e}")
+        logger.error(f"Could not write final HTML report: {e}")
 
-    sys.exit(0 if ok else 1)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
