@@ -70,7 +70,7 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
             total += 1
             if is_ok:
                 success += 1
-            elif not is_blank:
+            else:
                 failed += 1
 
             display_name = td.get('title', task_name)
@@ -215,11 +215,11 @@ def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> st
   </div>
 
   <div class="stats">
-    <div class="sc tot"><span class="n">{total}</span><span class="l">Total Tasks</span>
-      <div class="prog"><div class="progbar" style="width:{pct}%"></div></div></div>
-    <div class="sc ok"><span class="n">{success}</span><span class="l">Successful</span></div>
-    <div class="sc err"><span class="n">{failed}</span><span class="l">Failed</span></div>
-  </div>
+      <div class="sc tot"><span class="n">{total}</span><span class="l">Total Tasks</span>
+        <div class="prog"><div class="progbar" style="width:{pct}%"></div></div></div>
+      <div class="sc ok"><span class="n">{success}/{total}</span><span class="l">Passed</span></div>
+      <div class="sc err"><span class="n">{failed}</span><span class="l">Failed</span></div>
+    </div>
 
   <div class="tw">
     <table>
