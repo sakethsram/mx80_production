@@ -1,77 +1,76 @@
+import re
 import json
+from dataclasses import dataclass, asdict
+from typing import List, Dict, Any
 
-CMD_MIN_LEN = 10
+# ─────────────────────────────────────────────────────────────
+# 1. Parser: show system processes extensive | match rpd | no-more
+# ─────────────────────────────────────────────────────────────
 
-def audit_pre_checks(file_path: str) -> list:
-    try:
-        with open(file_path, "r") as f:
-            data = json.load(f)
-    except FileNotFoundError:
-        print(f"[audit] ERROR — file not found: {file_path}")
-        return []
-    except json.JSONDecodeError as e:
-        print(f"[audit] ERROR — could not parse JSON: {e}")
-        return []
-    except Exception as e:
-        print(f"[audit] ERROR — unexpected error loading file: {e}")
-        return []
+# Mock input data (exactly as you provided)
+# ─────────────────────────────────────────────────────────────
+MOCK_RPD = """18648 root 20 0 1176M 272M kqread 3 0:10 0.00% rpd{rpd}
+18701 root 20 0 958M 153M kqread 3 0:05 0.00% rpd{TraceThread}
+18700 root 20 0 954M 152M kqread 0 0:05 0.00% rpd{TraceThread}
+18702 root 20 0 946M 149M kqread 0 0:05 0.00% rpd{TraceThread}
+18648 root 20 0 1176M 272M kqread 4 0:04 0.00% rpd{TraceThread}
+18700 root 20 0 954M 152M kqread 3 0:03 0.00% rpd{rpd}
+18701 root 20 0 958M 153M kqread 3 0:03 0.00% rpd{rpd}
+18702 root 20 0 946M 149M kqread 4 0:03 0.00% rpd{rpd}
+18648 root 20 0 1176M 272M kqread 3 0:01 0.00% rpd{rsvp-io}
+18648 root 20 0 1176M 272M kqread 1 0:00 0.00% rpd{bgpio-0-th}
+18697 root 20 0 799M 14M kqread 3 0:00 0.00% rpdtmd
+18648 root 20 0 1176M 272M kqread 2 0:00 0.00% rpd{krtio-th}"""
 
-    results = []
+MOCK_DOWN_RSVP = """109.74.16.10 0.0.0.0 Dn 0 - EFF01-BME01
+109.74.16.2 0.0.0.0 Dn 0 - EFF01-IXL01"""
 
-    for device_key, device_data in data.items():
-        pre_checks = device_data.get("pre_checks", [])
+MOCK_LOG_MESSAGES = """Mar 2 13:41:22.927 EFFPER01 rpd[18648]: JTASK_IO_CONNECT_FAILED: BGP_8220.10.10.101.2: Connecting to 10.10.101.2+179 failed: Can't assign requested address
+Mar 2 13:41:22.928 EFFPER01 rpd[18648]: BGP_CONNECT_FAILED: bgp_connect_start: connect 10.10.101.2 (Internal AS 8220) (instance CUST-C10A1-UCAST-inside-EFF01): Can't assign requested address
+Mar 2 13:41:29.781 EFFPER01 rpd[18648]: bgp_pp_recv:5726: NOTIFICATION sent to 10.10.104.2+60671 (proto): code 6 (Cease) subcode 5 (Connection Rejected), Reason: no group for 10.10.104.2+60671 (proto) from AS 8220 found (Unconfigured Peer) in master(ae0.104), dropping him
+Mar 2 13:41:30.923 EFFPER01 rpd[18648]: JTASK_IO_CONNECT_FAILED: BGP_8220.172.16.172.2: Connecting to 172.16.172.2+179 failed: Can't assign requested address
+Mar 2 13:41:30.923 EFFPER01 rpd[18648]: BGP_CONNECT_FAILED: bgp_connect_start: connect 172.16.172.2 (Internal AS 8220) (instance PROV-P3A1-UCAST-inside-EFF01): Can't assign requested address
+Mar 2 13:41:34.929 EFFPER01 rpd[18648]: JTASK_IO_CONNECT_FAILED: BGP_8220.10.10.11.2: Connecting to 10.10.11.2+179 failed: Can't assign requested address"""
 
-        for entry in pre_checks:
-            cmd        = entry.get("cmd", "")
-            json_data  = entry.get("json", {})
-            cmd_number = entry.get("cmd_number", "?")
-
-            has_cmd  = len(cmd) >= CMD_MIN_LEN
-            has_json = bool(json_data)
-
-            if not has_cmd and not has_json:
-                status = "no_command_no_output"
-                detail = "Command is empty/short and no JSON — skipped, expected."
-            elif has_cmd and not has_json:
-                status = "parse_failed"
-                detail = "Command ran but JSON is empty — parser likely failed."
-            else:
-                status = "ok"
-                detail = "Command ran and JSON was produced successfully."
-
-            result = {
-                "device_key": device_key,
-                "cmd_number": cmd_number,
-                "cmd":        cmd,
-                "status":     status,
-                "detail":     detail,
-            }
-
-            line = (
-                f"[audit] {device_key} | "
-                f"cmd #{cmd_number:>3} | "
-                f"cmd: '{cmd}' | "
-                f"{status:<22} | "
-                f"{detail}"
-            )
-
-            print(line)
-            results.append({**result, "_line": line})
-
-    # --- write to text file ---
-    output_txt = file_path.replace(".json", "_audit.txt")
-    try:
-        with open(output_txt, "w") as f:
-            for r in results:
-                f.write(r["_line"] + "\n")
-            # clean up the temp _line key
-        results = [{k: v for k, v in r.items() if k != "_line"} for r in results]
-        print(f"[audit] Results written to {output_txt}")
-    except Exception as e:
-        print(f"[audit] ERROR — could not write text file: {e}")
-
-    return results
+MOCK_INTERFACES_TERSE = """Interface       Admin Link Proto    Local                 Remote
+gr-0/0/0        up    up
+ip-0/0/0        up    up
+lc-0/0/0        up    up
+lc-0/0/0.32769  up    up   vpls
+lt-0/0/0        up    up
+lt-0/0/0.11     up    up   inet     10.0.0.176/31
+lt-0/0/0.12     up    up   inet     10.0.0.177/31
+xe-0/0/0:1.2000 up    up   inet     172.17.20.9/30
+et-0/0/2.20     up    up   inet     100.96.112.46/31
+lo0.0           up    up   inet     194.180.107.5         --> 0/0
+ae0.1           up    up   inet     100.70.48.2/30"""
 
 
-file_path = "26_02_26_16_10.json"
-audit_pre_checks(file_path)
+# ─────────────────────────────────────────────────────────────
+# Main function - runs all four parsers on the mock data
+# ─────────────────────────────────────────────────────────────
+def main():
+    results = {}
+
+    # 1. rpd processes
+    results["show system processes extensive | match rpd | no-more"] = \
+        parse_show_system_processes_rpd_match(MOCK_RPD)
+
+    # 2. down rsvp / lsp
+    results["show rsvp session | match DN | no-more"] = \
+        parse_show_down_lsp_or_session(MOCK_DOWN_RSVP)
+
+    # 3. log messages
+    results["show log messages | last 200 | no-more"] = \
+        parse_show_log_messages_last_200(MOCK_LOG_MESSAGES)
+
+    # 4. interfaces terse
+    results["show interfaces terse | no-more"] = \
+        parse_show_interfaces_terse(MOCK_INTERFACES_TERSE)
+
+    # Print all results in JSON
+    print(json.dumps(results, indent=2))
+
+
+if __name__ == "__main__":
+    main()

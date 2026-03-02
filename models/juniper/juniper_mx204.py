@@ -667,7 +667,11 @@ class ShowMplsLspP2MP:
     transit_lsp: P2MPLSPSection = field(default_factory=P2MPLSPSection)
 
 
-#  ── parse_21_show_system_uptime ──────────────────────────────────────────────
+from dataclasses import dataclass, field
+from typing import Optional
+
+
+# ── parse_21_show_system_uptime ──────────────────────────────────────────────
 
 @dataclass
 class ShowSystemUptime:
@@ -1177,72 +1181,80 @@ class ShowConnections:
         }
     
 @dataclass
+class RpdProcessEntry:
+    pid: int
+    user: str
+    pri: int
+    nice: int
+    size: str
+    res: str
+    state: str
+    cpu: int
+    time: str
+    pct: str
+    thread_name: str
+
+# ─────────────────────────────────────────────────────────────
+# 2. Parser: show rsvp session | match DN | no-more   (and similar down LSP commands)
+# ─────────────────────────────────────────────────────────────
+@dataclass
+class LogMessageEntry:
+    timestamp: str
+    hostname: str
+    process: str
+    pid: int
+    message: str
+
+@dataclass
+class RecentLogMessages:
+    recent_lines: List[str] = None
+    error_events: List[LogMessageEntry] = None
+    total_errors_found: int = 0
+
+    def __post_init__(self):
+        if self.recent_lines is None:
+            self.recent_lines = []
+        if self.error_events is None:
+            self.error_events = []
+@dataclass
 class InterfaceEntry:
     interface: str
     admin: str
     link: str
-    proto: str | None = None
-    local: str | None = None
-    remote: str | None = None
-
-
-@dataclass
-class ShowInterfaceTerse:
-    interfaces: List[InterfaceEntry] = field(default_factory=list)
-
-    def to_dict(self):
-        return {"interfaces": [asdict(x) for x in self.interfaces]}
-
-
-# ---------------- LOG MESSAGES ----------------
+    proto: str = ""
+    local: str = ""
+    remote: str = ""
 
 @dataclass
-class LogEntry:
-    timestamp: str
-    hostname: str
-    process: str
-    message: str
+class ShowInterfacesTerse:
+    interfaces: List[InterfaceEntry] = None
+    total_interfaces: int = 0
 
-
+    def __post_init__(self):
+        if self.interfaces is None:
+            self.interfaces = []
 @dataclass
-class ShowLogMessages:
-    logs: List[LogEntry] = field(default_factory=list)
-
-    def to_dict(self):
-        return {"logs": [asdict(x) for x in self.logs]}
-
-
-# ---------------- MPLS LSP ----------------
-
-@dataclass
-class MplsLspEntry:
-    destination: str
-    nexthop: str
+class DownLspEntry:
+    to: str
+    from_: str
     state: str
-    uptime: str
-    metric: str
-    name: str
-
-
-@dataclass
-class ShowMplsLspDown:
-    lsps: List[MplsLspEntry] = field(default_factory=list)
-
-    def to_dict(self):
-        return {"lsps": [asdict(x) for x in self.lsps]}
-
-
-# ---------------- 4th Parser Placeholder ----------------
+    rt: int
+    style: str
+    lsp_name: str
 
 @dataclass
-class PlaceholderEntry:
-    key: str
-    value: str
+class DownLspSummary:
+    down_lsps: List[DownLspEntry] = None
+    total_down: int = 0
 
-
+    def __post_init__(self):
+        if self.down_lsps is None:
+            self.down_lsps = []
 @dataclass
-class PlaceholderCommand:
-    items: List[PlaceholderEntry] = field(default_factory=list)
+class ShowSystemProcessesRpd:
+    entries: List[RpdProcessEntry] = None
+    total_rpd_threads: int = 0
 
-    def to_dict(self):
-        return {"placeholder_output": [asdict(x) for x in self.items]}
+    def __post_init__(self):
+        if self.entries is None:
+            self.entries = []

@@ -2179,3 +2179,135 @@ def parse_36_show_ldp_neighbor(text_content) -> dict[str, any]:
     except Exception as e:
         return {"error": f"Error parsing show ldp neighbor: {str(e)}"}
 
+
+def parse_show_system_processes_rpd_match(text: str) -> Dict[str, Any]:
+    try:
+        result = ShowSystemProcessesRpd()
+        pattern = re.compile(
+            r'^\s*(\d+)\s+(\S+)\s+(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+%)\s+(.+)$',
+            re.MULTILINE
+        )
+        for match in pattern.finditer(text):
+            entry = RpdProcessEntry(
+                pid=int(match.group(1)),
+                user=match.group(2),
+                pri=int(match.group(3)),
+                nice=int(match.group(4)),
+                size=match.group(5),
+                res=match.group(6),
+                state=match.group(7),
+                cpu=int(match.group(8)),
+                time=match.group(9),
+                pct=match.group(10),
+                thread_name=match.group(11).strip()
+            )
+            result.entries.append(entry)
+        result.total_rpd_threads = len(result.entries)
+        return asdict(result)
+    except Exception as e:
+        return {"error": f"Error parsing rpd processes: {str(e)}"}
+
+
+
+def parse_show_down_lsp_or_session(text: str) -> Dict[str, Any]:
+    try:
+        result = DownLspSummary()
+        pattern = re.compile(
+            r'^(\d+\.\d+\.\d+\.\d+)\s+(\S+)\s+(Dn|Down)\s+(\d+)\s+(\S+)\s+(.+)$',
+            re.MULTILINE
+        )
+        for match in pattern.finditer(text):
+            entry = DownLspEntry(
+                to=match.group(1),
+                from_=match.group(2),
+                state=match.group(3),
+                rt=int(match.group(4)),
+                style=match.group(5),
+                lsp_name=match.group(6).strip()
+            )
+            result.down_lsps.append(entry)
+        result.total_down = len(result.down_lsps)
+        return asdict(result)
+    except Exception as e:
+        return {"error": f"Error parsing down LSP/session: {str(e)}"}
+
+
+# ─────────────────────────────────────────────────────────────
+# 3. Parser: show log messages | last 200 | no-more
+# ─────────────────────────────────────────────────────────────
+
+def parse_show_log_messages_last_200(text: str) -> Dict[str, Any]:
+    try:
+        result = RecentLogMessages()
+        lines = [line.strip() for line in text.strip().splitlines() if line.strip()]
+        result.recent_lines = lines[:5]
+
+        error_pattern = re.compile(
+            r'^(\w+\s+\d+\s+\d{2}:\d{2}:\d{2}\.\d{3})\s+(\S+)\s+(\S+)\[(\d+)\]:\s+(.+)$',
+            re.MULTILINE
+        )
+        keywords = [
+            "BGP_CONNECT_FAILED", "JTASK_IO_CONNECT_FAILED",
+            "NOTIFICATION sent", "Connection Rejected", "Unconfigured Peer", "rpd["
+        ]
+
+        for match in error_pattern.finditer(text):
+            msg = match.group(5)
+            if any(kw in msg for kw in keywords):
+                entry = LogMessageEntry(
+                    timestamp=match.group(1),
+                    hostname=match.group(2),
+                    process=match.group(3),
+                    pid=int(match.group(4)),
+                    message=msg.strip()
+                )
+                result.error_events.append(entry)
+
+        result.total_errors_found = len(result.error_events)
+        return asdict(result)
+    except Exception as e:
+        return {"error": f"Error parsing log messages: {str(e)}"}
+
+
+# ─────────────────────────────────────────────────────────────
+# 4. Parser: show interfaces terse | no-more
+# ─────────────────────────────────────────────────────────────
+
+
+def parse_show_interfaces_terse(text: str) -> Dict[str, Any]:
+    try:
+        result = ShowInterfacesTerse()
+        lines = text.strip().splitlines()
+
+        # Skip header
+        for line in lines[1:]:  # skip "Interface Admin Link Proto Local Remote"
+            parts = line.split()
+            if not parts:
+                continue
+
+            entry = InterfaceEntry(
+                interface=parts[0],
+                admin=parts[1],
+                link=parts[2],
+            )
+
+            # Handle lines with protocol info
+            if len(parts) > 3:
+                idx = 3
+                if parts[idx] not in ["up", "down", "testing"]:  # not admin/link
+                    entry.proto = parts[idx]
+                    idx += 1
+                    if idx < len(parts):
+                        entry.local = parts[idx]
+                        idx += 1
+                    if idx < len(parts):
+                        entry.remote = parts[idx]
+
+            result.interfaces.append(entry)
+
+        result.total_interfaces = len(result.interfaces)
+        return asdict(result)
+    except Exception as e:
+        return {"error": f"Error parsing interfaces terse: {str(e)}"}
+
+

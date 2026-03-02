@@ -1179,3 +1179,82 @@ class ShowConnections:
             "has_connections": self.has_connections,
             "connections": [c.to_dict() for c in self.connections],
         }
+    
+@dataclass
+class RpdProcessEntry:
+    pid: int
+    user: str
+    pri: int
+    nice: int
+    size: str
+    res: str
+    state: str
+    cpu: int
+    time: str
+    pct: str
+    thread_name: str
+
+# ─────────────────────────────────────────────────────────────
+# 2. Parser: show rsvp session | match DN | no-more   (and similar down LSP commands)
+# ─────────────────────────────────────────────────────────────
+@dataclass
+class LogMessageEntry:
+    timestamp: str
+    hostname: str
+    process: str
+    pid: int
+    message: str
+
+@dataclass
+class RecentLogMessages:
+    recent_lines: List[str] = None
+    error_events: List[LogMessageEntry] = None
+    total_errors_found: int = 0
+
+    def __post_init__(self):
+        if self.recent_lines is None:
+            self.recent_lines = []
+        if self.error_events is None:
+            self.error_events = []
+@dataclass
+class InterfaceEntry:
+    interface: str
+    admin: str
+    link: str
+    proto: str = ""
+    local: str = ""
+    remote: str = ""
+
+@dataclass
+class ShowInterfacesTerse:
+    interfaces: List[InterfaceEntry] = None
+    total_interfaces: int = 0
+
+    def __post_init__(self):
+        if self.interfaces is None:
+            self.interfaces = []
+@dataclass
+class DownLspEntry:
+    to: str
+    from_: str
+    state: str
+    rt: int
+    style: str
+    lsp_name: str
+
+@dataclass
+class DownLspSummary:
+    down_lsps: List[DownLspEntry] = None
+    total_down: int = 0
+
+    def __post_init__(self):
+        if self.down_lsps is None:
+            self.down_lsps = []
+@dataclass
+class ShowSystemProcessesRpd:
+    entries: List[RpdProcessEntry] = None
+    total_rpd_threads: int = 0
+
+    def __post_init__(self):
+        if self.entries is None:
+            self.entries = []
