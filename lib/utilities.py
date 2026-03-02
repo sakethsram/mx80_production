@@ -230,6 +230,14 @@ def build_registries():
         ("juniper", "show oam ethernet connectivity-fault-management interfaces extensive | no-more"): parse_35_show_oam_cfm_interfaces,
         ("juniper", "show ldp neighbor | no-more"):                                                    parse_36_show_ldp_neighbor,
         ("juniper", "show connections | no-more"):                                                     parse_37_show_connections,
+        ("juniper", "show system processes extensive | match rpd | no-more"):             parse_show_system_processes_rpd_match,
+        
+        ("juniper", "show rsvp session | match dn | no-more"):             parse_show_down_lsp_or_session,
+        
+        ("juniper", "show mpls lsp unidirectional | match dn | no-more"):             parse_show_down_lsp_or_session,
+        
+        ("juniper", "show log messages | last 200 | no-more"):            parse_show_log_messages_last_200,
+                ("juniper", "show interfaces terse | no-more"):             parse_show_interfaces_terse,
     }
     # Normalise every key at build time
     return {
