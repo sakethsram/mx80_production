@@ -107,7 +107,49 @@ def log_task(device_key: str, phase: str, task_name: str, status: str,
         existing = tasks[task_name].get("logs", "") or ""
         tasks[task_name]["logs"] = (existing + "\n" + log_line).lstrip("\n")
     logger.info(f"[tracker] {device_key} | {phase} | {task_name} -> {status}")
+def update_device_info_from_show_version(device_key: str, vendor: str, log) -> None:
+    """
+    Extracts hostname and version from the collected 'show version' output
+    and writes them into workflow_tracker[device_key]['device_info'].
+    """
+    try:
+        entries = global_config.device_results.get(device_key, {}).get("pre", [])
+        version_entry = next(
+            (e for e in entries if "show version" in e.get("cmd", "").lower()),
+            None
+        )
+        if not version_entry:
+            log.warning(f"[{device_key}] update_device_info: no 'show version' entry found")
+            return
 
+        output = version_entry.get("output", "") or ""
+
+        hostname = None
+        version  = None
+
+        if vendor == "juniper":
+            import re
+            # Hostname: "Hostname: <name>"
+            m = re.search(r"^Hostname:\s+(\S+)", output, re.MULTILINE | re.IGNORECASE)
+            if m:
+                hostname = m.group(1)
+            # Version: "Junos: <ver>" or "JUNOS Software Release [<ver>]"
+            m = re.search(r"Junos:\s+(\S+)", output, re.IGNORECASE)
+            if not m:
+                m = re.search(r"JUNOS Software Release \[([^\]]+)\]", output, re.IGNORECASE)
+            if m:
+                version = m.group(1)
+
+        device_info = workflow_tracker.get(device_key, {}).get("device_info", {})
+        if hostname:
+            device_info["hostname"] = hostname
+        if version:
+            device_info["version"] = version
+
+        log.info(f"[{device_key}] device_info updated — hostname={hostname}, version={version}")
+
+    except Exception as e:
+        log.error(f"[{device_key}] update_device_info_from_show_version failed: {e}")
 
 def set_commands(device_key: str, phase: str, entries: list):
     device = workflow_tracker.get(device_key)
@@ -168,7 +210,7 @@ def build_registries():
         ("juniper", "show isis adjacency extensive | no-more"):                                        parse_show_isis_adjacency_extensive,
         ("juniper", "show route summary | no-more"):                                                   parse_show_route_summary,
         ("juniper", "show rsvp session match DN | no-more"):                                           parse_show_rsvp_session_match_DN,
-        ("juniper", "show mpls lsp unidirectional match DN | no-more"):                                parse_show_mpls_lsp_unidirectional_match_DN,
+        #("juniper", "show mpls lsp unidirectional match DN | no-more"):                                parse_show_mpls_lsp_unidirectional_match_DN,
         ("juniper", "show rsvp | no-more"):                                                            parse_show_rsvp,
         ("juniper", "show mpls lsp unidirectional | no-more"):                                         parse_show_mpls_lsp_unidirectional_no_more,
         ("juniper", "show system uptime | no-more"):                                                   parse_21_show_system_uptime,
@@ -238,6 +280,8 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
         try:
             output = conn.send_command(cmd)
             log.debug(f"[{device_key}] '{cmd}' — {len(output)} chars received")
+          #  print(f"\n=== COMMAND: {cmd} ===\n{output}\n=== END OF OUTPUT ===\n")
+
 
         except Exception:
             import traceback as tb
@@ -304,6 +348,7 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
     phase = "pre-checks" if check_type == "pre" else "post-checks"
 
     registry = VENDOR_REGISTRY.get(vendor)
+    print("found the function",registry)
     if registry is None:
         log.error(f"[{device_key}] STEP 2 — No registry for vendor='{vendor}'")
         return False
@@ -564,4 +609,4 @@ def export_device_summary():
     with open(file_path, "w") as f:
         json.dump(output, f, indent=2)
 
-    print(f"[export] Summary written to {file_path}")
+    print(f"[export] Summary written to -> {file_path}")

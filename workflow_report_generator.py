@@ -8,18 +8,20 @@ Tracker structure:
 {
   "juniper_mx204": {
     "device_info": {"host","vendor","model","hostname","version","timestamp"},
-    "pre-checks":  {"tasks": {task_name: {status,error,title,logs}}, "commands": [{cmd,output,json}]},
+    "pre-checks":  {"tasks": {task_name: {status,error,title,logs}}, "commands": [{cmd,output,json,exception}]},
     "upgrade":     {"tasks": {...}},
     "post-checks": {"tasks": {...}, "commands": [...]}
   }
 }
 
-Changes:
-  - logs is now a plain string (not a list)
-  - "View Logs" button shown ONLY on failed tasks
-  - Device details card moves below dropdown, updates dynamically per device selected
-  - generate_html_report() writes a timestamped file per call
-  - generate_artificial_workflow_data() uses string logs
+Changes in this version (as requested):
+  1) Under each device, remove separate Success/Failed/Total cards; keep only "Passed: success/total" (with progress bar).
+  2) Show commands ONLY under Pre-Checks and specifically under a collapsible "Collect Outputs" group.
+  3) For each command:
+     - If exception present → mark red and show "Why?" button that reveals the exception.
+     - If no exception → mark green.
+     - Minimal UI by default; raw/json/exception are only revealed when user clicks the tiny buttons.
+  4) Keep the original data hierarchy; user chooses whether to see commands by expanding the section.
 """
 
 from datetime import datetime
@@ -36,6 +38,7 @@ PHASES = ['pre-checks', 'upgrade', 'post-checks']
 
 
 def _esc(s):
+    """HTML-escape for user-supplied/device data only."""
     return (str(s)
             .replace('&', '&amp;')
             .replace('<', '&lt;')
@@ -70,7 +73,7 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
             total += 1
             if is_ok:
                 success += 1
-            elif not is_blank:
+            else:
                 failed += 1
 
             display_name = td.get('title', task_name)
@@ -98,7 +101,7 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
             # Only show "View Logs" button on FAILED tasks that have a log string
             if not is_ok and not is_blank and logs:
                 log_block = (
-                    f'<button class="log-btn" оnclick="toggleLog(\'{lid}\')" '
+                    f'<button class="log-btn" onclick="toggleLog(\'{lid}\')" '
                     f'aria-expanded="false">View Logs</button>'
                     f'<div id="{lid}" class="log-drawer" hidden>'
                     f'<div class="log-line">{_esc(logs)}</div>'
@@ -130,45 +133,65 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
 
 
 # ─────────────────────────────────────────────────────────────
-# Build command output section for ONE device
+# Build command output section for ONE device (Pre-Checks only)
 # ─────────────────────────────────────────────────────────────
 def build_commands_section(device_data: dict, device_key: str) -> str:
     prefix   = device_key.replace('-', '_')
-    sections = []
 
-    for phase_key in ('pre-checks', 'post-checks'):
-        cmds = device_data.get(phase_key, {}).get('commands', [])
-        if not cmds:
-            continue
+    # Only pre-checks → collect outputs
+    cmds = device_data.get('pre-checks', {}).get('commands', [])
+    if not cmds:
+        return ''
 
-        meta  = PHASE_META[phase_key]
-        items = []
-        for i, entry in enumerate(cmds):
-            cmd_label = _esc(entry.get('cmd', ''))
-            raw_out   = _esc(entry.get('output', '') or '(empty)')
-            json_out  = entry.get('json', {})
-            json_str  = _esc(json.dumps(json_out, indent=2)) if json_out else '(not parsed)'
-            raw_id  = f'raw-{prefix}-{phase_key.replace("-","")}-{i}'
-            json_id = f'jsn-{prefix}-{phase_key.replace("-","")}-{i}'
+    meta = PHASE_META['pre-checks']
 
-            items.append(f"""
-<div class="cmd-block">
-  <div class="cmd-label">{cmd_label}</div>
-  <div class="cmd-toggles">
-    <button class="log-btn" оnclick="toggleLog('{raw_id}')">Raw Output</button>
-    <button class="log-btn" оnclick="toggleLog('{json_id}')">Parsed JSON</button>
+    items = []
+    for i, entry in enumerate(cmds):
+        cmd_label = _esc(entry.get('cmd', ''))
+        raw_out   = _esc(entry.get('output', '') or '(empty)')
+        json_out  = entry.get('json', {})
+        json_str  = _esc(json.dumps(json_out, indent=2)) if json_out else '(not parsed)'
+        exc_str   = _esc(entry.get('exception', '') or '')
+        ok        = (exc_str == '')
+
+        raw_id  = f'raw-{prefix}-pre-{i}'
+        json_id = f'jsn-{prefix}-pre-{i}'
+        exc_id  = f'exc-{prefix}-pre-{i}'
+
+        status_dot_cls = 'dot-ok' if ok else 'dot-fail'
+        row_cls        = 'cmd-mini-row ok' if ok else 'cmd-mini-row fail'
+
+        items.append(f"""
+<div class="{row_cls}">
+  <div class="cm-left">
+    <span class="dot {status_dot_cls}"></span>
+    <code class="cm-cmd">{cmd_label}</code>
   </div>
-  <div id="{raw_id}" class="log-drawer" hidden><div class="log-line">{raw_out}</div></div>
-  <div id="{json_id}" class="log-drawer" hidden><pre class="jb-inline">{json_str}</pre></div>
+  <div class="cm-right">
+    <button class="mini-btn" onclick="toggleLog('{raw_id}')">Raw</button>
+    <button class="mini-btn" onclick="toggleLog('{json_id}')">JSON</button>
+    {'' if ok else f'<button class="mini-btn mini-err" onclick="toggleLog(\'{exc_id}\')">Why?</button>'}
+  </div>
+
+  <div id="{raw_id}" class="log-drawer" hidden>
+    <div class="log-line">{raw_out}</div>
+  </div>
+  <div id="{json_id}" class="log-drawer" hidden>
+    <pre class="jb-inline">{json_str}</pre>
+  </div>
+  {'' if ok else f'<div id="{exc_id}" class="log-drawer" hidden><div class="log-line">{exc_str}</div></div>'}
 </div>""")
 
-        sections.append(f"""
-<div class="cmd-phase-block">
-  <div class="cmd-phase-title" style="color:{meta['color']};">{meta['label']} — Command Outputs</div>
-  {''.join(items)}
-</div>""")
-
-    return '\n'.join(sections) if sections else ''
+    # Entire command group is collapsible so user chooses to see commands or not.
+    return f"""
+<details class="cmd-phase-block">
+  <summary class="cmd-phase-title" style="color:{meta['color']};">
+    {meta['label']} — Collect Outputs ({len(cmds)})
+  </summary>
+  <div class="cmd-mini-list">
+    {''.join(items)}
+  </div>
+</details>"""
 
 
 # ─────────────────────────────────────────────────────────────
@@ -195,6 +218,7 @@ def build_device_info_json(workflow_data: dict) -> str:
 # ─────────────────────────────────────────────────────────────
 def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> str:
     tbody, total, success, failed = build_tbody(device_data, device_key)
+    # Only Pre-Checks — Collect Outputs commands shown
     cmd_section = build_commands_section(device_data, device_key)
 
     pct      = round(success / total * 100) if total else 0
@@ -214,11 +238,13 @@ def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> st
     <div class="meta-ts" id="ts-{_esc(device_key)}"></div>
   </div>
 
+  <!-- Keep only Success/Total -->
   <div class="stats">
-    <div class="sc tot"><span class="n">{total}</span><span class="l">Total Tasks</span>
-      <div class="prog"><div class="progbar" style="width:{pct}%"></div></div></div>
-    <div class="sc ok"><span class="n">{success}</span><span class="l">Successful</span></div>
-    <div class="sc err"><span class="n">{failed}</span><span class="l">Failed</span></div>
+      <div class="sc ok">
+        <span class="n">{success}/{total}</span>
+        <span class="l">Passed</span>
+        <div class="prog"><div class="progbar" style="width:{pct}%"></div></div>
+      </div>
   </div>
 
   <div class="tw">
@@ -270,10 +296,11 @@ def generate_html_report(workflow_data: dict, output_dir: str = '.') -> str:
     pill_txt = (f'ALL {total_all} TASKS PASSED' if failed_all == 0 else f'{failed_all} TASK(S) FAILED')
 
     dropdown_options = '\n'.join(
-        f'<option value="{_esc(dk)}"{" selected" if i == 0 else ""}>{_esc(dk)}</option>'
-        for i, dk in enumerate(device_keys)
+      f'<option value="{_esc(dk)}"{" selected" if i == 0 else ""}>'
+      f'{_esc(dk)} — {_esc(workflow_data[dk].get("device_info", {}).get("host", "—"))}'
+      f'</option>'
+      for i, dk in enumerate(device_keys)
     )
-
     device_panels = '\n'.join(
         build_device_panel(dk, workflow_data[dk], i == 0)
         for i, dk in enumerate(device_keys)
@@ -283,7 +310,7 @@ def generate_html_report(workflow_data: dict, output_dir: str = '.') -> str:
     json_html        = _esc(json.dumps(workflow_data, indent=2))
 
     # first device key for initial JS render
-    first_key = _esc(device_keys[0]) if device_keys else ''
+    first_key = device_keys[0] if device_keys else ''
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -329,10 +356,10 @@ body{{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:
 .dev-header{{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);}}
 .dev-key{{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--text)}}
 .meta-ts{{font-family:var(--mono);font-size:.68rem;color:var(--muted)}}
-.stats{{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}}
+.stats{{display:grid;grid-template-columns:1fr;gap:1rem;margin-bottom:1.5rem}}
 .sc{{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.3rem}}
 .sc .n{{font-size:2.1rem;font-weight:700;line-height:1;letter-spacing:-.02em;font-family:var(--mono)}}
-.sc.tot .n{{color:var(--accent)}} .sc.ok .n{{color:var(--ok)}} .sc.err .n{{color:var(--err)}}
+.sc.ok .n{{color:var(--ok)}}
 .sc .l{{font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}}
 .prog{{margin-top:.5rem;height:3px;background:var(--border);border-radius:99px;overflow:hidden}}
 .progbar{{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ok),#86efac)}}
@@ -357,18 +384,31 @@ thead th{{padding:.75rem 1.25rem;font-size:.65rem;text-transform:uppercase;lette
 .remark-ok{{color:#86efac}} .remark-err{{color:#fca5a5}} .remark-na{{color:var(--border)}}
 .log-btn{{display:inline-block;margin-top:.4rem;margin-right:.3rem;padding:.14rem .5rem;background:rgba(244,63,94,.06);border:1px solid rgba(244,63,94,.22);border-radius:3px;font-family:var(--mono);font-size:.62rem;font-weight:600;color:var(--err);cursor:pointer;user-select:none;transition:background .12s;letter-spacing:.04em;}}
 .log-btn:hover{{background:rgba(244,63,94,.14);border-color:rgba(244,63,94,.4)}}
-.cmd-block .log-btn{{background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.18);color:var(--accent);}}
-.cmd-block .log-btn:hover{{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.38)}}
+
+/* Minimal command list styles */
+.cmd-phase-block{{margin-bottom:2rem}}
+.cmd-phase-title{{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin:.25rem 0 .75rem;font-family:var(--mono);cursor:pointer;user-select:none}}
+.cmd-mini-list{{display:flex;flex-direction:column;gap:.5rem}}
+.cmd-mini-row{{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:.6rem .8rem}}
+.cmd-mini-row.ok{{border-color:rgba(34,197,94,.25)}}
+.cmd-mini-row.fail{{border-color:rgba(244,63,94,.28);background:rgba(244,63,94,.03)}}
+.cm-left{{display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem}}
+.dot{{width:8px;height:8px;border-radius:50%;display:inline-block}}
+.dot-ok{{background:var(--ok)}}
+.dot-fail{{background:var(--err)}}
+.cm-cmd{{font-family:var(--mono);font-size:.78rem;color:#cbd5e1}}
+.cm-right{{display:flex;gap:.4rem;flex-wrap:wrap}}
+.mini-btn{{display:inline-block;padding:.12rem .46rem;background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.18);border-radius:3px;font-family:var(--mono);font-size:.62rem;font-weight:600;color:var(--accent);cursor:pointer;user-select:none;transition:background .12s;letter-spacing:.04em;}}
+.mini-btn:hover{{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.38)}}
+.mini-btn.mini-err{{background:rgba(244,63,94,.06);border:1px solid rgba(244,63,94,.22);color:var(--err)}}
+.mini-btn.mini-err:hover{{background:rgba(244,63,94,.14);border-color:rgba(244,63,94,.4)}}
+
 .log-drawer{{margin-top:.42rem;background:#08090e;border:1px solid var(--border2);border-radius:4px;padding:.5rem .8rem;overflow-x:auto;}}
 .log-line{{font-family:var(--mono);font-size:.69rem;line-height:1.9;color:#fca5a5;white-space:pre-wrap;word-break:break-all;}}
-.cmd-block .log-line{{color:#7dd3fc;border-bottom:1px solid rgba(255,255,255,.03);}}
-.cmd-block .log-line:last-child{{border-bottom:none}}
-.cmd-phase-block{{margin-bottom:2rem}}
-.cmd-phase-title{{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.75rem;font-family:var(--mono);}}
-.cmd-block{{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:.75rem;}}
-.cmd-label{{font-family:var(--mono);font-size:.82rem;color:var(--text);font-weight:600;margin-bottom:.5rem}}
-.cmd-toggles{{display:flex;gap:.5rem;flex-wrap:wrap}}
-.jb-inline{{margin-top:.5rem;font-family:var(--mono);font-size:.7rem;line-height:1.7;color:#94a3b8;white-space:pre;overflow-x:auto;}}
+/* Keep blue tint for normal raw/JSON output lines */
+.cmd-mini-row .log-line{{color:#7dd3fc;border-bottom:1px solid rgba(255,255,255,.03);}}
+.cmd-mini-row .log-line:last-child{{border-bottom:none}}
+
 .json-sec{{margin-top:1.5rem}}
 .json-sec summary{{cursor:pointer;user-select:none;list-style:none;display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);padding:.5rem 0;transition:color .12s;font-family:var(--mono);}}
 .json-sec summary::-webkit-details-marker{{display:none}}
@@ -393,7 +433,7 @@ pre.jb{{margin-top:.7rem;background:var(--surf);border:1px solid var(--border);b
 <!-- Dropdown selector -->
 <div class="selector-bar">
   <label for="device-select">Device</label>
-  <select id="device-select" class="device-select" оnchange="selectDevice(this.value)">
+  <select id="device-select" class="device-select" onchange="selectDevice(this.value)">
     {dropdown_options}
   </select>
   <span class="device-count">{len(device_keys)} device(s) in this report</span>
@@ -448,18 +488,21 @@ function toggleLog(id) {{
   if (!el) return;
   el.hidden = !el.hidden;
   var parent = el.parentElement;
-  parent.querySelectorAll('.log-btn').forEach(function(btn) {{
-    var oc = btn.getAttribute('оnclick') || '';
+  if (!parent) return;
+  parent.querySelectorAll('button').forEach(function(btn) {{
+    var oc = btn.getAttribute('onclick') || '';
     if (oc.indexOf(id) !== -1) {{
       btn.textContent = el.hidden
-        ? btn.textContent.replace('Hide', 'View')
-        : btn.textContent.replace('View', 'Hide');
+        ? btn.textContent.replace('Hide', 'Show').replace('Why?', 'Why?')  // leave label unless Hide/Show present
+        : btn.textContent.replace('Show', 'Hide');
     }}
   }});
 }}
 
-// Initialise card with first device on load
-updateInfoCard('{first_key}');
+// Ensure initial card populates after DOM is ready
+document.addEventListener('DOMContentLoaded', function () {{
+  updateInfoCard('{_esc(first_key)}');
+}});
 </script>
 </body>
 </html>"""
@@ -467,8 +510,6 @@ updateInfoCard('{first_key}');
     os.makedirs(output_dir, exist_ok=True)
     filename  = f"workflow_report_{ts_file}.html"
     file_path = os.path.join(output_dir, filename)
-    with open(file_path, 'w') as f:
+    with open(file_path, 'w', encoding='utf-8') as f:
         f.write(html)
     return file_path
-
-

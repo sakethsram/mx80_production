@@ -667,11 +667,7 @@ class ShowMplsLspP2MP:
     transit_lsp: P2MPLSPSection = field(default_factory=P2MPLSPSection)
 
 
-from dataclasses import dataclass, field
-from typing import Optional
-
-
-# ── parse_21_show_system_uptime ──────────────────────────────────────────────
+#  ── parse_21_show_system_uptime ──────────────────────────────────────────────
 
 @dataclass
 class ShowSystemUptime:
@@ -1179,3 +1175,74 @@ class ShowConnections:
             "has_connections": self.has_connections,
             "connections": [c.to_dict() for c in self.connections],
         }
+    
+@dataclass
+class InterfaceEntry:
+    interface: str
+    admin: str
+    link: str
+    proto: str | None = None
+    local: str | None = None
+    remote: str | None = None
+
+
+@dataclass
+class ShowInterfaceTerse:
+    interfaces: List[InterfaceEntry] = field(default_factory=list)
+
+    def to_dict(self):
+        return {"interfaces": [asdict(x) for x in self.interfaces]}
+
+
+# ---------------- LOG MESSAGES ----------------
+
+@dataclass
+class LogEntry:
+    timestamp: str
+    hostname: str
+    process: str
+    message: str
+
+
+@dataclass
+class ShowLogMessages:
+    logs: List[LogEntry] = field(default_factory=list)
+
+    def to_dict(self):
+        return {"logs": [asdict(x) for x in self.logs]}
+
+
+# ---------------- MPLS LSP ----------------
+
+@dataclass
+class MplsLspEntry:
+    destination: str
+    nexthop: str
+    state: str
+    uptime: str
+    metric: str
+    name: str
+
+
+@dataclass
+class ShowMplsLspDown:
+    lsps: List[MplsLspEntry] = field(default_factory=list)
+
+    def to_dict(self):
+        return {"lsps": [asdict(x) for x in self.lsps]}
+
+
+# ---------------- 4th Parser Placeholder ----------------
+
+@dataclass
+class PlaceholderEntry:
+    key: str
+    value: str
+
+
+@dataclass
+class PlaceholderCommand:
+    items: List[PlaceholderEntry] = field(default_factory=list)
+
+    def to_dict(self):
+        return {"placeholder_output": [asdict(x) for x in self.items]}
