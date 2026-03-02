@@ -127,7 +127,7 @@ def get_pre_results(device_key: str) -> list:
 
 
 # ─────────────────────────────────────────────────────────────
-# _normalise — canonical command string for registry lookups
+# normalise — canonical command string for registry lookups
 #
 # Rules:
 #   1. Strip leading/trailing whitespace
@@ -139,7 +139,7 @@ def get_pre_results(device_key: str) -> list:
 #   "show vmhost version |no-more"             → "show vmhost version | no-more"
 # ─────────────────────────────────────────────────────────────
 
-def _normalise(cmd: str) -> str:
+def normalise(cmd: str) -> str:
     cmd = re.sub(r'\s+', ' ', cmd.strip())
     cmd = re.sub(r'\s*\|\s*', ' | ', cmd)
     return cmd
@@ -191,7 +191,7 @@ def build_registries():
     }
     # Normalise every key at build time
     return {
-        (vendor, _normalise(cmd)): fn
+        (vendor, normalise(cmd)): fn
         for (vendor, cmd), fn in raw.items()
     }
 
@@ -321,7 +321,7 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
     for entry in entries:
         cmd      = entry["cmd"]
         output   = entry["output"]
-        norm_cmd = _normalise(cmd)
+        norm_cmd = normalise(cmd)
 
         # ── LEVEL 1: is a parser registered? ─────────────────────────
         parser_fn = registry.get((vendor, norm_cmd))
