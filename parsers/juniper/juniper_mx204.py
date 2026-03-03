@@ -2275,6 +2275,7 @@ def parse_show_log_messages_last_200(text: str) -> Dict[str, Any]:
 
 
 def parse_show_interfaces_terse(text: str) -> Dict[str, Any]:
+    cmd='show interface terse | no-more'
     try:
         result = ShowInterfacesTerse()
         lines = text.strip().splitlines()
