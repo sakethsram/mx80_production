@@ -184,7 +184,7 @@ def get_pre_results(device_key: str) -> list:
 def normalise(cmd: str) -> str:
     cmd = re.sub(r'\s+', ' ', cmd.strip())
     cmd = re.sub(r'\s*\|\s*', ' | ', cmd)
-    return cmd
+    return cmd.lower()
 
 
 # ─────────────────────────────────────────────────────────────
@@ -210,7 +210,7 @@ def build_registries():
         ("juniper", "show isis adjacency extensive | no-more"):                                        parse_show_isis_adjacency_extensive,
         ("juniper", "show route summary | no-more"):                                                   parse_show_route_summary,
         ("juniper", "show rsvp session match DN | no-more"):                                           parse_show_rsvp_session_match_DN,
-        #("juniper", "show mpls lsp unidirectional match DN | no-more"):                                parse_show_mpls_lsp_unidirectional_match_DN,
+        #("juniper", "show mpls lsp unidirectional | match DN | no-more"):                                parse_show_mpls_lsp_unidirectional_match_DN,
         ("juniper", "show rsvp | no-more"):                                                            parse_show_rsvp,
         ("juniper", "show mpls lsp unidirectional | no-more"):                                         parse_show_mpls_lsp_unidirectional_no_more,
         ("juniper", "show system uptime | no-more"):                                                   parse_21_show_system_uptime,
@@ -230,15 +230,12 @@ def build_registries():
         ("juniper", "show oam ethernet connectivity-fault-management interfaces extensive | no-more"): parse_35_show_oam_cfm_interfaces,
         ("juniper", "show ldp neighbor | no-more"):                                                    parse_36_show_ldp_neighbor,
         ("juniper", "show connections | no-more"):                                                     parse_37_show_connections,
-        ("juniper", "show system processes extensive | match rpd | no-more"):             parse_show_system_processes_rpd_match,
-        
-        ("juniper", "show rsvp session | match dn | no-more"):             parse_show_down_lsp_or_session,
-        
-        ("juniper", "show mpls lsp unidirectional | match dn | no-more"):             parse_show_down_lsp_or_session,
-        
-        ("juniper", "show log messages | last 200 | no-more"):            parse_show_log_messages_last_200,
-                ("juniper", "show interfaces terse | no-more"):             parse_show_interfaces_terse,
-    }
+        ("juniper", "show rsvp session | match DN | no-more"):                                         parse_show_down_lsp_or_session,
+        ("juniper", "show mpls lsp unidirectional | match dn | no-more"):                              parse_show_down_lsp_or_session,
+        ("juniper", "show log messages | last 200 | no-more"):                                         parse_show_log_messages_last_200,
+        ("juniper", "show system processes extensive | match rpd | no-more"):                          parse_show_system_processes_rpd,
+        ("juniper", "show interface terse | no-more"):                                                 parse_show_interfaces_terse,
+      }
     # Normalise every key at build time
     return {
         (vendor, normalise(cmd)): fn
@@ -287,8 +284,8 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
 
         try:
             output = conn.send_command(cmd)
-            log.debug(f"[{device_key}] '{cmd}' — {len(output)} chars received")
-          #  print(f"\n=== COMMAND: {cmd} ===\n{output}\n=== END OF OUTPUT ===\n")
+            print(f"[{device_key}] '{cmd}' — {len(output)} chars received")
+            print(f"\n=== COMMAND: {cmd} ===\n{output}\n=== END OF OUTPUT ===\n")
 
 
         except Exception:
@@ -376,6 +373,9 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
         output   = entry["output"]
         norm_cmd = normalise(cmd)
 
+        print("looking for the parser for the  :->  ", cmd )
+
+
         # ── LEVEL 1: is a parser registered? ─────────────────────────
         parser_fn = registry.get((vendor, norm_cmd))
 
@@ -392,7 +392,7 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
         if len(stripped) <= MIN_OUTPUT_CHARS:
             # Parser exists but nothing useful came back — skip silently
 
-            entry["exception"] = f"output too short )"
+            entry["json"] ={};entry["exception"]= ""
             log.info(f"[{device_key}] '{cmd}' — output too short ")
             continue
 
@@ -414,11 +414,8 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
             # ── SUCCESS ──────────────────────────────────────────────
             entry["json"]=result
             entry["exception"] = ""
-            log.info(
-                f"[{device_key}] '{cmd}' parsed OK — "
-                f"keys: {list(result.keys()) if isinstance(result, dict) else type(result).__name__}"
-            )
-
+            log.info(f"[{device_key}] '{cmd}' parsed OK —keys: {list(result.keys()) if isinstance(result, dict) else type(result).__name__}")
+            print(result)
         except Exception as e :
             entry["exception"] = f"parser failed for '{cmd}'"
             all_ok = False
