@@ -4,41 +4,41 @@ import re
 from typing import List, Dict, Any, Union, Optional
 
 
-@dataclass
-class RpdThreadEntry:
-    pid: int
-    user: str
-    pri: int
-    nice: int
-    vsz: str
-    rss: str
-    state: str
-    cpu: int
-    time: str
-    wcpu: str
-    command: str
-    process: str
-    thread: Optional[str] = None
+# @dataclass
+# class RpdThreadEntry:
+#     pid: int
+#     user: str
+#     pri: int
+#     nice: int
+#     vsz: str
+#     rss: str
+#     state: str
+#     cpu: int
+#     time: str
+#     wcpu: str
+#     command: str
+#     process: str
+#     thread: Optional[str] = None
 
-@dataclass
-class ShowSystemProcessesRpd:
-    total: int = 0
-    processes: List[RpdThreadEntry] = field(default_factory=list)
+# @dataclass
+# class ShowSystemProcessesRpd:
+#     total: int = 0
+#     processes: List[RpdThreadEntry] = field(default_factory=list)
 
-@dataclass
-class InterfaceEntry:
-    interface: str
-    admin: str
-    link: str
-    proto: List[str] = field(default_factory=list)       
-    local: List[str] = field(default_factory=list)     
-    remote: Optional[str] = None
+# @dataclass
+# class InterfaceEntry:
+#     interface: str
+#     admin: str
+#     link: str
+#     proto: List[str] = field(default_factory=list)       
+#     local: List[str] = field(default_factory=list)     
+#     remote: Optional[str] = None
  
  
-@dataclass
-class ShowInterfacesTerse:
-    interfaces: List[InterfaceEntry] = field(default_factory=list)
-    total_interfaces: int = 0
+# @dataclass
+# class ShowInterfacesTerse:
+#     interfaces: List[InterfaceEntry] = field(default_factory=list)
+#     total_interfaces: int = 0
 
 
 @dataclass

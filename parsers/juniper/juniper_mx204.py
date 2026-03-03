@@ -5,198 +5,198 @@ from models.juniper.juniper_mx204 import *
 from typing import Any, Dict
 
 
-def parse_show_interfaces_terse(text: str) -> Dict[str, Any]:
-    try:
-        result = ShowInterfacesTerse()
-        lines = text.strip().splitlines()
-        if not lines:
-            result.total_interfaces = 0
-            return asdict(result)
+# def parse_show_interfaces_terse(text: str) -> Dict[str, Any]:
+#     try:
+#         result = ShowInterfacesTerse()
+#         lines = text.strip().splitlines()
+#         if not lines:
+#             result.total_interfaces = 0
+#             return asdict(result)
  
-        proto_keywords = {
-            "inet", "inet6", "iso", "mpls",
-            "aenet", "tnp", "bridge",
-            "multiservice", "vpls"
-        }
+#         proto_keywords = {
+#             "inet", "inet6", "iso", "mpls",
+#             "aenet", "tnp", "bridge",
+#             "multiservice", "vpls"
+#         }
  
-        last_entry = None
+#         last_entry = None
  
-        for raw in lines[1:]:  # skip header
-            line = raw.rstrip()
-            if not line:
-                continue
+#         for raw in lines[1:]:  # skip header
+#             line = raw.rstrip()
+#             if not line:
+#                 continue
  
-            parts = line.split()
-            if not parts:
-                continue
+#             parts = line.split()
+#             if not parts:
+#                 continue
  
-            # ---------------------------
-            # Detect NEW interface line
-            # ---------------------------
-            is_interface_line = (
-                len(parts) >= 3 and
-                parts[1] in {"up", "down"} and
-                parts[2] in {"up", "down"}
-            )
+#             # ---------------------------
+#             # Detect NEW interface line
+#             # ---------------------------
+#             is_interface_line = (
+#                 len(parts) >= 3 and
+#                 parts[1] in {"up", "down"} and
+#                 parts[2] in {"up", "down"}
+#             )
  
-            if is_interface_line:
-                iface, admin, link = parts[0], parts[1], parts[2]
+#             if is_interface_line:
+#                 iface, admin, link = parts[0], parts[1], parts[2]
  
-                entry = InterfaceEntry(
-                    interface=iface,
-                    admin=admin,
-                    link=link
-                )
+#                 entry = InterfaceEntry(
+#                     interface=iface,
+#                     admin=admin,
+#                     link=link
+#                 )
  
-                idx = 3
-                while idx < len(parts):
-                    token = parts[idx]
+#                 idx = 3
+#                 while idx < len(parts):
+#                     token = parts[idx]
  
-                    # protocol
-                    if token in proto_keywords:
-                        if token not in entry.proto:
-                            entry.proto.append(token)
-                        idx += 1
-                        continue
+#                     # protocol
+#                     if token in proto_keywords:
+#                         if token not in entry.proto:
+#                             entry.proto.append(token)
+#                         idx += 1
+#                         continue
  
-                    # remote
-                    if token == "-->" and idx + 1 < len(parts):
-                        entry.remote = parts[idx + 1]
-                        idx += 2
-                        continue
+#                     # remote
+#                     if token == "-->" and idx + 1 < len(parts):
+#                         entry.remote = parts[idx + 1]
+#                         idx += 2
+#                         continue
  
-                    # local IP
-                    if re.match(r'^\d+\.\d+\.\d+\.\d+', token):
-                        entry.local.append(token)
-                        idx += 1
-                        continue
+#                     # local IP
+#                     if re.match(r'^\d+\.\d+\.\d+\.\d+', token):
+#                         entry.local.append(token)
+#                         idx += 1
+#                         continue
  
-                    idx += 1
+#                     idx += 1
  
-                result.interfaces.append(entry)
-                last_entry = entry
-                continue
+#                 result.interfaces.append(entry)
+#                 last_entry = entry
+#                 continue
  
-            # ---------------------------
-            # Continuation Line
-            # ---------------------------
-            if last_entry:
-                token = parts[0]
+#             # ---------------------------
+#             # Continuation Line
+#             # ---------------------------
+#             if last_entry:
+#                 token = parts[0]
  
-                # additional protocol
-                if token in proto_keywords:
-                    if token not in last_entry.proto:
-                        last_entry.proto.append(token)
+#                 # additional protocol
+#                 if token in proto_keywords:
+#                     if token not in last_entry.proto:
+#                         last_entry.proto.append(token)
  
-                # additional local IP
-                elif re.match(r'^\d+\.\d+\.\d+\.\d+', token):
-                    last_entry.local.append(token)
+#                 # additional local IP
+#                 elif re.match(r'^\d+\.\d+\.\d+\.\d+', token):
+#                     last_entry.local.append(token)
  
-                # remote continuation
-                elif token == "-->" and len(parts) > 1:
-                    last_entry.remote = parts[1]
+#                 # remote continuation
+#                 elif token == "-->" and len(parts) > 1:
+#                     last_entry.remote = parts[1]
  
-        result.total_interfaces = len(result.interfaces)
-        return asdict(result)
+#         result.total_interfaces = len(result.interfaces)
+#         return asdict(result)
  
-    except Exception as e:
-        return {"error": f"Error parsing interfaces terse: {str(e)}"}
+#     except Exception as e:
+#         return {"error": f"Error parsing interfaces terse: {str(e)}"}
  
 
 
 
 
-@dataclass
-class RpdThreadEntry:
-    pid: int
-    user: str
-    pri: int
-    nice: int
-    vsz: str
-    rss: str
-    state: str
-    cpu: int
-    time: str
-    wcpu: str
-    command: str
-    process: str
-    thread: Optional[str] = None
+# @dataclass
+# class RpdThreadEntry:
+#     pid: int
+#     user: str
+#     pri: int
+#     nice: int
+#     vsz: str
+#     rss: str
+#     state: str
+#     cpu: int
+#     time: str
+#     wcpu: str
+#     command: str
+#     process: str
+#     thread: Optional[str] = None
 
-@dataclass
-class ShowSystemProcessesRpd:
-    total: int = 0
-    processes: List[RpdThreadEntry] = field(default_factory=list)
+# @dataclass
+# class ShowSystemProcessesRpd:
+#     total: int = 0
+#     processes: List[RpdThreadEntry] = field(default_factory=list)
 
-def parse_show_system_processes_rpd(text_content: str) -> Dict[str, Any]:
-    cmd= """Parse 'show system processes extensive | match rpd | no-more' output"""
-    print(cmd)
-    try:
+# def parse_show_system_processes_rpd(text_content: str) -> Dict[str, Any]:
+#     cmd= """Parse 'show system processes extensive | match rpd | no-more' output"""
+#     print(cmd)
+#     try:
 
-        result = ShowSystemProcessesRpd()
-	# Example line:
-        # 18648 root         20    0  1178M   252M kqread   0   0:46   0.00% rpd{rpd}
-        # PID   USER         PRI  NICE VSZ     RSS   STATE   C   TIME    WCPU  COMMAND
-        line_pattern = re.compile(
-            r'^\s*'
-            r'(?P<pid>\d+)\s+'
-            r'(?P<user>\S+)\s+'
-            r'(?P<pri>\d+)\s+'
-            r'(?P<nice>\d+)\s+'
-            r'(?P<vsz>\S+)\s+'
-            r'(?P<rss>\S+)\s+'
-            r'(?P<state>\S+)\s+'
-            r'(?P<cpu>\d+)\s+'
-            r'(?P<time>\d+:\d+(?::\d+)?)\s+'
-            r'(?P<wcpu>[\d\.]+%)\s+'
-            r'(?P<command>.+?)\s*$'
-        )
+#         result = ShowSystemProcessesRpd()
+# 	# Example line:
+#         # 18648 root         20    0  1178M   252M kqread   0   0:46   0.00% rpd{rpd}
+#         # PID   USER         PRI  NICE VSZ     RSS   STATE   C   TIME    WCPU  COMMAND
+#         line_pattern = re.compile(
+#             r'^\s*'
+#             r'(?P<pid>\d+)\s+'
+#             r'(?P<user>\S+)\s+'
+#             r'(?P<pri>\d+)\s+'
+#             r'(?P<nice>\d+)\s+'
+#             r'(?P<vsz>\S+)\s+'
+#             r'(?P<rss>\S+)\s+'
+#             r'(?P<state>\S+)\s+'
+#             r'(?P<cpu>\d+)\s+'
+#             r'(?P<time>\d+:\d+(?::\d+)?)\s+'
+#             r'(?P<wcpu>[\d\.]+%)\s+'
+#             r'(?P<command>.+?)\s*$'
+#         )
 
-        # Extract entries
-        for raw_line in text_content.splitlines():
-            line = raw_line.strip()
-            if not line:
-                continue
+#         # Extract entries
+#         for raw_line in text_content.splitlines():
+#             line = raw_line.strip()
+#             if not line:
+#                 continue
 
-            m = line_pattern.match(line)
-            if not m:
-                # Skip non-matching lines silently to stay robust
-                continue
+#             m = line_pattern.match(line)
+#             if not m:
+#                 # Skip non-matching lines silently to stay robust
+#                 continue
 
-            command = m.group('command').strip()
+#             command = m.group('command').strip()
 
-            # Extract process and optional thread from command (e.g., rpd{TraceThread})
-            proc_thread_m = re.match(r'^([^{\s]+)(?:\{([^}]+)\})?$', command)
-            if proc_thread_m:
-                process_name = proc_thread_m.group(1)
-                thread_name = proc_thread_m.group(2) if proc_thread_m.group(2) else None
-            else:
-                process_name = command
-                thread_name = None
+#             # Extract process and optional thread from command (e.g., rpd{TraceThread})
+#             proc_thread_m = re.match(r'^([^{\s]+)(?:\{([^}]+)\})?$', command)
+#             if proc_thread_m:
+#                 process_name = proc_thread_m.group(1)
+#                 thread_name = proc_thread_m.group(2) if proc_thread_m.group(2) else None
+#             else:
+#                 process_name = command
+#                 thread_name = None
 
-            entry = RpdThreadEntry(
-                pid=int(m.group('pid')),
-                user=m.group('user'),
-                pri=int(m.group('pri')),
-                nice=int(m.group('nice')),
-                vsz=m.group('vsz'),
-                rss=m.group('rss'),
-                state=m.group('state'),
-                cpu=int(m.group('cpu')),
-                time=m.group('time'),
-                wcpu=m.group('wcpu'),
-                command=command,
-                process=process_name,
-                thread=thread_name
-            )
-            result.processes.append(entry)
+#             entry = RpdThreadEntry(
+#                 pid=int(m.group('pid')),
+#                 user=m.group('user'),
+#                 pri=int(m.group('pri')),
+#                 nice=int(m.group('nice')),
+#                 vsz=m.group('vsz'),
+#                 rss=m.group('rss'),
+#                 state=m.group('state'),
+#                 cpu=int(m.group('cpu')),
+#                 time=m.group('time'),
+#                 wcpu=m.group('wcpu'),
+#                 command=command,
+#                 process=process_name,
+#                 thread=thread_name
+#             )
+#             result.processes.append(entry)
 
-        # Summary
-        result.total = len(result.processes)
+#         # Summary
+#         result.total = len(result.processes)
 
-        result_dict = asdict(result)
-        return result_dict
+#         result_dict = asdict(result)
+#         return result_dict
 
-    except Exception as e: return {"error": f"Error parsing show system processes (rpd): {str(e)}"}
+#     except Exception as e: return {"error": f"Error parsing show system processes (rpd): {str(e)}"}
 
 def parse_show_mpls_lsp_unidirectional_no_more(text_content) -> Dict[str, Any]:
     """Parse show mpls lsp unidirectional no more output"""

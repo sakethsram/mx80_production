@@ -149,114 +149,114 @@ def run_prechecks(conn, device, device_key, accepted_vendors, commands, logger):
         precheck.disconnect(logger)
         logger.info(f"[{device_key}] Prechecks completed at {datetime.now()}")
 
-def run_upgrade(conn, device, accepted_vendors, logger):
-    print("Running Upgrade..")
-    host = device.get("host")
-    vendor = device.get("vendor")
-    model = device.get("model")
-    expected_os = device.get('expected_os')
-    target_image = device.get("target_image")
-    device_name = f"{vendor}_{model}"
+# def run_upgrade(conn, device, accepted_vendors, logger):
+#     print("Running Upgrade..")
+#     host = device.get("host")
+#     vendor = device.get("vendor")
+#     model = device.get("model")
+#     expected_os = device.get('expected_os')
+#     target_image = device.get("target_image")
+#     device_name = f"{vendor}_{model}"
 
-    start_time = datetime.now()
-    logger.info(f"{host} — Upgrade started at {start_time}")
+#     start_time = datetime.now()
+#     logger.info(f"{host} — Upgrade started at {start_time}")
 
-    upgrade = Upgrade(device, accepted_vendors)
-    try:
-        conn, isUpgrade = upgrade.imageUpgrade(conn, expected_os, target_image, device_name, logger)
+#     upgrade = Upgrade(device, accepted_vendors)
+#     try:
+#         conn, isUpgrade = upgrade.imageUpgrade(conn, expected_os, target_image, device_name, logger)
 
-        if not isUpgrade:
-            msg = f"Upgrade is not successful for {device_name}"
-            logger.info(msg)
-            print(msg)
-            msg = f"Rolling back to the old image for {device_name}"
-            logger.info(msg)
-            print(msg)
-            rollback = run_rollback(conn, device, accepted_vendors, vendor, model, host, logger)
-            if not rollback:
-              msg = f"Rollback failed"
-              logger.info(msg)
-              print(msg)
-              return False
-            return True
-        msg = f"Upgrade is successful for {device_name}"
-        logger.info(msg)
-        print(msg)
-        return conn, True
+#         if not isUpgrade:
+#             msg = f"Upgrade is not successful for {device_name}"
+#             logger.info(msg)
+#             print(msg)
+#             msg = f"Rolling back to the old image for {device_name}"
+#             logger.info(msg)
+#             print(msg)
+#             rollback = run_rollback(conn, device, accepted_vendors, vendor, model, host, logger)
+#             if not rollback:
+#               msg = f"Rollback failed"
+#               logger.info(msg)
+#               print(msg)
+#               return False
+#             return True
+#         msg = f"Upgrade is successful for {device_name}"
+#         logger.info(msg)
+#         print(msg)
+#         return conn, True
 
-    except Exception as e:
-        msg = f"{host}: Upgrade failed for {device_name} due to {e}"
-        logger.error(msg)
-        print(msg)
-        return False
-
-
-def run_rollback(conn, device, accepted_vendors, vendor, model, host, logger):
-  print("Running Rollback...")
-  rollback_image = device.get("current_image")
-  device_name = f"{vendor}_{model}"
-
-  msg = f"{host} - Rollback started at {datetime.now}"
-  logger.info(msg)
-
-  rollback = Rollback(decice, accepted_vendors, rollback_image)
-  try:
-    isRollback = rollback.imageRollback(conn, device_name, logger)
-
-    if not isRollback:
-      msg = f"Rollback is not successful for {device_name}"
-      logger.info(msg)
-      print(msg)
-
-    msg = f"Rollback is successfull for {device_name}"
-    logger.info(msg)
-    print(msg)
-    return True
-  except Exception as e:
-    msg = f"{host}: Rollback failed for {device_name} due to {e}"
-    logger.error(msg)
-    print(msg)
-    return False
+#     except Exception as e:
+#         msg = f"{host}: Upgrade failed for {device_name} due to {e}"
+#         logger.error(msg)
+#         print(msg)
+#         return False
 
 
-def run_device_pipeline(device, accepted_vendors,commands):
-    vendor = device.get("vendor").lower()
-    model = device.get("model").lower().replace("-","")
-    host = device.get("host")
-    device_name = f"{vendor}_{model}"
-    global_config.vendor = vendor
-    global_config.model  = model
+# def run_rollback(conn, device, accepted_vendors, vendor, model, host, logger):
+#   print("Running Rollback...")
+#   rollback_image = device.get("current_image")
+#   device_name = f"{vendor}_{model}"
 
-    print(f"vendor: {vendor} and model: {model}")
-    logger = setup_logger("main", vendor, model)
-    logger.info(f"[{device_key}] Starting workflow")
+#   msg = f"{host} - Rollback started at {datetime.now}"
+#   logger.info(msg)
 
-    if device_key not in workflow_tracker:
-        init_device_tracker(device_key, dev["host"], vendor_lc, model_lc)
+#   rollback = Rollback(decice, accepted_vendors, rollback_image)
+#   try:
+#     isRollback = rollback.imageRollback(conn, device_name, logger)
 
-    try:
-        msg = f"Starting pipeline for {vendor} {model}"
-        logger.info(msg)
+#     if not isRollback:
+#       msg = f"Rollback is not successful for {device_name}"
+#       logger.info(msg)
+#       print(msg)
 
-        # Step 1: Precheck
-        precheck = PreCheck(device, accepted_vendors)
-        conn = precheck.connect(logger)
+#     msg = f"Rollback is successfull for {device_name}"
+#     logger.info(msg)
+#     print(msg)
+#     return True
+#   except Exception as e:
+#     msg = f"{host}: Rollback failed for {device_name} due to {e}"
+#     logger.error(msg)
+#     print(msg)
+#     return False
 
-        msg = "Running pre-checks"
-        logger.info(msg)
-        print(msg)
-        precheck_success = run_prechecks(conn, device, accepted_vendors,commands, logger)
 
-        if not precheck_success:
-            msg = "skipping upgrade due to failed prechecks"
-            logger.info(msg)
-            print(msg)
-            sys.exit(1)
+# def run_device_pipeline(device, accepted_vendors,commands):
+#     vendor = device.get("vendor").lower()
+#     model = device.get("model").lower().replace("-","")
+#     host = device.get("host")
+#     device_name = f"{vendor}_{model}"
+#     global_config.vendor = vendor
+#     global_config.model  = model
 
-    except Exception as e:
-        msg = f"Device Upgrade failed for {vendor}_{model}: {e}"
-        logger.error(msg)
-        print(msg)
+#     print(f"vendor: {vendor} and model: {model}")
+#     logger = setup_logger("main", vendor, model)
+#     logger.info(f"[{device_key}] Starting workflow")
+
+#     if device_key not in workflow_tracker:
+#         init_device_tracker(device_key, dev["host"], vendor_lc, model_lc)
+
+#     try:
+#         msg = f"Starting pipeline for {vendor} {model}"
+#         logger.info(msg)
+
+#         # Step 1: Precheck
+#         precheck = PreCheck(device, accepted_vendors)
+#         conn = precheck.connect(logger)
+
+#         msg = "Running pre-checks"
+#         logger.info(msg)
+#         print(msg)
+#         precheck_success = run_prechecks(conn, device, accepted_vendors,commands, logger)
+
+#         if not precheck_success:
+#             msg = "skipping upgrade due to failed prechecks"
+#             logger.info(msg)
+#             print(msg)
+#             sys.exit(1)
+
+#     except Exception as e:
+#         msg = f"Device Upgrade failed for {vendor}_{model}: {e}"
+#         logger.error(msg)
+#         print(msg)
 
 
 

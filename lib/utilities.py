@@ -233,8 +233,8 @@ def build_registries():
         ("juniper", "show rsvp session | match DN | no-more"):                                         parse_show_down_lsp_or_session,
         ("juniper", "show mpls lsp unidirectional | match dn | no-more"):                              parse_show_down_lsp_or_session,
         ("juniper", "show log messages | last 200 | no-more"):                                         parse_show_log_messages_last_200,
-        ("juniper", "show system processes extensive | match rpd | no-more"):                          parse_show_system_processes_rpd,
-        ("juniper", "show interface terse | no-more"):                                                 parse_show_interfaces_terse,
+        # ("juniper", "show system processes extensive | match rpd | no-more"):                          parse_show_system_processes_rpd,
+        # ("juniper", "show interface terse | no-more"):                                                 parse_show_interfaces_terse,
       }
     # Normalise every key at build time
     return {

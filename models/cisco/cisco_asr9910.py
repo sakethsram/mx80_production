@@ -6,6 +6,20 @@ from typing import List, Optional, Dict, Any
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 
+
+@dataclass
+class ISISAdjacencies: 
+    systemID: str 
+    interface: str 
+    SNPA: str 
+    state: str 
+    hold: int 
+    changed: str
+    NSF: str
+    ipv4BFD: str
+    ipv6BFD: str
+
+
 @dataclass
 class BFDSession:
     interface: str
