@@ -2,6 +2,7 @@ import logging
 import sys
 import json
 import traceback
+import threading
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from prechecks import *
@@ -11,42 +12,22 @@ from pprint import pformat
 from workflow_report_generator import generate_html_report
 import os
 
-MAX_THREADS = 5
+MAX_THREADS    = 5
 PRECHECKS_ONLY = True   # <--- Run prechecks only; skip upgrade in main()
 
-class DeviceAbortError(Exception):
-    pass
 
 # ----------------------------------------------------
-# Abort helper — call when any step fails
+# run_prechecks — runs inside a thread
 # ----------------------------------------------------
-
-def abort(device_key, phase, subtask, error, logger, exc: Exception = None):
-    log_line = ""
-    if exc is not None:
-        log_line = traceback.format_exc()
-
-    log_task(device_key, phase, subtask, 'Failed', error, log_line)
-    logger.error(f"[{device_key}] FATAL [{phase}] '{subtask}': {error}")
-    if log_line:
-        logger.error(f"[{device_key}] Traceback:\n{log_line}")
-    logger.error(f"[{device_key}] Aborting device — generating partial report")
-
-    try:
-        path = generate_html_report(workflow_tracker, output_dir='reports')
-        logger.info(f"[{device_key}] Partial report saved -> {path}")
-    except Exception as e:
-        logger.error(f"[{device_key}] Could not write HTML report: {e}")
-
-    raise DeviceAbortError(device_key)
 
 def run_prechecks(dev, device_key, logger):
+    tid         = threading.get_ident()
     host        = dev["host"]
     vendor_lc   = dev["vendor"].lower()
     model_lc    = str(dev["model"]).lower().replace("-", "")
     device_type = dev.get("device_type")
 
-    logger.info(f"[{device_key}] Prechecks started at {datetime.now()}")
+    logger.info(f"[THREAD-{tid}] [{device_key}] Prechecks started at {datetime.now()}")
     global_config.pre_check_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
     log_task(device_key, 'pre-checks', 'read Yaml',    'Success', 'deviceDetails.yaml loaded successfully')
@@ -55,77 +36,89 @@ def run_prechecks(dev, device_key, logger):
     precheck = PreCheck({"devices": [dev]})
 
     try:
+        # ── STEP 1: Connect ───────────────────────────────────────────
         try:
             conn = precheck.connect(logger)
         except Exception as e:
-            abort(device_key, 'pre-checks', 'connection using credentials',
-                  f'{host}: connect() raised exception — {e}', logger, exc=e)
+            logger.error(f"[THREAD-{tid}] [{device_key}] FATAL connect failed: {e}")
+            log_task(device_key, 'pre-checks', 'connection using credentials', 'Failed',
+                     f'{host}: connect() raised exception — {e}')
+            return False
 
         if not conn:
-            abort(device_key, 'pre-checks', 'connection using credentials',
-                  f'{host}: connect() returned None', logger)
+            logger.error(f"[THREAD-{tid}] [{device_key}] FATAL connect() returned None")
+            log_task(device_key, 'pre-checks', 'connection using credentials', 'Failed',
+                     f'{host}: connect() returned None')
+            return False
 
         log_task(device_key, 'pre-checks', 'connection using credentials', 'Success',
                  f'{host}: Connected successfully', '')
 
         try:
+            # ── STEP 2: Load commands ─────────────────────────────────
             global_config.vendor     = vendor_lc
             global_config.device_key = device_key
             all_cmds                 = load_yaml("show_cmd_list.yaml")
             global_config.commands   = all_cmds[device_key]
 
-            logger.info(f"[{device_key}] Starting command pipeline — {len(global_config.commands)} command(s)")
+            logger.info(f"[THREAD-{tid}] [{device_key}] Starting command pipeline — {len(global_config.commands)} command(s)")
 
+            # ── STEP 3: Collect outputs ───────────────────────────────
             entries = collect_outputs(
                 device_key=device_key, vendor=vendor_lc,
                 commands=global_config.commands, check_type="pre",
                 conn=conn, log=logger,
             )
             if not entries:
-                logger.warning(f"[{device_key}] collect_outputs() returned no entries")
-
+                logger.warning(f"[THREAD-{tid}] [{device_key}] collect_outputs() returned no entries")
+            
+            # ── STEP 4: Parse outputs ─────────────────────────────────
             parse_ok = parse_outputs(
                 device_key=device_key, vendor=vendor_lc,
                 check_type="pre", log=logger,
             )
             if not parse_ok:
-                logger.warning(f"[{device_key}] one or more parsers failed — continuing")
+                logger.warning(f"[THREAD-{tid}] [{device_key}] one or more parsers failed — continuing")
 
+            # ── STEP 5: Push to tracker ───────────────────────────────
             push_to_tracker(
                 device_key=device_key, check_type="pre",
                 entries=entries, parse_ok=parse_ok, log=logger,
             )
 
-            # ── NEW: populate hostname + version into device_info ──────
+            # ── STEP 6: Update device info from show version ──────────
             try:
                 update_device_info_from_show_version(device_key, vendor_lc, logger)
                 log_task(device_key, 'pre-checks', 'show version', 'Success',
                          'hostname and version extracted from show version output')
             except Exception as e:
-                logger.error(f"[{device_key}] Could not extract show version info: {e}")
+                logger.error(f"[THREAD-{tid}] [{device_key}] Could not extract show version info: {e}")
                 log_task(device_key, 'pre-checks', 'show version', 'Failed',
                          f'Could not extract: {e}')
 
         except KeyError as e:
-            abort(device_key, 'pre-checks', 'executing show commands',
-                  f"{host}: Missing command list for device_key='{device_key}' — {e}", logger, exc=e)
-        except Exception as e:
-            abort(device_key, 'pre-checks', 'executing show commands',
-                  f"{host}: command pipeline exception — {e}", logger, exc=e)
+            logger.error(f"[THREAD-{tid}] [{device_key}] FATAL missing command list: {e}")
+            log_task(device_key, 'pre-checks', 'executing show commands', 'Failed',
+                     f"{host}: Missing command list for device_key='{device_key}' — {e}")
+            return False
 
-        logger.info(f"[{device_key}] All pre-checks passed")
+        except Exception as e:
+            logger.error(f"[THREAD-{tid}] [{device_key}] FATAL command pipeline: {e}")
+            log_task(device_key, 'pre-checks', 'executing show commands', 'Failed',
+                     f"{host}: command pipeline exception — {e}")
+            return False
+
+        logger.info(f"[THREAD-{tid}] [{device_key}] All pre-checks passed")
         return True
 
-    except DeviceAbortError:
-        return False
     except Exception as e:
-        logger.error(f"[{device_key}] Unhandled exception: {e}")
-        abort(device_key, 'pre-checks', 'unexpected error',
-              f'{host}: Unhandled exception — {e}', logger, exc=e)
+        logger.error(f"[THREAD-{tid}] [{device_key}] Unhandled exception: {e}")
         return False
+
     finally:
         precheck.disconnect(logger)
-        logger.info(f"[{device_key}] Prechecks completed at {datetime.now()}")
+        logger.info(f"[THREAD-{tid}] [{device_key}] Prechecks completed at {datetime.now()}")
+
 
 # ----------------------------------------------------
 # Main Function
@@ -137,59 +130,57 @@ def main():
 
     global_config.vendor = all_devs[0]["vendor"].lower()
     global_config.model  = all_devs[0]["model"]
+    main_logger = setup_logger("main")
 
-    logger = setup_logger("main")
-
-    # ── Init trackers BEFORE threading (not thread-safe) ──────────────────
+    # ── Init tracker + per-device loggers BEFORE threads ──────────────
+    loggers = {}
     for dev in all_devs:
         vendor_lc  = dev["vendor"].lower()
         model_lc   = str(dev["model"]).lower().replace("-", "")
-        device_key = f"{vendor_lc}_{model_lc}"
+        ip_clean   = dev["host"].replace(".", "_")
+        device_key = f"{ip_clean}_{vendor_lc}_{model_lc}"
+
+        global_config.vendor = vendor_lc
+        global_config.model  = dev["model"]
 
         if device_key not in workflow_tracker:
             init_device_tracker(device_key, dev["host"], vendor_lc, model_lc)
 
-    print(f"[MAIN] Starting prechecks for {len(all_devs)} device(s) — max {MAX_THREADS} thread(s)")
-    logger.info(f"[MAIN] Spawning threads for {len(all_devs)} device(s)")
+        loggers[device_key] = setup_logger(device_key)
+        main_logger.info(f"[MAIN] Initialised tracker for [{device_key}] host={dev['host']}")
 
-    # ── One thread per device ──────────────────────────────────────────────
+    main_logger.info(f"[MAIN] Spawning threads for {len(all_devs)} device(s)")
+
+    # ── One thread per device ──────────────────────────────────────────
     with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
-        future_to_key = {
-            executor.submit(
-                run_prechecks,
-                dev,
-                f"{dev['vendor'].lower()}_{str(dev['model']).lower().replace('-', '')}",
-                setup_logger(f"{dev['vendor'].lower()}_{str(dev['model']).lower().replace('-', '')}"),
-            ): f"{dev['vendor'].lower()}_{str(dev['model']).lower().replace('-', '')}"
-            for dev in all_devs
-        }
+        future_to_key = {}
+        for dev in all_devs:
+            vendor_lc  = dev["vendor"].lower()
+            model_lc   = str(dev["model"]).lower().replace("-", "")
+            ip_clean   = dev["host"].replace(".", "_")
+            device_key = f"{ip_clean}_{vendor_lc}_{model_lc}"
+            future = executor.submit(run_prechecks, dev, device_key, loggers[device_key])
+            future_to_key[future] = device_key
 
         for future in as_completed(future_to_key):
             device_key = future_to_key[future]
             try:
                 ok = future.result()
-                status = "PASSED" if ok else "FAILED"
-                print(f"[MAIN] {device_key} -> prechecks {status}")
-                logger.info(f"[MAIN] {device_key} prechecks {'passed' if ok else 'failed'}")
+                main_logger.info(f"[MAIN] {device_key} -> {'passed' if ok else 'failed'}")
             except Exception as e:
-                print(f"[MAIN] {device_key} -> thread raised exception: {e}")
-                logger.error(f"[MAIN] {device_key} thread exception: {e}")
+                main_logger.error(f"[MAIN] {device_key} thread exception: {e}")
 
-    print(f"[MAIN] All devices done — exporting results")
-
-    # ── Final export + report — same as before ─────────────────────────────
+    # ── All devices done — generate final report ───────────────────────
     try:
         export_device_summary()
         path = generate_html_report(workflow_tracker, output_dir='reports')
-        logger.info(f"Report saved -> {path}")
-        print(f"[MAIN] Report saved -> {path}")
+        main_logger.info(f"All devices done. Report saved -> {path}")
+        print(f"Report saved -> {path}")
     except Exception as e:
-        logger.error(f"Could not write final HTML report: {e}")
-        print(f"[MAIN] ERROR: Could not write report: {e}")
+        main_logger.error(f"Could not write final HTML report: {e}")
 
     sys.exit(0)
 
 
 if __name__ == "__main__":
     main()
-
