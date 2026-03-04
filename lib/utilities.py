@@ -353,7 +353,7 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
     phase = "pre-checks" if check_type == "pre" else "post-checks"
 
     registry = VENDOR_REGISTRY.get(vendor)
-    print("found the function",registry)
+    # print("found the function",registry)
     if registry is None:
         log.error(f"[{device_key}] STEP 2 — No registry for vendor='{vendor}'")
         return False
