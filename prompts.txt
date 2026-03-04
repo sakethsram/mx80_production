@@ -1,1 +1,1892 @@
 my current project srtucture :
+ the actual files - 
+saketh@saketh-T480:~/.../upgrade$ tree
+.
+├── README.md
+├── __pycache__
+│   └── prechecks.cpython-312.pyc
+├── inputs
+│   ├── deviceDetails.yaml
+│   └── show_cmd_list.yaml
+├── lib
+│   ├── __pycache__
+│   │   └── utilities.cpython-312.pyc
+│   └── utilities.py
+├── logging
+│   └── juniper_mx204_2026-02-23_17-15-43.log
+├── models
+│   ├── cisco
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-38.pyc
+│   │   │   └── cisco_ncs5501.cpython-38.pyc
+│   │   ├── cisco_asr9910.py
+│   │   └── cisco_ncs5501.py
+│   └── juniper
+│       ├── __pycache__
+│       │   └── juniper_mx204.py
+│       └── juniper_mx204.py
+├── outputs
+├── parser_errors.py
+├── parsers
+│   ├── cisco
+│   │   ├── __pycache__
+│   │   │   └── cisco_ncs5501.cpython-38.pyc
+│   │   ├── cisco_asr9910.py
+│   │   └── cisco_ncs5501.py
+│   └── juniper
+│       ├── __pycache__
+│       │   └── junos_mx80.cpython-312.pyc
+│       └── juniper_mx204.py
+├── postchecks.py
+├── prechecks.py
+├── prompts.txt
+├── saketh_temp
+│   ├── 26_02_26_16_10.json
+│   ├── 26_02_26_16_10.json:Zone.Identifier
+│   ├── 4 (1).txt
+│   ├── 4 (1).txt:Zone.Identifier
+│   ├── new 1.txt:Zone.Identifier
+│   ├── reports
+│   │   ├── 26_02_26_04_59.json
+│   │   └── 26_02_26_05_00.json
+│   └── temp.py
+├── threadmain.py
+├── upgrade.py
+├── workflow_report_02_03_26_19_23_23.html
+└── workflow_report_generator.py
+
+19 directories, 35 files
+
+├── inputs
+│   ├── deviceDetails.yaml
+│   └── show_cmd_list.yaml 
+ == devices:
+  - host: "10.80.71.55"
+    vendor: "juniper"
+    model: mx204
+    device_type: "juniper"
+    current_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
+    expected_os: 23.4R2-S5.6
+    intermediate_os: False
+    min_disk_gb: 5
+    username: "lab"
+    password: "lab123"
+    target_image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
+    remote_backup_server: sftp://backup@10.10.20.20/backups/
+    cleanup_files:
+      - list of files
+    intermediate_image: junos-os-21.2R2-S5.bin
+    rollback: False
+    md5checksum_file: "dec5349a0d238dad686dc01f468a0bbe"
+
+  - host: "10.80.109.250"
+    vendor: "cisco"
+    model: asr9910
+    device_type: "cisco_xr"
+    current_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
+    expected_os: 23.4R2-S5.1
+    intermediate_os: False
+    min_disk_gb: 6
+    username: "admin"
+    password: "Colt@123"
+    target_image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
+    image_path: "/home/automation2/software/juniper/junos/MX204"
+    remote_backup_sarerver: "automation2@10.80.109.134"
+    remote_password: "kTRq8amH888r"
+    cleanup_files:
+      - juniper_mx204_2026-*
+      - /var/tmp/juniper_mx204_2026-*
+    intermediate_image: junos-os-21.2R2-S5.bin
+    md5checksum_file: "3e97c983380ac3a1b28e143219c8960a"
+    local_image_path: ""
+    juniper_mx204:
+  - show arp no-resolve | no-more
+  - show lldp neighbors | no-more
+  - show chassis routing-engine | no-more
+  - show system uptime | no-more
+  - show ntp associations no-resolve | no-more
+  - show vmhost version | no-more
+  - show vmhost snapshot | no-more
+  - show chassis hardware | no-more
+  - show chassis fpc detail | no-more
+  - show chassis alarms | no-more
+  - show system alarms | no-more
+  - show chassis environment | no-more
+  - show system resource-monitor fpc | no-more
+  - show system processes extensive | match rpd | no-more
+  - show interface terse | no-more
+  - show oam ethernet connectivity-fault-management interfaces extensive | no-more
+  - show vrrp summary | no-more
+  - show bfd session | no-more
+  - show rsvp neighbor | no-more
+  - show rsvp session | no-more
+  - show route table inet.0 | no-more
+  - show route table inet.3 | no-more
+  - show route table mpls.0 | no-more
+  - show mpls interface | no-more
+  - show mpls lsp | no-more
+  - show mpls lsp p2mp | no-more
+  - show bgp summary | no-more
+  - show bgp neighbor | no-more
+  - show isis adjacency extensive | no-more
+  - show route summary | no-more
+  - show rsvp session | match DN | no-more
+  - show mpls lsp unidirectional | match Dn | no-more
+  - show ldp neighbor | no-more
+  - show connections | no-more
+  - show log messages | last 200 | no-more
+
+
+cisco_asr9910:
+  - show install active summary
+  -  show isis adjacency
+
+lib/utilities.py : import logging
+import sys
+import os
+import re
+import yaml
+import json
+from datetime import datetime
+from netmiko import ConnectHandler
+from netmiko.exceptions import (
+    NetmikoTimeoutException,
+    NetmikoAuthenticationException
+)
+from paramiko.ssh_exception import SSHException
+from parsers.juniper.juniper_mx204 import *
+
+# ─────────────────────────────────────────────────────────────
+# GlobalConfig
+# ─────────────────────────────────────────────────────────────
+
+class GlobalConfig:
+    device_results: dict = {}
+    pre_check_timestamp = ""
+    vendor = ""
+    model = ""
+    session_log_path = ""
+    device_key = ""
+    commands: list = []
+
+global_config = GlobalConfig()
+
+# ─────────────────────────────────────────────────────────────
+# Global threshold — outputs <= this length are treated as empty
+# ─────────────────────────────────────────────────────────────
+MIN_OUTPUT_CHARS = 5
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+# ─────────────────────────────────────────────────────────────
+# workflow_tracker
+# ─────────────────────────────────────────────────────────────
+device_results = {}
+workflow_tracker = {}
+
+
+def init_device_tracker(device_key: str, host: str, vendor: str, model: str):
+    workflow_tracker[device_key] = {
+        "device_info": {
+            "host": host, "vendor": vendor, "model": model,
+            "timestamp": datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
+        },
+        "pre-checks": {
+            "tasks": {
+                "read Yaml":                     {"status": "", "error": "", "title": "Load device config from YAML",          "logs": ""},
+                "start logger":                  {"status": "", "error": "", "title": "Initialise log file for session",       "logs": ""},
+                "connection using credentials":  {"status": "", "error": "", "title": "Establish SSH session to device",       "logs": ""},
+                "show version":                  {"status": "", "error": "", "title": "Run show version",                      "logs": ""},
+                "executing show commands":       {"status": "", "error": "", "title": "Collect pre-check show command output", "logs": ""},
+                "Parsing the data":              {"status": "", "error": "", "title": "Parse and validate pre-check output",   "logs": ""},
+                "Backup Config":                 {"status": "", "error": "", "title": "Save running config and device logs",   "logs": ""},
+                "Validate MD5 checksum":         {"status": "", "error": "", "title": "Verify image integrity via MD5",        "logs": ""},
+                "Storage Check (5GB threshold)": {"status": "", "error": "", "title": "Confirm sufficient disk space",         "logs": ""},
+                "Disable Filter":                {"status": "", "error": "", "title": "Remove RE protection firewall filter",  "logs": ""},
+            },
+            "commands": []
+        },
+        "upgrade": {
+            "tasks": {
+                "image installation": {"status": "", "error": "", "title": "Install target OS image on device",       "logs": ""},
+                "reboot the device":  {"status": "", "error": "", "title": "Reboot and confirm device comes up",      "logs": ""},
+                "ping the device":    {"status": "", "error": "", "title": "Verify device reachability after upgrade", "logs": ""},
+            }
+        },
+        "post-checks": {
+            "tasks": {
+                "Take snapshot":            {"status": "", "error": "", "title": "Snapshot primary disk to backup disk",     "logs": ""},
+                "Execute show commands":    {"status": "", "error": "", "title": "Collect post-upgrade show command output", "logs": ""},
+                "parsing the commands":     {"status": "", "error": "", "title": "Parse and validate post-upgrade output",   "logs": ""},
+                "Enable RE-PROTECT filter": {"status": "", "error": "", "title": "Re-apply RE protection firewall filter",   "logs": ""},
+            },
+            "commands": []
+        }
+    }
+    logger.info(f"[tracker] Initialised slot for device_key='{device_key}'")
+
+
+def log_task(device_key: str, phase: str, task_name: str, status: str,
+             error: str = "", log_line: str = ""):
+    device = workflow_tracker.get(device_key)
+    if device is None:
+        logger.warning(f"[log_task] device_key='{device_key}' not in workflow_tracker")
+        return
+    phase_data = device.get(phase)
+    if phase_data is None:
+        logger.warning(f"[log_task] phase='{phase}' not found for '{device_key}'")
+        return
+    tasks = phase_data.get("tasks", {})
+    if task_name not in tasks:
+        logger.warning(f"[log_task] task='{task_name}' not found under [{device_key}][{phase}]['tasks']")
+        return
+    tasks[task_name]["status"] = status
+    if error:
+        tasks[task_name]["error"] = error
+    if log_line:
+        existing = tasks[task_name].get("logs", "") or ""
+        tasks[task_name]["logs"] = (existing + "\n" + log_line).lstrip("\n")
+    logger.info(f"[tracker] {device_key} | {phase} | {task_name} -> {status}")
+def update_device_info_from_show_version(device_key: str, vendor: str, log) -> None:
+    """
+    Extracts hostname and version from the collected 'show version' output
+    and writes them into workflow_tracker[device_key]['device_info'].
+    """
+    try:
+        entries = global_config.device_results.get(device_key, {}).get("pre", [])
+        version_entry = next(
+            (e for e in entries if "show version" in e.get("cmd", "").lower()),
+            None
+        )
+        if not version_entry:
+            log.warning(f"[{device_key}] update_device_info: no 'show version' entry found")
+            return
+
+        output = version_entry.get("output", "") or ""
+
+        hostname = None
+        version  = None
+
+        if vendor == "juniper":
+            import re
+            # Hostname: "Hostname: <name>"
+            m = re.search(r"^Hostname:\s+(\S+)", output, re.MULTILINE | re.IGNORECASE)
+            if m:
+                hostname = m.group(1)
+            # Version: "Junos: <ver>" or "JUNOS Software Release [<ver>]"
+            m = re.search(r"Junos:\s+(\S+)", output, re.IGNORECASE)
+            if not m:
+                m = re.search(r"JUNOS Software Release \[([^\]]+)\]", output, re.IGNORECASE)
+            if m:
+                version = m.group(1)
+
+        device_info = workflow_tracker.get(device_key, {}).get("device_info", {})
+        if hostname:
+            device_info["hostname"] = hostname
+        if version:
+            device_info["version"] = version
+
+        log.info(f"[{device_key}] device_info updated — hostname={hostname}, version={version}")
+
+    except Exception as e:
+        log.error(f"[{device_key}] update_device_info_from_show_version failed: {e}")
+
+def set_commands(device_key: str, phase: str, entries: list):
+    device = workflow_tracker.get(device_key)
+    if not device:
+        logger.warning(f"[set_commands] device_key='{device_key}' not in tracker")
+        return
+    phase_data = device.get(phase)
+    if not phase_data:
+        logger.warning(f"[set_commands] phase='{phase}' not found for '{device_key}'")
+        return
+    phase_data["commands"] = entries
+    logger.info(f"[tracker] Stored {len(entries)} command entries -> [{device_key}][{phase}]['commands']")
+
+
+def get_pre_results(device_key: str) -> list:
+    return global_config.device_results.get(device_key, {}).get("pre", [])
+
+
+# ─────────────────────────────────────────────────────────────
+# normalise — canonical command string for registry lookups
+#
+# Rules:
+#   1. Strip leading/trailing whitespace
+#   2. Collapse all internal whitespace runs to a single space
+#   3. Ensure exactly one space on each side of every pipe "|"
+#
+# Examples:
+#   "show rsvp session | match DN |no-more"   → "show rsvp session | match DN | no-more"
+#   "show vmhost version |no-more"             → "show vmhost version | no-more"
+# ─────────────────────────────────────────────────────────────
+
+def normalise(cmd: str) -> str:
+    cmd = re.sub(r'\s+', ' ', cmd.strip())
+    cmd = re.sub(r'\s*\|\s*', ' | ', cmd)
+    return cmd.lower()
+
+
+# ─────────────────────────────────────────────────────────────
+# build_registries — all keys normalised at build time
+# ─────────────────────────────────────────────────────────────
+
+def build_registries():
+    raw = {
+        ("juniper", "show arp no-resolve | no-more"):                                                  parse_show_arp_no_resolve,
+        ("juniper", "show vrrp summary | no-more"):                                                    parse_show_vrrp_summary,
+        ("juniper", "show lldp neighbors | no-more"):                                                  parse_show_lldp_neighbors,
+        ("juniper", "show bfd session | no-more"):                                                     parse_show_bfd_session,
+        ("juniper", "show rsvp neighbor | no-more"):                                                   parse_show_rsvp_neighbor,
+        ("juniper", "show rsvp session | no-more"):                                                    parse_show_rsvp_session,
+        ("juniper", "show route table inet.0 | no-more"):                                              parse_show_route_table_inet0,
+        ("juniper", "show route table inet.3 | no-more"):                                              parse_show_route_table_inet3,
+        ("juniper", "show route table mpls.0 | no-more"):                                              parse_show_route_table_mpls0,
+        ("juniper", "show mpls interface | no-more"):                                                  parse_show_mpls_interface,
+        ("juniper", "show mpls lsp | no-more"):                                                        parse_show_mpls_lsp,
+        ("juniper", "show mpls lsp p2mp | no-more"):                                                   parse_show_mpls_lsp_p2mp,
+        ("juniper", "show bgp summary | no-more"):                                                     parse_show_bgp_summary,
+        ("juniper", "show bgp neighbor | no-more"):                                                    parse_show_bgp_neighbor,
+        ("juniper", "show isis adjacency extensive | no-more"):                                        parse_show_isis_adjacency_extensive,
+        ("juniper", "show route summary | no-more"):                                                   parse_show_route_summary,
+        ("juniper", "show rsvp session match DN | no-more"):                                           parse_show_rsvp_session_match_DN,
+        #("juniper", "show mpls lsp unidirectional | match DN | no-more"):                                parse_show_mpls_lsp_unidirectional_match_DN,
+        ("juniper", "show rsvp | no-more"):                                                            parse_show_rsvp,
+        ("juniper", "show mpls lsp unidirectional | no-more"):                                         parse_show_mpls_lsp_unidirectional_no_more,
+        ("juniper", "show system uptime | no-more"):                                                   parse_21_show_system_uptime,
+        ("juniper", "show ntp associations no-resolve | no-more"):                                     parse_22_show_ntp_associations,
+        ("juniper", "show vmhost version | no-more"):                                                  parse_23_show_vmhost_version,
+        ("juniper", "show vmhost snapshot | no-more"):                                                 parse_24_show_vmhost_snapshot,
+        ("juniper", "show chassis hardware | no-more"):                                                parse_25_show_chassis_hardware,
+        ("juniper", "show chassis fpc detail | no-more"):                                              parse_26_show_chassis_fpc_detail,
+        ("juniper", "show chassis alarms | no-more"):                                                  parse_27_show_chassis_alarms,
+        ("juniper", "show system alarms | no-more"):                                                   parse_28_show_system_alarms,
+        ("juniper", "show chassis routing-engine | no-more"):                                          parse_29_show_chassis_routing_engine,
+        ("juniper", "show chassis environment | no-more"):                                             parse_30_show_chassis_environment,
+        ("juniper", "show system resource-monitor fpc | no-more"):                                     parse_31_show_system_resource_monitor_fpc,
+        ("juniper", "show krt table | no-more"):                                                       parse_32_show_krt_table,
+        ("juniper", "show system processes | no-more"):                                                parse_33_show_system_processes,
+        ("juniper", "show interface descriptions | no-more"):                                          parse_34_show_interface_descriptions,
+        ("juniper", "show oam ethernet connectivity-fault-management interfaces extensive | no-more"): parse_35_show_oam_cfm_interfaces,
+        ("juniper", "show ldp neighbor | no-more"):                                                    parse_36_show_ldp_neighbor,
+        ("juniper", "show connections | no-more"):                                                     parse_37_show_connections,
+        ("juniper", "show rsvp session | match DN | no-more"):                                         parse_show_down_lsp_or_session,
+        ("juniper", "show mpls lsp unidirectional | match dn | no-more"):                              parse_show_down_lsp_or_session,
+        ("juniper", "show log messages | last 200 | no-more"):                                         parse_show_log_messages_last_200,
+        # ("juniper", "show system processes extensive | match rpd | no-more"):                          parse_show_system_processes_rpd,
+        # ("juniper", "show interface terse | no-more"):                                                 parse_show_interfaces_terse,
+      }
+    # Normalise every key at build time
+    return {
+        (vendor, normalise(cmd)): fn
+        for (vendor, cmd), fn in raw.items()
+    }
+
+
+# ─────────────────────────────────────────────────────────────
+# VENDOR_REGISTRY  — built once at module load
+# ─────────────────────────────────────────────────────────────
+VENDOR_REGISTRY = {
+    "juniper": build_registries(),
+}
+
+
+# ═════════════════════════════════════════════════════════════
+# PIPELINE STEP 1 — collect_outputs
+#
+# For each command in the list:
+#   - Send command to device via conn.send_command()
+#   - collected = True  only when len(output.strip()) > MIN_OUTPUT_CHARS
+#   - Store entry: { cmd, output, json_output, exception }
+#     exception = actual traceback if send_command raised, else ""
+#
+# Returns: list of entry dicts
+# ═════════════════════════════════════════════════════════════
+
+def collect_outputs(device_key: str, vendor: str, commands: list,
+                    check_type: str, conn, log) -> list:
+
+    phase = "pre-checks" if check_type == "pre" else "post-checks"
+
+    log.info(f"[{device_key}] STEP 1 collect_outputs — "
+             f"{len(commands)} command(s), phase={phase}, "
+             f"MIN_OUTPUT_CHARS={MIN_OUTPUT_CHARS}")
+
+    if device_key not in global_config.device_results:
+        global_config.device_results[device_key] = {}
+
+    entries = []
+
+    for cmd in commands:
+        log.info(f"[{device_key}] Sending: '{cmd}'")
+        exception_str = ""
+        output        = ""
+
+        try:
+            output = conn.send_command(cmd)
+            print(f"[{device_key}] '{cmd}' — {len(output)} chars received")
+            print(f"\n=== COMMAND: {cmd} ===\n{output}\n=== END OF OUTPUT ===\n")
+
+
+        except Exception:
+            import traceback as tb
+            exception_str = tb.format_exc()          # actual traceback string
+            log.error(f"[{device_key}] '{cmd}' send_command raised:\n{exception_str}")
+
+        stripped  = output.strip() if output else ""
+        collected = len(stripped) > MIN_OUTPUT_CHARS
+
+        entry = {
+            "cmd":       cmd,
+            "output":    output,
+            "json":      {},
+            "exception": f"send_command failed for '{cmd}'" if exception_str else "",
+               }
+        entries.append(entry)
+
+        log.info(f"[{device_key}] '{cmd}' collected={collected} "
+                 f"({len(stripped)} chars)")
+
+    global_config.device_results[device_key][check_type] = entries
+
+    log.info(f"[{device_key}] STEP 1 done — {len(entries)} entries stored")
+    return entries
+
+
+# ═════════════════════════════════════════════════════════════
+# PIPELINE STEP 2 — parse_outputs
+#
+# Traverses the entries list built by collect_outputs.
+# For each entry, nested-if logic determines what to do:
+#
+#   Level 1 — is a parser registered for this command?
+#       NO  → exception = "no parser registered"
+#             json stays {}
+#             continue (collect-only, not a failure)
+#
+#       YES → Level 2 — is output > MIN_OUTPUT_CHARS?
+#                 NO  → exception = "output too short (N chars)"
+#                       json stays {}
+#                       continue (skip silently, not a failure)
+#
+#                 YES → Level 3 — call the parser function
+#                           RAISES   → exception = actual traceback string
+#                                      json stays {}
+#                                      continue (log, keep going)
+#
+#                           RETURNS empty → exception = "parser returned empty result"
+#                                           json stays {}
+#                                           continue
+#
+#                           RETURNS data  → json = result
+#                                           exception = ""
+#
+# json populated  → exception = ""
+# json empty      → exception = reason string (see levels above)
+#
+# Returns True only if every parser-registered, output-present command succeeded.
+# Individual failures do NOT abort the run.
+# ═════════════════════════════════════════════════════════════
+
+def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
+
+    phase = "pre-checks" if check_type == "pre" else "post-checks"
+
+    registry = VENDOR_REGISTRY.get(vendor)
+    print("found the function",registry)
+    if registry is None:
+        log.error(f"[{device_key}] STEP 2 — No registry for vendor='{vendor}'")
+        return False
+
+    entries = global_config.device_results.get(device_key, {}).get(check_type, [])
+    if not entries:
+        log.warning(f"[{device_key}] STEP 2 — Nothing in device_results to parse")
+        return False
+
+    log.info(f"[{device_key}] STEP 2 parse_outputs — "
+             f"{len(entries)} entry(ies), vendor={vendor}")
+
+    all_ok = True
+
+    for entry in entries:
+        cmd      = entry["cmd"]
+        output   = entry["output"]
+        norm_cmd = normalise(cmd)
+
+        print("looking for the parser for the  :->  ", cmd )
+
+
+        # ── LEVEL 1: is a parser registered? ─────────────────────────
+        parser_fn = registry.get((vendor, norm_cmd))
+
+        if parser_fn is None:
+            # No parser → collect-only command, not a failure
+
+            entry["exception"] = "no parser registered"
+            log.debug(f"[{device_key}] '{cmd}' — no parser registered, collect-only")
+            continue
+
+        # ── LEVEL 2: is output long enough to parse? ─────────────────
+        stripped = output.strip() if output else ""
+
+        if len(stripped) <= MIN_OUTPUT_CHARS:
+            # Parser exists but nothing useful came back — skip silently
+
+            entry["json"] ={};entry["exception"]= ""
+            log.info(f"[{device_key}] '{cmd}' — output too short ")
+            continue
+
+        # ── LEVEL 3: call the parser ──────────────────────────────────
+        log.info(f"[{device_key}] Running {parser_fn.__name__}() for '{cmd}'")
+
+        try:
+            result = parser_fn(output)
+
+            if not result or all(not v for v in result.values()):
+                # Parser ran without raising but returned nothing useful
+
+                entry["exception"] = "parser returned empty result"
+                all_ok = False
+                log.warning(f"[{device_key}] {parser_fn.__name__}() returned "
+                             f"empty result for '{cmd}'")
+                continue
+
+            # ── SUCCESS ──────────────────────────────────────────────
+            entry["json"]=result
+            entry["exception"] = ""
+            log.info(f"[{device_key}] '{cmd}' parsed OK —keys: {list(result.keys()) if isinstance(result, dict) else type(result).__name__}")
+            print(result)
+        except Exception as e :
+            entry["exception"] = f"parser failed for '{cmd}'"
+            all_ok = False
+            log.error(f"[{device_key}] {parser_fn.__name__}() FAILED for '{cmd}': {e}")
+            continue
+
+    verdict = "all parsers OK" if all_ok else "one or more parsers FAILED (continued)"
+    log.info(f"[{device_key}] STEP 2 done — {verdict}")
+    return all_ok
+
+
+# ═════════════════════════════════════════════════════════════
+# PIPELINE STEP 3 — push_to_tracker
+#
+# Entries from collect_outputs are already in tracker format:
+#   { "cmd", "output", "json", "exception" }
+# Just calls set_commands() to write them into workflow_tracker.
+# ═════════════════════════════════════════════════════════════
+
+def push_to_tracker(device_key: str, check_type: str, entries: list,
+                    parse_ok: bool, log) -> None:
+
+    phase = "pre-checks" if check_type == "pre" else "post-checks"
+
+    # Read from device_results — parse_outputs mutates entries in-place there.
+    # This guarantees json and exception fields are fully populated before storing.
+    final_entries = global_config.device_results.get(device_key, {}).get(check_type, entries)
+
+    set_commands(device_key, phase, final_entries)
+
+    parsed_count  = sum(1 for e in final_entries if e["json"])
+    skipped_count = sum(1 for e in final_entries if not e["json"])
+
+    log.info(
+        f"[{device_key}] STEP 3 push_to_tracker — "
+        f"{len(entries)} total -> [{device_key}][{phase}]['commands'] | "
+        f"parsed={parsed_count}, skipped/collect-only={skipped_count}, "
+        f"parse_ok={parse_ok}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────
+# setup_logger
+# ─────────────────────────────────────────────────────────────
+
+def setup_logger(name):
+    log_dir = os.path.join(os.getcwd(), "logging")
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = f"{global_config.vendor}_{global_config.model}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+    log_path = os.path.join(log_dir, log_file)
+    file_logger = logging.getLogger(f"{global_config.vendor}_{global_config.model}")
+    file_logger.setLevel(logging.DEBUG)
+    file_logger.propagate = False
+    handler = logging.FileHandler(log_path)
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s",
+                                  datefmt="%Y-%m-%d_%H:%M:%S")
+    handler.setFormatter(formatter)
+    file_logger.addHandler(handler)
+    return file_logger
+
+
+# ─────────────────────────────────────────────────────────────
+# write_json
+# ─────────────────────────────────────────────────────────────
+
+def write_json(command_name, vendor, model, json_data):
+    if not all([command_name, vendor, model]):
+        logger.error("Command name, vendor, and model cannot be empty")
+        raise ValueError("Invalid Parameters")
+    try:
+        logger.info("Writing to pre_checks JSON file ...")
+        curr_dir   = os.getcwd()
+        output_dir = os.path.join(curr_dir, "pre_checks")
+        os.makedirs(output_dir, exist_ok=True)
+        filename  = f"{vendor}_{model}_{global_config.pre_check_timestamp}.json"
+        file_path = os.path.join(output_dir, filename)
+        if os.path.exists(file_path):
+            with open(file_path, "r") as f:
+                data = json.load(f)
+        else:
+            data = {
+                "metadata": {
+                    "timestamp": global_config.pre_check_timestamp,
+                    "vendor":    vendor,
+                    "model":     model,
+                },
+                "commands": {}
+            }
+        data["commands"][command_name] = json_data
+        with open(file_path, "w") as f:
+            json.dump(data, f, indent=2)
+        logger.info(f"JSON file written successfully: {file_path}")
+        return data
+    except Exception as e:
+        logger.error(f"Unexpected error while writing JSON: {e}")
+        raise
+
+
+# ─────────────────────────────────────────────────────────────
+# login_device
+# ─────────────────────────────────────────────────────────────
+
+def login_device(host, username, password, device_type, session_log_path, logger):
+    try:
+        logger.info(f"Connecting to {host} using Netmiko...")
+        device = {
+            "device_type": device_type,
+            "host":        host,
+            "username":    username,
+            "password":    password,
+            "session_log": session_log_path,
+        }
+        conn = ConnectHandler(**device)
+        logger.info(f"Login Successful to {host}")
+        return conn
+    except NetmikoTimeoutException:
+        logger.error(f"{host}: Connection Timed out"); raise
+    except NetmikoAuthenticationException:
+        logger.error(f"{host}: Authentication Failed"); raise
+    except SSHException as e:
+        logger.error(f"{host}: SSH error: {e}"); raise
+    except Exception as e:
+        logger.error(f"{host}: Unknown error: {e}"); raise
+
+
+# ─────────────────────────────────────────────────────────────
+# logout_device
+# ─────────────────────────────────────────────────────────────
+
+def logout_device(conn, host, logger):
+    try:
+        if conn:
+            conn.disconnect()
+            logger.info(f"Logout successful from {host}")
+        else:
+            logger.warning("Logout skipped: connection object is None")
+    except Exception as e:
+        logger.error(f"{host if host else 'Device'}: Logout failed for vendor {global_config.vendor}: {e}")
+
+
+# ─────────────────────────────────────────────────────────────
+# load_yaml
+# ─────────────────────────────────────────────────────────────
+
+def load_yaml(filename):
+    try:
+        curr_dir  = os.getcwd()
+        file_path = os.path.join(curr_dir, "inputs", filename)
+        with open(file_path, "r") as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Failed to load YAML {filename}: {e}")
+        raise
+
+
+# ─────────────────────────────────────────────────────────────
+# export_device_summary
+# ─────────────────────────────────────────────────────────────
+
+def export_device_summary():
+    timestamp = datetime.now().strftime("%d_%m_%y_%H_%M")
+    output    = {}
+
+    for device_key, phases in global_config.device_results.items():
+        device_details = {
+            "device_key":          device_key,
+            "vendor":              global_config.vendor,
+            "model":               global_config.model,
+            "pre_check_timestamp": global_config.pre_check_timestamp,
+        }
+
+        pre_entries = phases.get("pre", [])
+        pre_checks  = []
+        for entry in pre_entries:
+            raw_output = entry.get("output", "") or ""
+            first_line = raw_output.strip().splitlines()[0] if raw_output.strip() else ""
+            pre_checks.append({
+                "cmd":       entry.get("cmd", ""),
+                "output":    first_line,
+                "json":      entry.get("json", {}),
+                "exception": entry.get("exception", ""),
+            })
+
+        output[device_key] = {
+            "device_details": device_details,
+            "pre_checks":     pre_checks,
+        }
+
+    reports_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "precheck_jsons"
+    )
+    os.makedirs(reports_dir, exist_ok=True)
+    file_path = os.path.join(reports_dir, f"{timestamp}.json")
+
+    with open(file_path, "w") as f:
+        json.dump(output, f, indent=2)
+
+    print(f"[export] Summary written to -> {file_path}")
+
+
+prechecks.py - saketh@saketh-T480:~/.../upgrade$ cat prechecks.py 
+import logging
+from netmiko import ConnectHandler
+from lib.utilities import *
+import re
+from datetime import datetime
+import os
+
+# logger = logging.getLogger(__name__)
+#----------------------------------------------------#
+# PreCheck class
+#----------------------------------------------------#
+
+class PreCheck:
+
+    """
+    Handles configuration and log backups from devices.
+    Currently support Juniper devices
+
+    """
+
+    def __init__(self, device, test_mode=False):
+        self.device = device
+        self.conn = None
+        self.host = device.get("devices")[0].get("host")
+        self.device_type = device.get("devices")[0].get('device_type')
+        self.vendor = device.get("devices")[0].get('vendor', '').lower()
+        self.model = str(device.get("devices")[0].get('model', '')).lower().replace("-", "")
+        self.min_disk_gb = device.get("devices")[0].get('min_disk_gb')
+        self.username = device.get("devices")[0].get('username')
+        self.device_key = f"{self.vendor}_{self.model}"
+        session_log_dir = os.path.join(os.getcwd(), "outputs")
+        os.makedirs(session_log_dir, exist_ok=True)
+
+    # -------------------------------
+    # Connection Handling
+    # -------------------------------
+    def connect(self, logger):
+        try:
+            msg = f"Connecting to {self.host}"
+
+            logger.info(msg)
+
+            session_log_dir = os.path.join(os.getcwd(), "outputs")
+            os.makedirs(session_log_dir, exist_ok=True)
+
+            session_logs_file = f"{self.vendor}_{self.model}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+            session_logs_path = os.path.join(session_log_dir, session_logs_file)
+
+            self.conn = login_device(
+                    device_type = self.device.get("devices")[0].get('device_type'),
+                    host = self.device.get("devices")[0].get("host"),
+                    username = self.device.get("devices")[0].get("username"),
+                    password = self.device.get("devices")[0].get("password"),
+                    session_log_path= session_logs_path,
+                    logger = logger
+                )
+
+            if self.conn is not None:
+                msg = f"{self.host}: Connected successfully"
+                logger.info(msg)
+                print("connection..", self.conn)
+
+                log_task(self.device_key, 'pre-checks', 'connection using credentials', 'Success', 'loggedin', 'DEVICE IN')
+
+                return self.conn
+
+        except Exception as e:
+            msg = f"{self.host}: Not able to connect the device for vendor: {self.vendor}"
+            logger.error(msg)
+
+            log_task(self.device_key, 'pre-checks', 'connection using credentials', 'Failed', str(e))
+            exit(1)
+
+    def disconnect(self, logger):
+        try:
+            if self.conn:
+                msg = "Logging out from device"
+                logging.info(msg)
+                logout_device(self.conn, self.host, logger)
+                self.conn = None
+            else:
+                msg = "Device is not connected already"
+                logger.info(msg)
+                exit
+        except Exception as e:
+            msg = "Not able to logout from device for vendor: {self.vendor}"
+            logger.error(msg)
+            exit
+
+    def showVersion(self, conn, vendor, logger):
+        """
+        Detect vendor and execute show version for specific model
+        to get current OS version and firmware version
+        """
+        try:
+            # self.conn = self.connect()
+            print("Running show version")
+            msg = f"Running show version for {vendor}"
+            logger.info(msg)
+            print(f" Device type: {vendor}")
+
+            if not conn:
+                msg = f"{self.host}: Not connected to device for vendor: {vendor}"
+                print(msg)
+                logger.error(msg)
+                raise RuntimeError(msg)
+                exit
+
+            if (
+                self.vendor not in  ["juniper", "cisco"]
+            ):
+                msg = f"{self.host}: Unsupported vendor: {self.vendor}"
+                print(msg)
+                logger.error(msg)
+                raise ValueError(msg)
+                self.disconnect(logger)
+
+            command = "show version"
+            print(f"{command}")
+            msg = f"{self.host}: Executing '{command}' for vendor: {vendor}"
+            logger.info(msg)
+            print(msg)
+            output = conn.send_command(command)
+
+            print("\nOP START\n", output, "\nOP END\n")
+            print("vendor..", self.vendor)
+            if self.vendor == 'juniper':
+                print(msg)
+                msg = "Fetching the version from the output for vendor: {self.vendor}"
+                version_pattern = re.search(r"\s*Junos:\s*(?P<version>\S+)", output, re.IGNORECASE)
+
+            if version_pattern:
+                version = version_pattern.group("version")
+                print(version)
+            else:
+                msg = "No device name and version found. Check the output file for vendor: {self.vendor}"
+                print(msg)
+                logger.warning(msg)
+                self.disconnect(logger)
+                raise ValueError(msg)
+
+            msg = f"{self.host}: Version information retrieved for vendor: {self.vendor}"
+            logger.info(msg)
+
+
+            log_task(self.device_key, 'pre-checks', 'show version', 'Success', 'Version information retrieved', '')  # Since we tested connection
+
+            return output
+
+        except Exception as e:
+            logger.error(f"{self.host}: Show version failed: {e}")
+            self.disconnect(logger)
+            return False
+            raise
+
+    # -------------------------------
+    # Pre Backup image
+    # -------------------------------
+    def preBackup(self, conn, filename, logger):
+
+        # -------------------------------
+        # Backup the running configuration
+        # -------------------------------
+
+        try:
+            msg = f"Taking device backup vendor: {self.vendor}"
+            print(f"Taking device backup vendor: {self.vendor}")
+            logger.info(msg)
+
+            if not conn:
+                msg = f"Not connected to device for vendor: {self.vendor}"
+                logger.error(msg)
+                log_task(self.device_key, 'pre-checks', 'Backup Config', 'Failed', msg)
+                raise RuntimeError("Not connected to device")
+
+            if self.vendor not in ["juniper", "cisco"]:
+                msg = f"Unsupported vendor: {self.vendor}"
+                logger.error(msg)
+                log_task(self.device_key, 'pre-checks', 'Backup Config', 'Failed', msg)
+                raise ValueError(msg)
+
+            vendor_test = self.vendor
+            print(f"type: {type(self.vendor)} and vendor: {vendor_test}")
+
+            # Executing the commands for backup
+            def execute_command_test(conn, commands, stage, logger):
+                print(conn)
+                try:
+                    print(commands)
+                    msg = f"{self.host}: Running {stage} for vendor: {self.vendor}..."
+                    print("I am in execution command")
+                    logger.info(msg)
+
+                    for cmd in commands:
+                        msg = f"{self.host}: Excecuting '{cmd}'"
+                        logger.info(msg)
+                        print(f"command: {cmd}")
+
+                        if "Configuration" in stage:
+                            print(f"cmd: {cmd}")
+                            result = conn.send_config_set(cmd, cmd_verify=False) + "\n"
+                            print(f"result: {result}")
+
+                        if "log" in stage:
+                            print(f"cmd: {cmd}")
+                            result = conn.send_command(
+                                cmd,
+                                cmd_verify=False,
+                                expect_string=r".*>",
+                                read_timeout=300,
+                            ) + "\n"
+                            print(f"result: {result}")
+
+                    return True
+
+                except Exception as e:
+                    print(e)
+                    msg = f"{self.host}: {stage} failed for vendor: {self.vendor}"
+                    logger.error(msg)
+                    self.disconnect(logger)
+                    return False
+
+            # Vendor-specific backup execution
+            if self.vendor == "juniper":
+
+                config_commands = [
+                    "configure",
+                    f"save {filename}",
+                    "run file list",
+                    "exit",
+                ]
+
+                log_commands = [
+                    f"request support information | save /var/log/{filename}.txt ",
+                    f"file archive compress source /var/log/ destination /var/tmp/{filename}.tgz",
+                ]
+
+                print("Call execute commands")
+                preBackupConfig = execute_command_test(
+                    conn, config_commands, "Configuration backup", logger
+                )
+
+                preDeviceLog = execute_command_test(
+                    conn, log_commands, "Device log backup", logger
+                )
+
+                preBackupDisk = self.preBackupDisk(conn)
+
+            elif self.vendor == "cisco":
+
+                cisco_commands = [
+                    "copy running-config harddisk:show-run-xr.txt",
+                    "admin",
+                    "copy running-config harddisk:show-run-admin location 0/RSP0/CPU0/VM1",
+                ]
+
+                print("Executing Cisco backup commands")
+
+                try:
+                    for cmd in cisco_commands:
+                        msg = f"{self.host}: Executing '{cmd}'"
+                        logger.info(msg)
+                        print(f"command: {cmd}")
+                        result = conn.send_command(
+                            cmd,
+                            cmd_verify=False,
+                            expect_string=r".*#",
+                            read_timeout=300,
+                        )
+                        print(f"result: {result}")
+
+                    preBackupConfig = True
+                    preDeviceLog = True
+                    preBackupDisk = self.preBackupDisk(conn)
+
+                except Exception as e:
+                    print(e)
+                    msg = f"{self.host}: Cisco backup failed: {e}"
+                    logger.error(msg)
+                    preBackupConfig = False
+                    preDeviceLog = False
+                    preBackupDisk = False
+
+            if preBackupConfig and preDeviceLog and preBackupDisk:
+                log_task(self.device_key, 'pre-checks', 'Backup Config', 'Success', '')
+                return True
+            else:
+                msg = f"Device Backup failed for vendor: {self.vendor}"
+                logger.error(msg)
+                log_task(self.device_key, 'pre-checks', 'Backup Config', 'Failed', msg)
+                self.disconnect(logger)
+
+        except Exception as e:
+            print(e)
+            msg = f"Device Backup failed for vendor: {self.vendor}: {e}"
+            logger.error(msg)
+            log_task(self.device_key, 'pre-checks', 'Backup Config', 'Failed', str(e))
+            self.disconnect(logger)
+            return False
+
+    # ------------------------------------
+    # Transfering image to Router
+    # -------------------------------------
+
+    def transferImage(self, local_image_path, filename, logger):
+        """
+        Transfer Juniper image to router disk (/tmp) using CLI commands
+        """
+        try:
+            msg="Transfer Juniper image to router disk (/tmp) using CLI commands"
+            logger.info(msg)
+            if not self.conn:
+                msg="Not connected to device"
+                logger.error(msg)
+                raise RuntimeError("Not connected to device")
+
+            if (
+                    self.vendor not in  ["juniper", "cisco"]
+                ):
+                    msg = f"Unsupported vendor: {self.vendor}"
+                    logger.error(msg)
+                    raise ValueError(msg)
+                    self.disconnect(logger)
+
+            if self.device_type == "juniper":
+
+                image_name = self.image
+                remote_path = f"/tmp/{image_name}"
+
+                # Build CLI SCP command (router pulls file from SCP server)
+                # NOTE: Replace <scp-server> and <user> with actual values
+                commands = [
+                    f"scp <scp-user>@<scp-server>:{local_image_path} {remote_path}\n"
+                ]
+
+            elif self.device_type == "cisco":
+                pass
+
+            output = ""
+            for cmd in commands:
+                logger.info(f"{self.host}: Executing '{cmd.strip()}'")
+                result = self.conn.send_command_timing(cmd)
+                output += result + "\n"
+                print(f"output: {result}")
+
+            logger.info(f"{self.host}: Image transferred to {remote_path}")
+            return remote_path
+
+        except Exception as e:
+            msg="f{self.host}: Image transfer failed: {e}"
+            logger.error(msg)
+            self.disconnect(logger)
+            raise
+
+
+    # -----------------------------------
+    # Validate the MD5 Checksum of image
+    # -----------------------------------
+
+    def verifyChecksum(self,conn, logger):
+        """
+        Verify MD5 checksum of Juniper image file in /var/tmp/
+        Retrieves filename and expected checksum from self.device
+
+        Returns:
+            True if checksums match, False otherwise
+        """
+        try:
+            if not conn:
+                logger.error("Not connected to device")
+                raise RuntimeError("Not connected to device")
+
+            if (self.vendor not in  ["juniper", "cisco"]):
+                msg = f"Unsupported vendor: {self.vendor}"
+                logger.error(msg)
+                raise ValueError(msg)
+                self.disconnect(logger)
+            filename = self.device.get("devices")[0].get("target_image")
+            expected_checksum = self.device.get("devices")[0].get("md5checksum_file")
+
+            if not filename or not expected_checksum:
+                logger.error(f"{self.host}: Missing filename or checksum in device config")
+                raise ValueError("Missing filename or checksum in device config")
+
+            command = f"file checksum md5 /var/tmp/{filename}"
+            logger.info(f"{self.host}: Executing '{command}'")
+            output = conn.send_command(command, expect_string=r".*>", read_timeout=60)
+            logger.debug(f"{self.host}: Checksum output: {output}")
+            r = re.search(r'\.tgz\)\s*=\s*(.*)',output).group(1)
+
+            logger.info(f"{self.host}: inputed from user checksum: {expected_checksum}")
+            logger.info(f"{self.host}: extracted from device  checksum: {r}")
+
+            # Compare checksums
+            if r.lower() == expected_checksum.lower():
+                logger.info(f"{self.host}: Checksum verification PASSED")
+                return True
+            else:
+                logger.warning(f"{self.host}: Checksum verification FAILED")
+                logger.warning(f"{self.host}: Expected: {expected_checksum}")
+                logger.warning(f"{self.host}: Got: {r}")
+                return False
+
+        except Exception as e:
+            logger.error(f"{self.host}: Checksum verification failed: {e}")
+            raise
+
+    def preBackupDisk(self, conn):
+        """
+        Check number of disks on a device
+        Backing up the whole primary disk1 config to disk2 for rollback
+        """
+        for attempt in range(1, 4):
+            logger.info(f"Attempt {attempt} to backup disk for vendor: {self.vendor}")
+            time.sleep(60)  # wait 1 minute before each attempt
+            try:
+                msg = "Backing up the whole primary disk1 config to disk2 for rollback"
+                logger.info(f"Backing up the whole primary disk1 config to disk2 for rollback for vendor: {self.vendor}")
+
+                if not conn:
+                    msg = f"Not connected to device for vendor: {self.vendor}"
+                    logger.error(msg)
+                    raise RuntimeError("Not connected to device")
+                    exit
+
+                if (
+                    self.vendor not in  ["juniper", "cisco"]
+                ):
+                    msg = f"Unsupported vendor: {self.vendor}"
+                    logger.error(msg)
+                    raise ValueError(msg)
+                    self.disconnect()
+
+                if self.vendor == "juniper":
+                    msg = f"Check number of disks on a juniper device "
+                    logger.info(msg)
+                    output = conn.send_command("show vmhost version")
+                    print(f"output: {output}")
+
+                    if "set b" in output and "set p" in output:
+                        msg = f"There are 2 disks in a device for vendor: {self.vendor}\n will take a backup of primary disk to backup disk"
+                        logger.info(msg)
+                        cmd = "request vmhost snapshot"
+                        msg = f"{self.host}: executing the '{cmd}' for vendor: {self.vendor}"
+                        logger.info(msg)
+                        output = conn.send_command_timing(cmd)
+                        if cmd in output or "yes,no" in output.lower():
+                            output += conn.send_command("yes", expect_string=r".*>", read_timeout=180)
+                        print(f"snapshot output: {output}")
+                        logger.info(f"{self.host}: Disk1 backup is done for vendor: {self.vendor}")
+                    else:
+                        msg = f"There is only 1 disk in  a device for vendor: {self.vendor}\n No need to take a disk backup"
+                        logger.info(msg)
+
+                    return True
+            except Exception as e:
+                msg = f"{self.host}: Disk backup failed for vendor: {self.vendor}: {e}"
+                logger.error(msg)
+                self.disconnect()
+                if attempt == 3:
+                    logger.error("Aborting after 3 failed attempts")
+                    return False
+
+    # -------------------------------
+    # Check Storage & Cleanup
+    # -------------------------------
+    def checkStorage(self,conn, logger):
+
+        try:
+            msg= f"{self.host}: Checking system storage for vendor: {self.vendor} "
+            logger.info(msg)
+            # conn=self.connect()
+            if not conn:
+                msg="Not connected to device"
+                logger.error(msg)
+                raise RuntimeError("Not connected to device")
+
+
+            if (
+                self.vendor not in  ["juniper", "cisco"]
+            ):
+                msg = f"Unsupported vendor: {self.vendor}"
+                logger.error(msg)
+                raise ValueError(msg)
+                self.disconnect(logger)
+
+            storage_output = conn.send_command("show system storage")
+            print("command storage_output ::::")
+            # free_gb =
+            avail_space=re.search(r"^/dev/gpt/var\s+\S+\s+\S+\s+(\S+)", storage_output, re.M).group(1)
+
+            avail_space=avail_space[:-1]
+
+
+            avail_space=int(avail_space)
+            print(avail_space,type(avail_space))
+
+
+            if avail_space == None:
+                msg= f"{self.host} Unable to parse storage output for vendor: {self.vendor}"
+                raise ValueError(msg)
+
+            msg=f"{self.host}: Free space {avail_space} GB for vendor: {self.vendor}"
+            logger.info(msg)
+
+            # Enough space
+            if avail_space >= self.min_disk_gb:
+                log_task(self.device_key, 'pre-checks', 'Storage Check (5GB threshold)', 'Success', '')
+
+                return {"status": "OK", "avail_space": avail_space}
+
+            # ---------------------------------------------------
+            # LOW STORAGE → START CLEANUP
+            # ---------------------------------------------------
+            msg="LOW STORAGE → START CLEANUP"
+            logger.info(msg)
+            logger.warning(f"{self.host}: Low space! Running system cleanup")
+
+
+
+            # ---------------------------------------------------
+            # Delete files from YAML
+            # ---------------------------------------------------
+            files_to_delete = self.device.get("cleanup_files", [])
+
+            msg=f"{self.host} Delete files from YAML for vendor: {self.vendor}"
+            logger.info(msg)
+
+            if not files_to_delete:
+                logger.error(
+                    f"{self.host}: cleanup_files EMPTY -> No files are available to delete"
+                )
+                self.disconnect(logger)
+                return False
+
+            for file in files_to_delete:
+                logger.info(f"{self.host}: Deleting {file}")
+                conn.send_command(f"file delete {file}")
+
+            return {
+                "status": "SELECTED_FILES_DELETED"
+            }
+
+        except Exception as e:
+            msg = "f{self.host}: Storage cleanup failed for vendor: {self.vendor}"
+            logger.exception(msg)
+            log_task(self.device_key, 'pre-checks', 'Storage Check (5GB threshold)', 'Failed', str(e))
+
+            self.disconnect(logger)
+            raise
+
+    def disableReProtectFilter(self, conn, logger):
+        """
+        Removes RE protection firewall filter from loopback interface (lo0).
+        show configuration | display set | match lo0.0
+        set interfaces lo0 unit 0 family inet filter input PROTECT-RE-FILTER
+        """
+        try:
+            if not conn:
+                msg = "Not connected to device"
+                logger.error(msg)
+                log_task(self.device_key, 'pre-checks', 'Disable Filter', 'Failed', msg)
+                raise RuntimeError("Not connected to device")
+
+
+            if (
+                self.vendor not in  ["juniper", "cisco"]
+            ):
+                msg = f"Unsupported vendor: {self.vendor}"
+                logger.error(msg)
+                log_task(self.device_key, 'pre-checks', 'Disable Filter', 'Failed', msg)
+                raise ValueError(msg)
+                self.disconnect(logger)
+
+
+            filter_commands = [
+                "configure",
+                "delete interfaces lo0.0 family inet filter",
+                "commit",
+                "exit"
+            ]
+
+            print(filter_commands)
+
+            output = ""
+            for cmd in filter_commands:
+                logger.info(f"{self.host}: Executing '{cmd}'")
+                print(cmd)
+                output += f"[OK] {cmd}\n"
+
+            output += "[edit]\ncommit complete\n"
+
+
+            log_task(self.device_key, 'pre-checks', 'Disable Filter', 'Success', '')
+
+            return output
+
+        except Exception as e:
+            logger.exception(f"{self.host}: Disable RE protect filter failed")
+            log_task(self.device_key, 'pre-checks', 'Disable Filter', 'Failed', str(e))
+            raisesaketh@saketh-T480:~/.../upgrade$ 
+
+
+current main.py 
+import logging
+import sys
+import json
+import traceback
+from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from prechecks import *
+from lib.utilities import *
+from parsers.juniper.juniper_mx204 import *
+from pprint import pformat
+from workflow_report_generator import generate_html_report
+import os
+
+MAX_THREADS = 5
+
+
+# ----------------------------------------------------
+# run_prechecks — new signature, same internal style
+# Returns True if all ok, False if phase-level failure
+# ----------------------------------------------------
+
+def run_prechecks(device_key, vendor, device_commands, logger):
+
+    logger.info(f"[{device_key}] Prechecks started at {datetime.now()}")
+    global_config.pre_check_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
+    # STEP 1 — collect_outputs
+    try:
+        conn    = global_config.device_results[device_key]["conn"]
+        entries = collect_outputs(
+            device_key=device_key, vendor=vendor,
+            commands=device_commands, check_type="pre",
+            conn=conn, log=logger,
+        )
+        if not entries:
+            logger.warning(f"[{device_key}] collect_outputs() returned no entries")
+            global_config.device_results[device_key]["pre"].append({
+                "cmd": "collect_outputs", "output": "", "json": {},
+                "exception": "collect_outputs returned empty"
+            })
+            return False
+
+        for entry in entries:
+            global_config.device_results[device_key]["pre"].append({
+                "cmd":       entry["cmd"],
+                "output":    entry["output"],
+                "json":      {},
+                "exception": ""
+            })
+
+    except Exception as e:
+        logger.error(f"[{device_key}] collect_outputs failed: {e}")
+        global_config.device_results[device_key]["pre"].append({
+            "cmd": "collect_outputs", "output": "", "json": {},
+            "exception": str(e)
+        })
+        return False
+
+    # STEP 2 — parse_outputs
+    try:
+        parse_ok = parse_outputs(
+            device_key=device_key, vendor=vendor,
+            check_type="pre", log=logger,
+        )
+        if not parse_ok:
+            logger.warning(f"[{device_key}] one or more parsers failed — continuing")
+
+        push_to_tracker(
+            device_key=device_key, check_type="pre",
+            entries=entries, parse_ok=parse_ok, log=logger,
+        )
+
+    except Exception as e:
+        logger.error(f"[{device_key}] parse_outputs failed: {e}")
+        global_config.device_results[device_key]["pre"].append({
+            "cmd": "parse_outputs", "output": "", "json": {},
+            "exception": str(e)
+        })
+        return False
+
+    # STEP 3 — extract hostname and version from show version
+    try:
+        update_device_info_from_show_version(device_key, vendor, logger)
+        log_task(device_key, 'pre-checks', 'show version', 'Success',
+                 'hostname and version extracted from show version output')
+    except Exception as e:
+        logger.error(f"[{device_key}] Could not extract show version info: {e}")
+        log_task(device_key, 'pre-checks', 'show version', 'Failed',
+                 f'Could not extract: {e}')
+
+    logger.info(f"[{device_key}] All pre-checks passed")
+    return True
+
+
+# ----------------------------------------------------
+# run_device_pipeline — one thread per device
+# ----------------------------------------------------
+
+def run_device_pipeline(device, commands):
+
+    # STEP 1 — build identity
+    host       = device.get("host")
+    vendor     = device.get("vendor").lower()
+    model      = str(device.get("model")).lower().replace("-", "")
+    cmd_key    = f"{vendor}_{model}"
+    device_key = f"{vendor}_{model}_{host}"
+
+    # STEP 2 — get commands for this device type
+    device_commands = commands.get(cmd_key, [])
+    if not device_commands:
+        print(f"[{device_key}] No commands found for cmd_key='{cmd_key}' — skipping")
+        return
+
+    # STEP 3 — init device slot in device_results and workflow_tracker
+    global_config.device_results[device_key] = {
+        "device_info": {
+            "host": host, "vendor": vendor, "model": model,
+            "hostname": "", "version": ""
+        },
+        "conn":    None,
+        "yaml":    device,
+        "pre":     [],
+        "post":    [],
+        "upgrade": {}
+    }
+    global_config.vendor = vendor
+    global_config.model  = model
+    init_device_tracker(device_key, host, vendor, model)
+
+    # STEP 4 — setup logger
+    logger = setup_logger(host)
+
+    logger.info(f"[{device_key}] Starting workflow")
+
+    precheck = PreCheck(device)
+
+    try:
+        # STEP 5 — connect
+        try:
+            conn = precheck.connect(logger)
+        except Exception as e:
+            logger.error(f"[{device_key}] connect() raised: {e}")
+            log_task(device_key, 'pre-checks', 'connection using credentials',
+                     'Failed', str(e))
+            global_config.device_results[device_key]["pre"].append({
+                "cmd": "connect", "output": "", "json": {},
+                "exception": str(e)
+            })
+            return
+
+        if not conn:
+            logger.error(f"[{device_key}] connect() returned None")
+            log_task(device_key, 'pre-checks', 'connection using credentials',
+                     'Failed', 'connect() returned None')
+            global_config.device_results[device_key]["pre"].append({
+                "cmd": "connect", "output": "", "json": {},
+                "exception": "connect() returned None"
+            })
+            return
+
+        global_config.device_results[device_key]["conn"] = conn
+        global_config.device_results[device_key]["pre"].append({
+            "cmd": "connect", "output": f"{host}: Connected successfully",
+            "json": {}, "exception": ""
+        })
+        log_task(device_key, 'pre-checks', 'connection using credentials',
+                 'Success', f'{host}: Connected successfully', '')
+
+        # STEP 6 — run prechecks
+        try:
+            ok = run_prechecks(device_key, vendor, device_commands, logger)
+            if not ok:
+                logger.error(f"[{device_key}] run_prechecks reported phase failure")
+        except Exception as e:
+            logger.error(f"[{device_key}] run_prechecks raised: {e}")
+
+        # STEP 7 — upgrade (placeholder)
+        pass
+
+        # STEP 8 — post checks (placeholder)
+        pass
+
+    finally:
+        precheck.disconnect(logger)
+        global_config.device_results[device_key]["conn"] = None
+        logger.info(f"[{device_key}] Pipeline finished — connection cleared")
+
+
+# ----------------------------------------------------
+# Main Function
+# ----------------------------------------------------
+
+def main():
+    devices  = load_yaml("deviceDetails.yaml")
+    all_devs = devices.get("devices", [])
+    commands = load_yaml("show_cmd_list.yaml")
+
+    if not all_devs:
+        print("No devices found in deviceDetails.yaml")
+        sys.exit(1)
+
+    global_config.vendor = all_devs[0]["vendor"].lower()
+    global_config.model  = all_devs[0]["model"]
+    logger = setup_logger("main")
+
+    # Juniper only for now
+    juniper_devs = [d for d in all_devs if d.get("vendor", "").lower() == "juniper"]
+
+    with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
+        for device in juniper_devs:
+            executor.submit(run_device_pipeline, device, commands)
+
+    # All threads done — write JSON summary
+    try:
+        export_device_summary()
+        logger.info("JSON summary written to precheck_jsons/")
+        print("JSON summary written to precheck_jsons/")
+    except Exception as e:
+        logger.error(f"Could not write JSON summary: {e}")
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+ 
+## PHASE 0 — Context (Give this with EVERY phase)
+ 
+```
+You are working on a network device automation tool written in Python.
+The codebase has these files:
+- main.py
+- lib/utilities.py
+- prechecks.py
+- parsers/juniper/juniper_mx204.py
+- workflow_report_generator.py
+- inputs/deviceDetails.yaml
+- inputs/show_cmd_list.yaml
+ 
+RULES:
+- Do not rewrite everything — make surgical changes only
+- Do not change any existing function signatures unless told to
+- Do not touch workflow_tracker — leave it exactly as is
+- Do not remove any existing imports
+- Ask me before making any assumption
+- never do more than the phase that is asked to do 
+- after each phase never show m,e the whole file  , show me where exactly to add it , in which file /function etc 
+
+```
+
+
+---
+Implement a complete working pipeline for a single Junos device using threading, where the main.py creates one thread that runs through the entire device 
+lifecycle. The thread populates device_results directly with all outputs and exceptions at each step, using print statements for major step visibility instead
+ of logger. This phase delivers a fully functional end-to-end flow for one device that we know works perfectly before scaling.
+- try to make the new main.py (threading main ) similar to the old main.py
+try to do the majority changes to 
+
+the format of how to ans me - if there is a lot of changes in a particular file - show the whole or if a certain change needs to be done to a line then show only the before and after lien of that line
+if a lot of changes in a ufnction - hsow hte whole function
+ideally we have to do minimal changes to the code -
+and also one more thing 
+after giving code tell me what each parts intention is - and what it might return - show this only for the new code
+before you give me code - tell me exactly what you plaaning to acheive - this way we can understand the exact path -
+and make sure to stop the thread once its done - 
+tbf i already did some code on the phase 0 - u see it , critique it - the issue is that the thread isnt dying - 
+and there are no prints to see what is happening behind the scenes - 
+
+
+here below - are the previusly defined phases = htis is not hte way we are going forward - but the final idead you can understand from it 
+## PHASE 1 — Add `device_results` to `utilities.py`
+ 
+```
+TASK: Add a new global dictionary called device_results to utilities.py
+ 
+This dict is the central data store for all devices.
+It lives in utilities.py alongside workflow_tracker.
+Do not touch workflow_tracker.
+ 
+The structure is:
+ 
+device_results = {}
+ 
+Each key is a device_key in format "vendor_model_host"
+example: "juniper_mx204_192.168.1.10"
+ 
+Each value is:
+{
+    "device_info": {
+        "host":     "",
+        "vendor":   "",
+        "model":    "",
+        "hostname": "",    # filled later from show version
+        "version":  ""     # filled later from show version
+    },
+    "conn":    None,       # netmiko connection object — set after connect, cleared after disconnect
+    "yaml":    {},         # raw device dict from deviceDetails.yaml
+    "pre":     [],         # list of entries filled during pre-checks
+    "post":    [],         # list of entries filled during post-checks
+    "upgrade": {}          # filled during upgrade phase
+}
+ 
+Each entry inside "pre" and "post" looks like:
+{
+    "cmd":       "",   # command string or step name like "connect"
+    "output":    "",   # raw text output from device
+    "json":      {},   # parsed structured output — filled by parsers
+    "exception": ""    # error string if something went wrong — empty if ok
+}
+ 
+ADD device_results = {} to utilities.py
+right below where workflow_tracker = {} is defined.
+Nothing else changes in this file.
+```
+ 
+---
+ 
+## PHASE 2 — Rewrite `main()` in `main.py`
+ 
+```
+TASK: Rewrite only the main() function in main.py
+ 
+RULES:
+- Do not touch any other function
+- Do not remove existing imports
+- ThreadPoolExecutor is already imported — use it
+ 
+The new main() does this:
+ 
+1. Load deviceDetails.yaml using load_yaml() — gives a dict
+   call .get("devices") on it to get the list of devices
+ 
+2. Load show_cmd_list.yaml using load_yaml() — gives a dict
+   keys are in format "vendor_model" example "juniper_mx204"
+ 
+3. If devices is empty — print and sys.exit(1)
+ 
+4. Open a ThreadPoolExecutor with max_workers=MAX_THREADS
+   Loop through devices one by one
+   For each device call executor.submit(run_device_pipeline, device, commands)
+ 
+5. After the with block exits — all threads are done
+   At this point call export_device_summary()
+   Then call generate_html_report(workflow_tracker, output_dir='reports')
+   Wrap both in try/except and log errors
+ 
+The executor block looks like:
+    with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
+        for device in devices:
+            executor.submit(run_device_pipeline, device, commands)
+ 
+Do not use futures for now.
+Do not add any other logic.
+```
+ 
+---
+ 
+## PHASE 3 — Add `run_device_pipeline()` to `main.py`
+ 
+```
+TASK: Add a new function called run_device_pipeline() to main.py
+Place it above main()
+Do not touch any other function
+ 
+This function receives: (device, commands)
+ 
+Step by step what it does:
+ 
+STEP 1 — Build identity
+    host       = device.get("host")
+    vendor     = device.get("vendor").lower()
+    model      = str(device.get("model")).lower().replace("-", "")
+    cmd_key    = f"{vendor}_{model}"
+    device_key = f"{vendor}_{model}_{host}"
+ 
+STEP 2 — Get commands for this device type
+    device_commands = commands.get(cmd_key, [])
+    if not device_commands — log warning and return immediately
+ 
+STEP 3 — Initialise this device's slot in device_results
+    device_results[device_key] = {
+        "device_info": { "host": host, "vendor": vendor, "model": model, "hostname": "", "version": "" },
+        "conn":    None,
+        "yaml":    device,
+        "pre":     [],
+        "post":    [],
+        "upgrade": {}
+    }
+    Also call init_device_tracker(device_key, host, vendor, model) for workflow_tracker
+ 
+STEP 4 — Setup logger
+    logger = setup_logger(host)
+ 
+STEP 5 — Connect
+    precheck = PreCheck(device)
+    Call precheck.connect(logger) inside a try/except
+    
+    If connect fails or returns None:
+        append to device_results[device_key]["pre"]:
+            { "cmd": "connect", "output": "", "json": {}, "exception": <error string> }
+        log the error
+        call precheck.disconnect(logger) in finally
+        return   # stop this device — do not proceed
+ 
+    If connect succeeds:
+        device_results[device_key]["conn"] = conn
+        append to device_results[device_key]["pre"]:
+            { "cmd": "connect", "output": f"{host}: Connected successfully", "json": {}, "exception": "" }
+ 
+STEP 6 — Call run_prechecks
+    Wrap in try/except
+    Call run_prechecks(device_key, vendor, device_commands, logger)
+    
+    If run_prechecks returns True (meaning failed):
+        log the failure
+        call precheck.disconnect(logger) in finally
+        return   # stop this device
+ 
+STEP 7 — Upgrade phase
+    Leave as pass for now — placeholder only
+ 
+STEP 8 — Post checks
+    Leave as pass for now — placeholder only
+ 
+STEP 9 — Always in finally block
+    precheck.disconnect(logger)
+    device_results[device_key]["conn"] = None
+    log pipeline finished
+```
+ 
+---
+ 
+## PHASE 4 — Rewrite `run_prechecks()` in `main.py`
+ 
+```
+TASK: Rewrite only run_prechecks() in main.py
+ 
+New signature: run_prechecks(device_key, vendor, device_commands, logger)
+ 
+This function returns True if a phase-level failure happened, False if all ok.
+A phase-level failure means the whole step failed — not a single command failing.
+A single command or parser failing does NOT return True — just logs and continues.
+ 
+STEP 1 — collect_outputs
+    conn = device_results[device_key]["conn"]
+    
+    Call collect_outputs(device_key, vendor, device_commands, "pre", conn, logger)
+    inside a try/except
+    
+    If it raises an exception or returns empty:
+        append to device_results[device_key]["pre"]:
+            { "cmd": "collect_outputs", "output": "", "json": {}, "exception": <error> }
+        log error
+        return True   # phase failed — stop device
+ 
+    If entries returned:
+        for each entry in entries — append to device_results[device_key]["pre"]:
+            { "cmd": entry["cmd"], "output": entry["output"], "json": {}, "exception": "" }
+ 
+STEP 2 — parse_outputs
+    Call parse_outputs(device_key, vendor, "pre", logger)
+    inside a try/except
+    
+    If it raises an exception:
+        append to device_results[device_key]["pre"]:
+            { "cmd": "parse_outputs", "output": "", "json": {}, "exception": <error> }
+        log error
+        return True   # phase failed — stop device
+ 
+    parse_outputs mutates entries in place — filling in "json" and "exception" fields
+    Individual parser failures do NOT return True — parse_outputs handles those internally
+ 
+STEP 3 — extract hostname and version from show version entry
+    Look through device_results[device_key]["pre"] for entry where "show version" is in cmd
+    If found and entry["json"] is not empty:
+        device_results[device_key]["device_info"]["hostname"] = entry["json"].get("hostname", "")
+        device_results[device_key]["device_info"]["version"]  = entry["json"].get("version", "")
+    Wrap in try/except — if it fails just log warning and continue — not a phase failure
+ 
+return False   # all steps passed
+```
+ 
+---
+ 
+## PHASE 5 — Generate HTML report at the end
+ 
+```
+TASK: At the end of main() after all threads finish
+      build the HTML report using device_results
+ 
+The report reads from device_results — not workflow_tracker
+device_results at this point looks like:
+ 
+{
+    "juniper_mx204_192.168.1.10": {
+        "device_info": { "host", "vendor", "model", "hostname", "version" },
+        "pre": [
+            { "cmd": "connect",          "output": "...", "json": {},    "exception": "" },
+            { "cmd": "show version",     "output": "...", "json": {...}, "exception": "" },
+            { "cmd": "show bgp summary", "output": "...", "json": {},    "exception": "no parser registered" },
+        ],
+        "post":    [],
+        "upgrade": {}
+    },
+    "cisco_asr9910_192.168.1.11": { ... }
+}
+ 
+In main() after the executor block:
+    try:
+        export_device_summary()
+        path = generate_html_report(device_results, output_dir='reports')
+        print(f"Report saved -> {path}")
+    except Exception as e:
+        print(f"Could not write report: {e}")
+ 
+Note: wait for the current code -
+and then for phase 1 try to tell me why my code is failing and what to change it so htat  it works
+and also forget about the html part completly - i wont give u the code also 
+and after each phase - u tell me what to check if the code worked or - this way its easier to manage expectation 

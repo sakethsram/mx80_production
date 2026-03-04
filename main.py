@@ -130,37 +130,62 @@ def run_prechecks(dev, device_key, logger):
 # ----------------------------------------------------
 # Main Function
 # ----------------------------------------------------
+
 def main():
-    devices    = load_yaml("deviceDetails.yaml")
-    all_devs   = devices["devices"]
+    devices  = load_yaml("deviceDetails.yaml")
+    all_devs = devices["devices"]
 
     global_config.vendor = all_devs[0]["vendor"].lower()
     global_config.model  = all_devs[0]["model"]
+
     logger = setup_logger("main")
 
+    # ── Init trackers BEFORE threading (not thread-safe) ──────────────────
     for dev in all_devs:
         vendor_lc  = dev["vendor"].lower()
         model_lc   = str(dev["model"]).lower().replace("-", "")
         device_key = f"{vendor_lc}_{model_lc}"
 
-        global_config.vendor = vendor_lc
-        global_config.model  = dev["model"]
-
-        logger.info(f"[{device_key}] Starting workflow")
-
         if device_key not in workflow_tracker:
             init_device_tracker(device_key, dev["host"], vendor_lc, model_lc)
 
-        run_prechecks(dev, device_key, logger)
+    print(f"[MAIN] Starting prechecks for {len(all_devs)} device(s) — max {MAX_THREADS} thread(s)")
+    logger.info(f"[MAIN] Spawning threads for {len(all_devs)} device(s)")
 
-    # All devices done — generate final report
+    # ── One thread per device ──────────────────────────────────────────────
+    with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
+        future_to_key = {
+            executor.submit(
+                run_prechecks,
+                dev,
+                f"{dev['vendor'].lower()}_{str(dev['model']).lower().replace('-', '')}",
+                setup_logger(f"{dev['vendor'].lower()}_{str(dev['model']).lower().replace('-', '')}"),
+            ): f"{dev['vendor'].lower()}_{str(dev['model']).lower().replace('-', '')}"
+            for dev in all_devs
+        }
+
+        for future in as_completed(future_to_key):
+            device_key = future_to_key[future]
+            try:
+                ok = future.result()
+                status = "PASSED" if ok else "FAILED"
+                print(f"[MAIN] {device_key} -> prechecks {status}")
+                logger.info(f"[MAIN] {device_key} prechecks {'passed' if ok else 'failed'}")
+            except Exception as e:
+                print(f"[MAIN] {device_key} -> thread raised exception: {e}")
+                logger.error(f"[MAIN] {device_key} thread exception: {e}")
+
+    print(f"[MAIN] All devices done — exporting results")
+
+    # ── Final export + report — same as before ─────────────────────────────
     try:
         export_device_summary()
         path = generate_html_report(workflow_tracker, output_dir='reports')
-        logger.info(f"All devices done. Report saved -> {path}")
-        print(f"Report saved -> {path}")
+        logger.info(f"Report saved -> {path}")
+        print(f"[MAIN] Report saved -> {path}")
     except Exception as e:
         logger.error(f"Could not write final HTML report: {e}")
+        print(f"[MAIN] ERROR: Could not write report: {e}")
 
     sys.exit(0)
 
