@@ -1,23 +1,6 @@
-  File "/home/colt/Documents/MS1Automation2/main.py", line 8, in <module>
-    from prechecks import *
-  File "/home/colt/Documents/MS1Automation2/prechecks.py", line 3, in <module>
-    from lib.utilities import *
-  File "/home/colt/Documents/MS1Automation2/lib/utilities.py", line 14, in <module>
-    from parsers.cisco.cisco_asr9910 import *
-  File "/home/colt/Documents/MS1Automation2/parsers/cisco/cisco_asr9910.py", line 8, in <module>
-    from models.cisco.cisco_asr9910 import (
-ImportError: cannot import name 'ShowPlatform' from 'models.cisco.cisco_asr9910' (/home/colt/Documents/MS1Automation2/models/cisco/cisco_asr9910.py)
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ ^C
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ ^C
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ cat models/cisco/cisco_asr9910.py
+cat > models/cisco/cisco_asr9910.py << 'EOF'
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
-
-
-
-from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
-
 
 @dataclass
 class ISISAdjacencies:
@@ -31,6 +14,33 @@ class ISISAdjacencies:
     ipv4BFD: str
     ipv6BFD: str
 
+@dataclass
+class IsisAdjacencyEntry:
+    SystemId: str
+    Interface: str
+    SNPA: str
+    State: str
+    Hold: int
+    Changed: str
+    NSF: str
+    IPv4BFD: str
+    IPv6BFD: str
+
+@dataclass
+class IsisAdjacencyLevelBlock:
+    Level: str
+    TotalAdjacencyCount: int = 0
+    Adjacencies: List[IsisAdjacencyEntry] = field(default_factory=list)
+    UpCount: int = 0
+    NonUpCount: int = 0
+    IPv4BFDUpCount: int = 0
+    IPv4BFDNonUpCount: int = 0
+
+@dataclass
+class IsisAdjacencyReport:
+    Blocks: List[IsisAdjacencyLevelBlock] = field(default_factory=list)
+    SourceFile: Optional[str] = None
+    ParsedAt: Optional[str] = None
 
 @dataclass
 class BFDSession:
@@ -46,13 +56,20 @@ class BFDSession:
     hardware: str
     npu: str
 
+@dataclass
+class ShowbfdSession:
+    interface: str
+    destAddr: str
+    localDettime: List[Dict[str, str]]
+    hw: str
+    npu: str
+    state: str
 
 @dataclass
 class ShowInstallActiveSummary:
     Label: str
     AcivePackages: int
     Packages: List[str]
-
 
 @dataclass
 class ShowRouteSummary:
@@ -62,6 +79,69 @@ class ShowRouteSummary:
     deleted: int
     memory: int
 
+@dataclass
+class BgpProcessVersion:
+    Process: str
+    RcvTblVer: str
+    BRibRib: str
+    LabelVer: str
+    ImportVer: str
+    SendTblVer: str
+    StandbyVer: str
+
+@dataclass
+class BgpNeighbor:
+    Neighbor: str
+    Spk: str
+    RemoteAS: str
+    MsgRcvd: str
+    MsgSent: str
+    TblVer: str
+    InQ: str
+    OutQ: str
+    UpDown: str
+    StatePfxRcd: str
+
+@dataclass
+class ShowBgpAllSummary:
+    RouterID: str
+    LocalAS: str
+    TableState: str
+    MainTableVersion: str
+    ProcessVersions: List[Dict[str, Any]]
+    Neighbors: List[Dict[str, Any]]
+
+@dataclass
+class ShowBgpVrfAllSummary:
+    VRF: str
+    VRFState: str
+    RouteDistinguisher: str
+    VRFID: str
+    RouterID: str
+    LocalAS: str
+    TableState: str
+    MainTableVersion: str
+    ProcessVersions: List[Dict[str, Any]]
+
+@dataclass
+class ShowIpv4VrfAllInterfaceBrief:
+    Interface: str
+    IPAddress: str
+    Status: str
+    Protocol: str
+    VrfName: str
+
+@dataclass
+class ShowMplsLdpNeighbor:
+    PeerLdpIdentifier: str
+    LocalTCP: str
+    RemoteTCP: str
+    SessionState: str
+    Uptime: str
+    MsgsSent: str
+    MsgsReceived: str
+    DiscoveryInterfaces: List[str]
+    BoundIPv4Addresses: List[str]
 
 @dataclass
 class PimNeighbor:
@@ -76,6 +156,73 @@ class PimNeighbor:
     flags: List[str]
     flagsRaw: str
 
+@dataclass
+class ShowPfmLocationAll:
+    Node: str
+    CurrentTime: str
+    PFMTotal: int
+    EmergencyAlert: int
+    Critical: int
+    Error: int
+    RaisedTime: str
+    SNumber: str
+    FaultName: str
+    Severity: str
+    ProcessID: str
+    DevicePath: str
+    Handle: str
+
+@dataclass
+class ShowProcessesCpu:
+    PID: str
+    Runtime: str
+    Invoked: str
+    uSecs: str
+    FiveSec: str
+    OneMin: str
+    FiveMin: str
+    TTY: str
+    Process: str
+
+@dataclass
+class memoryInfo:
+    physicalMem: str
+    freeMem: str
+    memoryState: str
+
+@dataclass
+class ShowWatchdogMemoryState:
+    nodeName: str
+    memoryInfo: List[memoryInfo]
+
+@dataclass
+class ShowMemorySummary:
+    node: str
+    physical_total: str
+    physical_available: str
+    app_total: str
+    app_available: str
+    image: str
+    bootram: str
+    reserved: str
+    iomem: str
+    flashfsys: str
+    shared_window: str
+
+@dataclass
+class ShowRedundancy:
+    ActiveNode: str
+    StandbyNode: str
+    RedundancyState: str
+    RedundancyMode: str
+    LastSwitchover: str
+
+@dataclass
+class ShowInterfacesDescription:
+    Interface: str
+    Status: str
+    Protocol: str
+    Description: str
 
 @dataclass
 class ShowFileSystemEntry:
@@ -87,14 +234,48 @@ class ShowFileSystemEntry:
     prefixes: List[str]
 
 @dataclass
-class FPDEntry:
-        Location: str
-        CardType: str
-        HWver: str
-        FPDdevice: str
-        ATRstatus: str
-        FPDVersions: dict
+class BundleMember:
+    Interface: str
+    Duplex: str
+    Speed: str
+    State: str
 
+@dataclass
+class ShowInterfacesBundleEther:
+    Interface: str
+    AdminState: str
+    LineProtocol: str
+    MacAddress: str
+    Description: str
+    InternetAddress: str
+    MTU: str
+    Bandwidth: str
+    LastLinkFlapped: str
+    ArpTimeout: str
+    MemberCount: int
+    Members: List[BundleMember]
+
+@dataclass
+class ShowMsdpPeer:
+    PeerAddress: str
+    AS: str
+    State: str
+    UptimeResetTime: str
+    SACount: int
+    ConnectionSource: str
+    RPFPeer: str
+
+@dataclass
+class ShowL2vpnXconnectBrief:
+    LikeToLike_UP: int
+    LikeToLike_DOWN: int
+    LikeToLike_UNR: int
+    PwEther_UP: int
+    PwEther_DOWN: int
+    PwEther_UNR: int
+    Total_UP: int
+    Total_DOWN: int
+    Total_UNRESOLVED: int
 
 @dataclass
 class L2vpnXconnectBriefRow:
@@ -112,52 +293,35 @@ class L2vpnXconnectBriefSummary:
     totalUnresolved: int
 
 @dataclass
-class IsisAdjacencyEntry:
-    SystemId: str
-    Interface: str
-    SNPA: str
+class FPDEntry:
+    Location: str
+    CardType: str
+    HWver: str
+    FPDdevice: str
+    ATRstatus: str
+    FPDVersions: dict
+
+@dataclass
+class ShowPlatform:
+    Node: str
+    Type: str
     State: str
-    Hold: int
-    Changed: str
-    NSF: str
-    IPv4BFD: str
-    IPv6BFD: str
-
+    ConfigState: str
 
 @dataclass
-class IsisAdjacencyLevelBlock:
-    Level: str
-    TotalAdjacencyCount: int = 0
-    Adjacencies: List[IsisAdjacencyEntry] = field(default_factory=list)
-
-    # Optional: useful derived stats
-    UpCount: int = 0
-    NonUpCount: int = 0
-    IPv4BFDUpCount: int = 0
-    IPv4BFDNonUpCount: int = 0
-
+class ShowMediaLocation:
+    Disk: str
+    Size: str
+    Used: str
+    Free: str
 
 @dataclass
-class IsisAdjacencyReport:
-
-    Blocks: List[IsisAdjacencyLevelBlock] = field(default_factory=list)
-
-    # Optional: metadata
-    SourceFile: Optional[str] = None
-    ParsedAt: Optional[str] = None  # ISO timestamp if you want
-
-
-@dataclass
-class ShowMemorySummary:
-    node: str
-    physical_total: str
-    physical_available: str
-    app_total: str
-    app_available: str
-    image: str
-    bootram: str
-    reserved: str
-    iomem: str
-    flashfsys: str
-    shared_window: str
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$
+class ShowVersion:
+    Version: str
+    Uptime: str
+    ImageFile: str
+    Processor: str
+    SerialNumber: str
+    ROM: str
+    BuildInfo: str
+EOF
