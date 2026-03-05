@@ -274,10 +274,13 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
         stripped = output.strip() if output else ""
 
         if len(stripped) <= MIN_OUTPUT_CHARS:
-            entry["json"]      = {}
-            entry["exception"] = ""
+            if parser_fn is not None:
+                entry["json"]      = parser_fn("")
+                entry["exception"] = ""
+            else:
+                entry["json"]      = {}
+                entry["exception"] = ""
             continue
-
         try:
             result = parser_fn(output)
 
