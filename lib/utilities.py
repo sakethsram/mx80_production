@@ -435,3 +435,58 @@ def merge_thread_result(device_key: str, result: dict):
             if value:
                 slot["device_info"][field] = value
         logger.info(f"[merge] device_key='{device_key}' merged into device_results")
+        
+def connect(device_key: str, dev: dict, logger):
+    host       = dev["host"]
+    vendor     = dev["vendor"].lower()
+    model      = str(dev["model"]).lower().replace("-", "")
+
+    session_log_dir = os.path.join(os.getcwd(), "outputs")
+    os.makedirs(session_log_dir, exist_ok=True)
+    session_log_file = f"{vendor}_{model}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+    session_log_path = os.path.join(session_log_dir, session_log_file)
+
+    logger.info(f"[{device_key}] Connecting to {host}")
+
+    try:
+        conn = login_device(
+            device_type      = dev["device_type"],
+            host             = host,
+            username         = dev["username"],
+            password         = dev["password"],
+            session_log_path = session_log_path,
+            logger           = logger,
+        )
+        device_results[device_key]["conn"] = conn
+        logger.info(f"[{device_key}] Connected successfully to {host}")
+        return conn
+
+    except Exception as e:
+        logger.error(f"[{device_key}] Connection failed: {e}")
+        device_results[device_key]["pre"].append({
+            "cmd":       "connect",
+            "output":    "",
+            "json":      {},
+            "exception": f"Connection failed: {e}",
+        })
+        return None
+
+
+def disconnect(device_key: str, logger):
+    slot = device_results.get(device_key, {})
+    conn = slot.get("conn")
+    host = slot.get("device_info", {}).get("host", device_key)
+
+    if conn is None:
+        logger.error(f"[{device_key}] disconnect called but conn is None")
+        device_results[device_key]["pre"].append({
+            "cmd":       "disconnect",
+            "output":    "",
+            "json":      {},
+            "exception": "disconnect called but conn was None — connection never established",
+        })
+        return
+
+    logout_device(conn, host, logger)
+    device_results[device_key]["conn"] = None
+    logger.info(f"[{device_key}] Disconnected from {host}")

@@ -5,7 +5,7 @@ import traceback
 import threading
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from prechecks import *
+# from prechecks import *
 from lib.utilities import *
 from parsers.juniper.juniper_mx204 import *
 import os
@@ -27,12 +27,12 @@ def run_prechecks(dev, device_key, logger):
 
     logger.info(f"[THREAD-{tid}] [{device_key}] Prechecks started at {datetime.now()}")
 
-    precheck = PreCheck({"devices": [dev]})
+    
 
     try:
         # ── STEP 1: Connect ───────────────────────────────────────────
         try:
-            conn = precheck.connect(logger)
+            conn = connect(device_key, dev, logger)
         except Exception as e:
             logger.error(f"[THREAD-{tid}] [{device_key}] FATAL connect failed: {e}")
             merge_thread_result(device_key, device_results.get(device_key, {"pre": [], "post": [], "upgrade": {}, "device_info": {}}))
@@ -95,7 +95,7 @@ def run_prechecks(dev, device_key, logger):
         return False
 
     finally:
-        precheck.disconnect(logger)
+        disconnect(device_key, logger)
         logger.info(f"[THREAD-{tid}] [{device_key}] Prechecks completed at {datetime.now()}")
 
 
