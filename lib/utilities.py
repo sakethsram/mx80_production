@@ -87,7 +87,6 @@ def build_juniper_registries():
         ("juniper", "show isis adjacency extensive | no-more"):                                        parse_show_isis_adjacency_extensive,
         ("juniper", "show route summary | no-more"):                                                   parse_show_route_summary,
         ("juniper", "show rsvp session match DN | no-more"):                                           parse_show_rsvp_session_match_DN,
-        ("juniper", "show rsvp | no-more"):                                                            parse_show_rsvp,
         ("juniper", "show mpls lsp unidirectional | no-more"):                                         parse_show_mpls_lsp_unidirectional_no_more,
         ("juniper", "show system uptime | no-more"):                                                   parse_21_show_system_uptime,
         ("juniper", "show ntp associations no-resolve | no-more"):                                     parse_22_show_ntp_associations,
@@ -100,14 +99,9 @@ def build_juniper_registries():
         ("juniper", "show chassis routing-engine | no-more"):                                          parse_29_show_chassis_routing_engine,
         ("juniper", "show chassis environment | no-more"):                                             parse_30_show_chassis_environment,
         ("juniper", "show system resource-monitor fpc | no-more"):                                     parse_31_show_system_resource_monitor_fpc,
-        ("juniper", "show krt table | no-more"):                                                       parse_32_show_krt_table,
-        ("juniper", "show system processes | no-more"):                                                parse_33_show_system_processes,
-        ("juniper", "show interface descriptions | no-more"):                                          parse_34_show_interface_descriptions,
         ("juniper", "show oam ethernet connectivity-fault-management interfaces extensive | no-more"): parse_35_show_oam_cfm_interfaces,
         ("juniper", "show ldp neighbor | no-more"):                                                    parse_36_show_ldp_neighbor,
         ("juniper", "show connections | no-more"):                                                     parse_37_show_connections,
-        ("juniper", "show rsvp session | match DN | no-more"):                                         parse_show_down_lsp_or_session,
-        ("juniper", "show mpls lsp unidirectional | match dn | no-more"):                              parse_show_down_lsp_or_session,
         ("juniper", "show log messages | last 200 | no-more"):                                         parse_show_log_messages_last_200,
     }
     return {
