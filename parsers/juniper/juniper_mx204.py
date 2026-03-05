@@ -1633,13 +1633,12 @@ def parse_show_route_summary(text_content: str) -> Dict[str, Any]:
 def parse_show_rsvp_session_match_DN(text_content: str) -> Dict[str, Any]:
     cmd = "show rsvp session | match DN | no-more"
     try:
-        if not text_content or "empty" in text_content.lower():
-            return {}
+        s = (text_content or "").strip()
+        if not s:
+            return {"no_down_sessions": True}
         return {"output": text_content}
     except Exception as e:
         return {"error": f"Error parsing {cmd}: {str(e)}"}
-
-
 # ────────────────────────────────────────────────────────────────────────────────
 def parse_show_mpls_lsp_unidirectional_no_more(text_content: str) -> Dict[str, Any]:
     cmd = "show mpls lsp unidirectional | match Dn | no-more"
