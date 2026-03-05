@@ -46,22 +46,26 @@ def run_prechecks(dev, device_key, logger):
     try:
         # ── STEP 1: Connect ───────────────────────────────────────────
         try:
-            conn = connect(device_key, dev, logger) 
+            conn = connect(device_key, dev, logger)
+            if not conn:
+                raise ConnectionError("connect() returned None")
         except Exception as e:
-            logger.error(f"[THREAD-{tid}] [{device_key}] FATAL connect failed: {e}")
-            merge_thread_result(device_key, device_results.get(device_key, {"pre": [], "post": [], "upgrade": {}, "device_info": {}}))
+            logger.error(f"[{device_key}] STEP 1 CONNECT failed — {e}")
+            device_results[device_key]["pre"].append({"cmd": "connect", "output": "", "json": {}, "exception": str(e)})
             return False
 
-        if not conn:
-            logger.error(f"[THREAD-{tid}] [{device_key}] FATAL connect() returned None")
-            merge_thread_result(device_key, device_results.get(device_key, {"pre": [], "post": [], "upgrade": {}, "device_info": {}}))
-            return False
-
+        # ── STEP 2: Execute show commands ─────────────────────────────
         try:
-            # ── STEP 2: Execute show commands ─────────────────────────
             exec_ok = execute_show_commands(device_key, vendor_lc, model_lc, conn, "pre", logger)
+            if not exec_ok:
+                raise RuntimeError("execute_show_commands returned False")
+        except Exception as e:
+            logger.error(f"[{device_key}] STEP 2 EXECUTE failed — {e}")
+            device_results[device_key]["pre"].append({"cmd": "execute_show_commands", "output": "", "json": {}, "exception": str(e)})
+            return False
 
-            # ── STEP 3: Merge results ─────────────────────────────────
+        # ── STEP 3: Merge results ─────────────────────────────────────
+        try:
             thread_result = {
                 "pre":         device_results.get(device_key, {}).get("pre", []),
                 "device_info": device_results.get(device_key, {}).get("device_info", {}),
@@ -69,10 +73,9 @@ def run_prechecks(dev, device_key, logger):
                 "upgrade":     {},
             }
             merge_thread_result(device_key, thread_result)
-
         except Exception as e:
-            logger.error(f"[THREAD-{tid}] [{device_key}] FATAL command pipeline: {e}")
-            merge_thread_result(device_key, device_results.get(device_key, {"pre": [], "post": [], "upgrade": {}, "device_info": {}}))
+            logger.error(f"[{device_key}] STEP 3 STORE failed — {e}")
+            device_results[device_key]["pre"].append({"cmd": "merge_thread_result", "output": "", "json": {}, "exception": str(e)})
             return False
 
         logger.info(f"[THREAD-{tid}] [{device_key}] All pre-checks passed")
@@ -80,13 +83,11 @@ def run_prechecks(dev, device_key, logger):
 
     except Exception as e:
         logger.error(f"[THREAD-{tid}] [{device_key}] Unhandled exception: {e}")
-        merge_thread_result(device_key, device_results.get(device_key, {"pre": [], "post": [], "upgrade": {}, "device_info": {}}))
         return False
 
     finally:
         disconnect(device_key, logger)
         logger.info(f"[THREAD-{tid}] [{device_key}] Prechecks completed at {datetime.now()}")
-
 # ----------------------------------------------------
 # Main Function
 # ----------------------------------------------------
