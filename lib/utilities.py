@@ -118,8 +118,71 @@ def build_juniper_registries():
 
 def build_cisco_registries():
     raw = {
-        ("cisco", "show install active summary"):   show_install_active_summary,
-        ("cisco", "show isis adjacency"):           show_isis_adjacency,
+        # ── show install active summary ───────────────────────────────
+        ("cisco", "show install active summary"):           show_install_active_summary,
+
+        # ── show isis adjacency ───────────────────────────────────────
+        ("cisco", "show isis adjacency"):                   show_isis_adjacency,
+
+        # ── show bfd session ─────────────────────────────────────────
+        ("cisco", "show bfd session"):                      show_bfd_session,
+
+        # ── show route summary ────────────────────────────────────────
+        ("cisco", "show route summary"):                    show_route_summary,
+
+        # ── show bgp all summary ──────────────────────────────────────
+        ("cisco", "show bgp all summary"):                  show_bgp_all_summary,
+
+        # ── show bgp vrf all summary ──────────────────────────────────
+        ("cisco", "show bgp vrf all summary"):              show_bgp_vrf_all_summary,
+
+        # ── show ipv4 vrf all interface brief ─────────────────────────
+        ("cisco", "show ipv4 vrf all interface brief"):     show_ipv4_vrf_all_interface_brief,
+
+        # ── show mpls ldp neighbor ────────────────────────────────────
+        ("cisco", "show mpls ldp neighbor"):                show_mpls_ldp_neighbor,
+
+        # ── show pim neighbor ─────────────────────────────────────────
+        ("cisco", "show pim neighbor"):                     show_pim_neighbor,
+
+        # ── show pfm location all ─────────────────────────────────────
+        ("cisco", "show pfm location all"):                 show_pfm_location_all,
+
+        # ── show processes cpu ────────────────────────────────────────
+        ("cisco", "show processes cpu"):                    show_processes_cpu,
+
+        # ── show watchdog memory-state location all ───────────────────
+        ("cisco", "show watchdog memory-state location all"): show_watchdog_memory_state,
+
+        # ── show redundancy ───────────────────────────────────────────
+        ("cisco", "show redundancy"):                       show_redundancy,
+
+        # ── show interfaces description ───────────────────────────────
+        ("cisco", "show interfaces description"):           show_interfaces_description,
+
+        # ── show filesystem ───────────────────────────────────────────
+        ("cisco", "show filesystem"):                       show_filesystem,
+
+        # ── show interfaces Bundle-Ether ──────────────────────────────
+        ("cisco", "show interfaces Bundle-Ether"):          show_interfaces,
+
+        # ── show msdp peer ────────────────────────────────────────────
+        ("cisco", "show msdp peer"):                        show_msdp_peer,
+
+        # ── show l2vpn xconnect brief ─────────────────────────────────
+        ("cisco", "show l2vpn xconnect brief"):             show_l2vpn_xconnect_brief,
+
+        # ── show hw-module fpd ────────────────────────────────────────
+        ("cisco", "show hw-module fpd"):                    show_hw_module_fpd,
+
+        # ── show platform ─────────────────────────────────────────────
+        ("cisco", "show platform"):                         show_platform,
+
+        # ── show media location 0/RSP1/CPU0 ──────────────────────────
+        ("cisco", "show media location 0/RSP1/CPU0"):       show_media_location,
+
+        # ── show version ──────────────────────────────────────────────
+        ("cisco", "show version"):                          show_version,
     }
     return {
         (vendor, normalise(cmd)): fn
