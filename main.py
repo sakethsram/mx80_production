@@ -40,13 +40,13 @@ def run_prechecks(dev, device_key, logger):
     vendor_lc   = dev["vendor"].lower()
     model_lc    = str(dev["model"]).lower().replace("-", "")
     device_type = dev.get("device_type")
-
+    conn = None
     logger.info(f"[THREAD-{tid}] [{device_key}] Prechecks started at {datetime.now()}")
 
     try:
         # ── STEP 1: Connect ───────────────────────────────────────────
         try:
-            conn = connect(dev, logger)
+            conn = connect(device_key, dev, logger) 
         except Exception as e:
             logger.error(f"[THREAD-{tid}] [{device_key}] FATAL connect failed: {e}")
             merge_thread_result(device_key, device_results.get(device_key, {"pre": [], "post": [], "upgrade": {}, "device_info": {}}))
@@ -84,7 +84,7 @@ def run_prechecks(dev, device_key, logger):
         return False
 
     finally:
-        disconnect(conn, host, logger)
+        disconnect(device_key, logger)
         logger.info(f"[THREAD-{tid}] [{device_key}] Prechecks completed at {datetime.now()}")
 
 # ----------------------------------------------------
