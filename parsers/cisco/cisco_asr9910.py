@@ -40,29 +40,26 @@ logger = logging.getLogger(__name__)
 # show redundancy
 # ---------------------------------------------------------------------------
 def show_redundancy(content: str) -> List[Dict[str, Any]]:
-    """
-    Parse 'show redundancy' output.
-
-    :param content: Raw command output string.
-    :return: List of parsed dicts.
-    """
     try:
         cmd = "show redundancy"
 
         if not content:
             raise ValueError(f"No output found for command: {cmd}")
 
-        active_match = re.search(r'Active node:\s+(\S+)', content)
-        standby_match = re.search(r'Standby node:\s+(\S+)', content)
-        state_match = re.search(r'Redundancy state:\s+(.+)', content)
-        mode_match = re.search(r'Redundancy mode:\s+(.+)', content)
-        last_sw_match = re.search(r'Last switchover:\s+(.+)', content)
+        # "Node 0/RSP0/CPU0 is in ACTIVE role"
+        active_match = re.search(r'Node\s+(\S+)\s+is in ACTIVE role', content)
+
+        # "Partner node (0/RSP1/CPU0) is in STANDBY role"
+        standby_match = re.search(r'Partner node\s+\((\S+)\)\s+is in STANDBY role', content)
+
+        # "Last switch-over Tue Mar  3 09:09:09 2026: 1 day, 20 hours..."
+        last_sw_match = re.search(r'Last switch-over\s+(.+?):\s+\d+\s+day', content)
 
         result = [asdict(ShowRedundancy(
             ActiveNode=active_match.group(1).strip() if active_match else "",
             StandbyNode=standby_match.group(1).strip() if standby_match else "",
-            RedundancyState=state_match.group(1).strip() if state_match else "",
-            RedundancyMode=mode_match.group(1).strip() if mode_match else "",
+            RedundancyState="ACTIVE/STANDBY" if active_match and standby_match else "",
+            RedundancyMode="",   # not present in XR show redundancy output
             LastSwitchover=last_sw_match.group(1).strip() if last_sw_match else ""
         ))]
 
@@ -70,8 +67,7 @@ def show_redundancy(content: str) -> List[Dict[str, Any]]:
 
     except Exception as e:
         return [{"error": f"Error parsing command output: {str(e)}"}]
-
-# ---------------------------------------------------------------------------
+#-----------------------------------------
 # show bfd session
 # ---------------------------------------------------------------------------
 def show_bfd_session(content: str) -> List[Dict[str, Any]]:
