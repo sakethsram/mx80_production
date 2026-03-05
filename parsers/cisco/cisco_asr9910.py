@@ -5,7 +5,35 @@ from dataclasses import dataclass, asdict, field
 import logging
 
 # Import models
-from models.cisco.cisco_asr9910 import *
+from models.cisco.cisco_asr9910 import (
+    ShowInstallActiveSummary,
+    ISISAdjacencies,
+    ShowRouteSummary,
+    PimNeighbor,
+    ShowFileSystemEntry,
+    FPDEntry,
+    ShowPlatform,
+    ShowInterfacesDescription,
+    ShowInterfacesBundleEther,
+    BundleMember,
+    ShowbfdSession,
+    ShowBgpAllSummary,
+    BgpProcessVersion,
+    BgpNeighbor,
+    ShowBgpVrfAllSummary,
+    ShowIpv4VrfAllInterfaceBrief,
+    ShowMplsLdpNeighbor,
+    ShowPfmLocationAll,
+    ShowWatchdogMemoryState,
+    memoryInfo,
+    ShowL2vpnXconnectBrief,
+    ShowMsdpPeer,
+    ShowRedundancy,
+    ShowVersion,
+    ShowMediaLocation,
+    ShowProcessesCpu,
+)
+
 logger = logging.getLogger(__name__)
 
 
