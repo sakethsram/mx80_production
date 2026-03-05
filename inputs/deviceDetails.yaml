@@ -1,24 +1,24 @@
 devices:
-  - host: "10.80.109.250"
-    vendor: "cisco"
-    model: asr9910
-    device_type: "cisco_xr"
-    current_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
-    expected_os: 23.4R2-S5.1
-    intermediate_os: False
-    min_disk_gb: 6
-    username: "admin"
-    password: "Colt@123"
-    target_image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
-    image_path: "/home/automation2/software/juniper/junos/MX204"
-    remote_backup_sarerver: "automation2@10.80.109.134"
-    remote_password: "kTRq8amH888r"
-    cleanup_files:
-      - juniper_mx204_2026-*
-      - /var/tmp/juniper_mx204_2026-*
-    intermediate_image: junos-os-21.2R2-S5.bin
-    md5checksum_file: "3e97c983380ac3a1b28e143219c8960a"
-    local_image_path: ""
+  # - host: "10.80.109.250"
+  #   vendor: "cisco"
+  #   model: asr9910
+  #   device_type: "cisco_xr"
+  #   current_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
+  #   expected_os: 23.4R2-S5.1
+  #   intermediate_os: False
+  #   min_disk_gb: 6
+  #   username: "admin"
+  #   password: "Colt@123"
+  #   target_image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
+  #   image_path: "/home/automation2/software/juniper/junos/MX204"
+  #   remote_backup_sarerver: "automation2@10.80.109.134"
+  #   remote_password: "kTRq8amH888r"
+  #   cleanup_files:
+  #     - juniper_mx204_2026-*
+  #     - /var/tmp/juniper_mx204_2026-*
+  #   intermediate_image: junos-os-21.2R2-S5.bin
+  #   md5checksum_file: "3e97c983380ac3a1b28e143219c8960a"
+  #   local_image_path: ""
 
   - host: "10.80.71.55"
     vendor: "juniper"

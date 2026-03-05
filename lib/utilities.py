@@ -205,7 +205,16 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
         output        = ""
         try:
             output = conn.send_command(cmd)
+            
+            print("\n" + "=" * 80)
+            print(f"\033[1;93m>>> OUTPUT FROM COMMAND: {cmd}\033[0m")   # Bright yellow + bold
+            print("-" * 80)
+            print(output if output.strip() else "\033[2m<no output>\033[0m")
+
+            print("=" * 80 + "\n")
             print(f"[{device_key}] '{cmd}' — {len(output)} chars received")
+            print("=" * 80 + "\n")
+
         except Exception:
             import traceback as tb
             exception_str = tb.format_exc()
