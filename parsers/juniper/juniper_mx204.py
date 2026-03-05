@@ -1636,81 +1636,26 @@ def parse_show_rsvp_session_match_DN(text_content: str) -> Dict[str, Any]:
 def parse_show_mpls_lsp_unidirectional_no_more(text_content: str) -> Dict[str, Any]:
     cmd = "show mpls lsp unidirectional | match Dn | no-more"
     try:
-        text_content = re.sub(r'---(more)---\s*\n?', '', text_content)
-        result = ShowMplsLspData()
-
-        sections = re.split(r'((?:Ingress|Egress|Transit) LSP: \d+ sessions)', text_content)
-
-        for i in range(1, len(sections), 2):
-            section_header = sections[i].strip()
-            section_content = sections[i + 1] if i + 1 < len(sections) else ""
-
-            section_type = None
-            total_sessions = 0
-
-            if "Ingress" in section_header:
-                section_type = "Ingress"
-                total_match = re.search(r'Ingress LSP: (\d+) sessions', section_header)
-                total_sessions = int(total_match.group(1)) if total_match else 0
-            elif "Egress" in section_header:
-                section_type = "Egress"
-                total_match = re.search(r'Egress LSP: (\d+) sessions', section_header)
-                total_sessions = int(total_match.group(1)) if total_match else 0
-            elif "Transit" in section_header:
-                section_type = "Transit"
-                total_match = re.search(r'Transit LSP: (\d+) sessions', section_header)
-                total_sessions = int(total_match.group(1)) if total_match else 0
-            else:
-                continue
-
-            summary_match = re.search(r'Total\s+(\d+)\s+displayed,\s+Up\s+(\d+),\s+Down\s+(\d+)', section_content)
-            sessions_displayed = int(summary_match.group(1)) if summary_match else 0
-            sessions_up = int(summary_match.group(2)) if summary_match else 0
-            sessions_down = int(summary_match.group(3)) if summary_match else 0
-
-            pattern = r'(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+\.\d+\.\d+)\s+(Up|Down)\s+(\d+)\s+(\d+)\s+(\w+)\s+(\S+)\s+(\S+)\s+(\S+)$'
-            entries = []
-            for match in re.finditer(pattern, section_content, re.MULTILINE):
-                entries.append(MplsLspEntry(
-                    to_address=match.group(1),
-                    from_address=match.group(2),
-                    state=match.group(3),
-                    rt=int(match.group(4)),
-                    style=f"{match.group(5)} {match.group(6)}",
-                    label_in=match.group(7),
-                    label_out=match.group(8),
-                    lsp_name=match.group(9).strip()
-                ))
-
-            mpls_lsp_section = MplsLspSection(
-                section_type=section_type,
-                total_sessions=total_sessions,
-                sessions_displayed=sessions_displayed,
-                sessions_up=sessions_up,
-                sessions_down=sessions_down,
-                entries=entries
-            )
-
-            if section_type == "Ingress":
-                result.ingress = mpls_lsp_section
-            elif section_type == "Egress":
-                result.egress = mpls_lsp_section
-            elif section_type == "Transit":
-                result.transit = mpls_lsp_section
-
-        for section in [result.ingress, result.egress, result.transit]:
-            if section and section.sessions_displayed == 0 and section.entries:
-                for entry in section.entries:
-                    section.sessions_displayed += 1
-                    if entry.state == 'Up':
-                        section.sessions_up += 1
-                    else:
-                        section.sessions_down += 1
-
-        return asdict(result)
+        down_lsps = []
+        pattern = re.compile(
+            r'^(\d+\.\d+\.\d+\.\d+)\s+(\S+)\s+(Dn)\s+(\d+)\s+(\S+)\s+(.+)$',
+            re.MULTILINE
+        )
+        for match in pattern.finditer(text_content):
+            down_lsps.append({
+                "to":       match.group(1),
+                "from":     match.group(2),
+                "state":    match.group(3),
+                "rt":       int(match.group(4)),
+                "style":    match.group(5),
+                "lsp_name": match.group(6).strip(),
+            })
+        return {
+            "total_down": len(down_lsps),
+            "down_lsps":  down_lsps,
+        }
     except Exception as e:
         return {"error": f"Error parsing {cmd}: {str(e)}"}
-
 
 # ────────────────────────────────────────────────────────────────────────────────
 def parse_36_show_ldp_neighbor(text_content: str) -> Dict[str, Any]:
