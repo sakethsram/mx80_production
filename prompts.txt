@@ -1,4 +1,4 @@
-cat > models/cisco/cisco_asr9910.py << 'EOF'
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/models/cisco$ cat cisco_asr9910.py
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 
@@ -324,4 +324,4 @@ class ShowVersion:
     SerialNumber: str
     ROM: str
     BuildInfo: str
-EOF
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/models/cisco$
