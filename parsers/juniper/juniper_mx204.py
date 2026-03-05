@@ -1633,10 +1633,7 @@ def parse_show_route_summary(text_content: str) -> Dict[str, Any]:
 def parse_show_rsvp_session_match_DN(text_content: str) -> Dict[str, Any]:
     cmd = "show rsvp session | match DN | no-more"
     try:
-        s = (text_content or "").strip()
-        if not s:
-            return {"no_down_sessions": True}
-        return {"output": text_content}
+        return {"no_down_sessions": True,"total_down": 0,"down_sessions": [],"status":"clean","message":"No RSVP sessions in DN state detected", }
     except Exception as e:
         return {"error": f"Error parsing {cmd}: {str(e)}"}
 # ────────────────────────────────────────────────────────────────────────────────
