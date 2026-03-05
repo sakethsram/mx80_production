@@ -490,3 +490,14 @@ def disconnect(device_key: str, logger):
     logout_device(conn, host, logger)
     device_results[device_key]["conn"] = None
     logger.info(f"[{device_key}] Disconnected from {host}")
+
+
+def load_commands(vendor: str, model: str, logger) -> list:
+    all_cmds = load_yaml("show_cmd_list.yaml")
+    cmd_key  = f"{vendor}_{model}"
+    if cmd_key not in all_cmds:
+        logger.error(f"[load_commands] No commands found for key='{cmd_key}'")
+        return []
+    commands = all_cmds[cmd_key]
+    logger.info(f"[load_commands] Loaded {len(commands)} commands for '{cmd_key}'")
+    return commands

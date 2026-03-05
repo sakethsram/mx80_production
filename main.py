@@ -15,9 +15,25 @@ PRECHECKS_ONLY = True   # <--- Run prechecks only; skip upgrade in main()
 
 
 # ----------------------------------------------------
+# execute_show_commands
+# ----------------------------------------------------
+def execute_show_commands(device_key, vendor, model, conn, check_type, logger):
+    commands = load_commands(vendor, model, logger)
+    if not commands:
+        logger.error(f"[{device_key}] execute_show_commands — no commands loaded, aborting")
+        return False
+    entries  = collect_outputs(device_key, vendor, commands, check_type, conn, logger)
+    if not entries:
+        logger.warning(f"[{device_key}] execute_show_commands — collect_outputs returned nothing")
+    parse_ok = parse_outputs(device_key, vendor, check_type, logger)
+    if not parse_ok:
+        logger.warning(f"[{device_key}] execute_show_commands — one or more parsers failed")
+    return parse_ok
+
+
+# ----------------------------------------------------
 # run_prechecks — runs inside a thread
 # ----------------------------------------------------
-
 def run_prechecks(dev, device_key, logger):
     tid         = threading.get_ident()
     host        = dev["host"]
@@ -27,12 +43,10 @@ def run_prechecks(dev, device_key, logger):
 
     logger.info(f"[THREAD-{tid}] [{device_key}] Prechecks started at {datetime.now()}")
 
-    
-
     try:
         # ── STEP 1: Connect ───────────────────────────────────────────
         try:
-            conn = connect(device_key, dev, logger)
+            conn = connect(dev, logger)
         except Exception as e:
             logger.error(f"[THREAD-{tid}] [{device_key}] FATAL connect failed: {e}")
             merge_thread_result(device_key, device_results.get(device_key, {"pre": [], "post": [], "upgrade": {}, "device_info": {}}))
@@ -44,30 +58,10 @@ def run_prechecks(dev, device_key, logger):
             return False
 
         try:
-            # ── STEP 2: Load commands ─────────────────────────────────
-            all_cmds = load_yaml("show_cmd_list.yaml")
-            cmd_key  = f"{vendor_lc}_{model_lc}"   # "juniper_mx204" — matches YAML
-            commands = all_cmds[cmd_key]
-            logger.info(f"[THREAD-{tid}] [{device_key}] Starting command pipeline — {len(commands)} command(s)")
+            # ── STEP 2: Execute show commands ─────────────────────────
+            exec_ok = execute_show_commands(device_key, vendor_lc, model_lc, conn, "pre", logger)
 
-            # ── STEP 3: Collect outputs ───────────────────────────────
-            entries = collect_outputs(
-                device_key=device_key, vendor=vendor_lc,
-                commands=commands, check_type="pre",
-                conn=conn, log=logger,
-            )
-            if not entries:
-                logger.warning(f"[THREAD-{tid}] [{device_key}] collect_outputs() returned no entries")
-
-            # ── STEP 4: Parse outputs ─────────────────────────────────
-            parse_ok = parse_outputs(
-                device_key=device_key, vendor=vendor_lc,
-                check_type="pre", log=logger,
-            )
-            if not parse_ok:
-                logger.warning(f"[THREAD-{tid}] [{device_key}] one or more parsers failed — continuing")
-
-            # ── STEP 5: Merge results ─────────────────────────────────
+            # ── STEP 3: Merge results ─────────────────────────────────
             thread_result = {
                 "pre":         device_results.get(device_key, {}).get("pre", []),
                 "device_info": device_results.get(device_key, {}).get("device_info", {}),
@@ -75,11 +69,6 @@ def run_prechecks(dev, device_key, logger):
                 "upgrade":     {},
             }
             merge_thread_result(device_key, thread_result)
-
-        except KeyError as e:
-            logger.error(f"[THREAD-{tid}] [{device_key}] FATAL missing command list: {e}")
-            merge_thread_result(device_key, device_results.get(device_key, {"pre": [], "post": [], "upgrade": {}, "device_info": {}}))
-            return False
 
         except Exception as e:
             logger.error(f"[THREAD-{tid}] [{device_key}] FATAL command pipeline: {e}")
@@ -95,9 +84,8 @@ def run_prechecks(dev, device_key, logger):
         return False
 
     finally:
-        disconnect(device_key, logger)
+        disconnect(conn, host, logger)
         logger.info(f"[THREAD-{tid}] [{device_key}] Prechecks completed at {datetime.now()}")
-
 
 # ----------------------------------------------------
 # Main Function
