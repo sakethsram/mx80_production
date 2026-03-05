@@ -1,60 +1,559 @@
-json - cat is - {
-  "10_80_71_55_juniper_mx204": {
-    "device_info": {
-      "host": "10.80.71.55",
-      "vendor": "juniper",
-      "model": "mx204",
-      "hostname": "",
-      "version": ""
-    },
-    "yaml": {
-      "host": "10.80.71.55",
-      "vendor": "juniper",
-      "model": "mx204",
-      "device_type": "juniper",
-      "current_image": "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
-      "expected_os": "23.4R2-S5.6",
-      "intermediate_os": false,
-      "min_disk_gb": 5,
-      "username": "lab",
-      "password": "lab123",
-      "target_image": "junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz",
-      "remote_backup_server": "sftp://backup@10.10.20.20/backups/",
-      "cleanup_files": [
-        "list of files"
-      ],
-      "intermediate_image": "junos-os-21.2R2-S5.bin",
-      "rollback": false,
-      "md5checksum_file": "dec5349a0d238dad686dc01f468a0bbe"
-    },
-    "pre": [
-      {
-        "cmd": "show system processes extensive | match rpd | no-more",
-        "output": "18704 root         20    0  1176M   272M kqread   3   0:07   0.00% rpd{rpd}\n18758 root         20    0   946M   149M kqread   2   0:03   0.00% rpd{TraceThread}\n18757 root         20    0   958M   153M kqread   2   0:03   0.00% rpd{TraceThread}\n18756 root         20    0   954M   152M kqread   0   0:03   0.00% rpd{TraceThread}\n18757 root         20    0   958M   153M kqread   0   0:02   0.00% rpd{rpd}\n18756 root         20    0   954M   152M kqread   0   0:02   0.00% rpd{rpd}\n18758 root         20    0   946M   149M kqread   1   0:02   0.00% rpd{rpd}\n18704 root         20    0  1176M   272M kqread   4   0:02   0.00% rpd{TraceThread}\n18704 root         20    0  1176M   272M kqread   3   0:00   0.00% rpd{rsvp-io}\n18704 root         20    0  1176M   272M kqread   0   0:00   0.00% rpd{bgpio-0-th}\n18753 root         20    0   799M    14M kqread   3   0:00   0.00% rpdtmd\n18704 root         20    0  1176M   272M kqread   2   0:00   0.00% rpd{krtio-th}\n18757 root         20    0   958M   153M kqread   0   0:00   0.00% rpd{bgpio-0-th}\n18756 root         20    0   954M   152M kqread   4   0:00   0.00% rpd{bgpio-0-th}\n18757 root         20    0   958M   153M kqread   0   0:00   0.00% rpd{krtio-th}\n18756 root         20    0   954M   152M kqread   4   0:00   0.00% rpd{krtio-th}\n18758 root         20    0   946M   149M kqread   0   0:00   0.00% rpd{krtio-th}\n",
-        "json": {},
-        "exception": "no parser registered"
-      },
-      {
-        "cmd": "show interface terse | no-more",
-        "output": "Interface               Admin Link Proto    Local                 Remote\ngr-0/0/0                up    up\nip-0/0/0                up    up\nlc-0/0/0                up    up\nlc-0/0/0.32769          up    up   vpls    \nlt-0/0/0                up    up\nlt-0/0/0.11             up    up   inet     10.0.0.176/31   \nlt-0/0/0.12             up    up   inet     10.0.0.177/31   \nlt-0/0/0.176            up    up   inet     66.1.0.176/31   \nlt-0/0/0.177            up    up   inet     66.1.0.177/31   \nlt-0/0/0.32767          up    up  \nmt-0/0/0                up    up\npd-0/0/0                up    up\npd-0/0/0.32790          up    up   inet    \npd-0/0/0.32793          up    up   inet    \npe-0/0/0                up    up\npe-0/0/0.32781          up    down inet    \npe-0/0/0.32782          up    down inet    \npe-0/0/0.32784          up    down inet    \npe-0/0/0.32787          up    down inet    \npfe-0/0/0               up    up\npfe-0/0/0.16383         up    up   inet    \n                                   inet6   \npfh-0/0/0               up    up\npfh-0/0/0.16383         up    up   inet    \npfh-0/0/0.16384         up    up   inet    \nud-0/0/0                up    up\nut-0/0/0                up    up\nvt-0/0/0                up    up\nvt-0/0/0.1              up    up   inet    \nvt-0/0/0.2              up    up   inet    \nvt-0/0/0.5              up    up   inet    \nvt-0/0/0.112            up    up   inet    \nvt-0/0/0.117            up    up   inet    \nvt-0/0/0.2115           up    up   inet    \nvt-0/0/0.2097152        up    up   inet    \n                                   mpls    \nxe-0/0/0:0              up    up\nxe-0/0/0:0.0            up    up   aenet    --> ae10.0\nxe-0/0/0:0.32767        up    up   aenet    --> ae10.32767\nxe-0/0/0:1              up    up\nxe-0/0/0:1.2000         up    up   inet     172.17.20.9/30  \n                                   multiservice\nxe-0/0/0:1.2001         up    up   inet     172.17.21.9/30  \n                                   multiservice\nxe-0/0/0:1.2002         up    up   inet     172.17.22.9/30  \n                                   multiservice\nxe-0/0/0:1.2003         up    up   inet     172.17.23.9/24  \n                                   multiservice\nxe-0/0/0:1.2004         up    up   inet     172.17.24.9/24  \n                                   multiservice\nxe-0/0/0:1.2005         up    up   inet     172.17.24.9/24  \n                                   multiservice\nxe-0/0/0:1.2006         up    up   inet     172.17.25.9/24  \n                                   multiservice\nxe-0/0/0:1.2007         up    up   inet     172.17.26.9/24  \n                                   multiservice\nxe-0/0/0:1.2008         up    up   inet     172.17.27.9/24  \n                                   multiservice\nxe-0/0/0:1.2009         up    up   inet     172.17.28.9/24  \n                                   multiservice\nxe-0/0/0:1.32767        up    up   multiservice\nxe-0/0/0:2              up    up\nxe-0/0/0:2.16386        up    up  \nxe-0/0/0:3              up    down\nxe-0/0/0:3.16386        up    down\nxe-0/0/1:0              up    up\nxe-0/0/1:0.0            up    up   aenet    --> ae10.0\nxe-0/0/1:0.32767        up    up   aenet    --> ae10.32767\nxe-0/0/1:1              up    up\nxe-0/0/1:1.16386        up    up  \nxe-0/0/1:2              up    up\nxe-0/0/1:2.101          up    up   aenet    --> ae1.101\nxe-0/0/1:2.32767        up    up   aenet    --> ae1.32767\nxe-0/0/1:3              up    up\net-0/0/2                up    up\net-0/0/2.20             up    up   inet     100.96.112.46/31\n                                   multiservice\net-0/0/2.32767          up    up   multiservice\nxe-0/0/3:0              up    up\nxe-0/0/3:0.3400         up    up   inet     213.86.204.109/30\n                                   multiservice\nxe-0/0/3:0.32767        up    up   multiservice\nxe-0/0/3:1              up    up\nxe-0/0/3:1.3400         up    up   inet     213.86.204.110/30\n                                   multiservice\nxe-0/0/3:1.32767        up    up   multiservice\nxe-0/0/3:2              up    up\nxe-0/0/3:2.100          up    up   inet     169.254.152.186/30\n                                   multiservice\nxe-0/0/3:2.32767        up    up   multiservice\nxe-0/0/3:3              up    up\nxe-0/0/3:3.100          up    up   inet     169.254.152.185/30\n                                   multiservice\nxe-0/0/3:3.32767        up    up   multiservice\ngr-0/1/0                up    up\nip-0/1/0                up    up\nlt-0/1/0                up    up\nmt-0/1/0                up    up\npd-0/1/0                up    up\npd-0/1/0.32789          up    up   inet    \npd-0/1/0.32791          up    up   inet    \npd-0/1/0.32792          up    up   inet    \npe-0/1/0                up    up\npe-0/1/0.32779          up    up   inet    \npe-0/1/0.32780          up    down inet    \npe-0/1/0.32783          up    down inet    \npe-0/1/0.32785          up    down inet    \npe-0/1/0.32786          up    down inet    \nud-0/1/0                up    up\nut-0/1/0                up    up\nvt-0/1/0                up    up\nvt-0/1/0.211            up    up   inet    \nvt-0/1/0.2115           up    up   inet    \nvt-0/1/0.2097153        up    up   inet    \n                                   mpls    \nxe-0/1/0                up    down\nxe-0/1/0.0              up    down inet    \n                                   multiservice\nxe-0/1/1                up    up\nxe-0/1/1.0              up    up   inet    \n                                   multiservice\nxe-0/1/2                up    up\nxe-0/1/3                up    up\nxe-0/1/3.1              up    up   aenet    --> ae0.1\nxe-0/1/3.2              up    up   aenet    --> ae0.2\nxe-0/1/3.101            up    up   aenet    --> ae0.101\nxe-0/1/3.102            up    up   aenet    --> ae0.102\nxe-0/1/3.104            up    up   aenet    --> ae0.104\nxe-0/1/3.105            up    up   aenet    --> ae0.105\nxe-0/1/3.111            up    up   aenet    --> ae0.111\nxe-0/1/3.112            up    up   aenet    --> ae0.112\nxe-0/1/3.121            up    up   aenet    --> ae0.121\nxe-0/1/3.122            up    up   aenet    --> ae0.122\nxe-0/1/3.123            up    up   aenet    --> ae0.123\nxe-0/1/3.124            up    up   aenet    --> ae0.124\nxe-0/1/3.125            up    up   aenet    --> ae0.125\nxe-0/1/3.126            up    up   aenet    --> ae0.126\nxe-0/1/3.127            up    up   aenet    --> ae0.127\nxe-0/1/3.128            up    up   aenet    --> ae0.128\nxe-0/1/3.129            up    up   aenet    --> ae0.129\nxe-0/1/3.130            up    up   aenet    --> ae0.130\nxe-0/1/3.172            up    up   aenet    --> ae0.172\nxe-0/1/3.173            up    up   aenet    --> ae0.173\nxe-0/1/3.201            up    up   aenet    --> ae0.201\nxe-0/1/3.202            up    up   aenet    --> ae0.202\nxe-0/1/3.211            up    up   aenet    --> ae0.211\nxe-0/1/3.212            up    up   aenet    --> ae0.212\nxe-0/1/3.312            up    up   aenet    --> ae0.312\nxe-0/1/3.313            up    up   aenet    --> ae0.313\nxe-0/1/3.412            up    up   aenet    --> ae0.412\nxe-0/1/3.413            up    up   aenet    --> ae0.413\nxe-0/1/3.32767          up    up   aenet    --> ae0.32767\nxe-0/1/4                up    up\nxe-0/1/4.0              up    up   inet     10.0.0.1/30     \n                                            109.74.16.86/30 \n                                   iso     \n                                   mpls    \n                                   multiservice\nxe-0/1/5                up    up\nxe-0/1/5.0              up    up   inet     109.74.16.89/30 \n                                   iso     \n                                   mpls    \n                                   multiservice\nxe-0/1/6                up    down\nxe-0/1/6.0              up    down aenet    --> ae12.0\nxe-0/1/7                up    up\nxe-0/1/7.0              up    up   inet     10.0.0.9/30     \n                                            109.74.16.45/30 \n                                   iso     \n                                   mpls    \n                                   multiservice\nae0                     up    up\nae0.1                   up    up   inet     100.70.48.2/30  \n                                   multiservice\nae0.2                   up    up   inet     100.70.52.6/30  \n                                   multiservice\nae0.101                 up    up   inet     10.10.101.1/30  \n                                   multiservice\nae0.102                 up    up   inet     10.10.102.1/30  \n                                   multiservice\nae0.104                 up    up   inet     10.10.104.1/30  \n                                   multiservice\nae0.105                 up    up   inet     10.10.105.1/30  \n                                   multiservice\nae0.111                 up    up   inet     10.10.11.1/30   \n                                   multiservice\nae0.112                 up    up   inet     10.10.112.1/30  \n                                   multiservice\nae0.121                 up    up   inet     10.10.121.1/30  \n                                   multiservice\nae0.122                 up    up   inet     10.10.122.1/30  \n                                   multiservice\nae0.123                 up    up   inet     10.10.123.1/30  \n                                   multiservice\nae0.124                 up    up   inet     10.10.124.1/30  \n                                   multiservice\nae0.125                 up    up   inet     10.10.125.1/30  \n                                   multiservice\nae0.126                 up    up   inet     10.10.126.1/30  \n                                   multiservice\nae0.127                 up    up   inet     10.10.127.1/30  \n                                   multiservice\nae0.128                 up    up   inet     10.10.128.1/30  \n                                   multiservice\nae0.129                 up    up   inet     10.10.129.1/30  \n                                   multiservice\nae0.130                 up    up   inet     10.10.130.1/30  \n                                   multiservice\nae0.172                 up    up   inet     172.16.172.1/30 \n                                   multiservice\nae0.173                 up    up   inet     172.16.173.1/30 \n                                   multiservice\nae0.201                 up    up   inet     10.10.201.1/30  \n                                   multiservice\nae0.202                 up    up   inet     10.10.202.1/30  \n                                   multiservice\nae0.211                 up    up   inet     10.10.211.5/30  \n                                   multiservice\nae0.212                 up    up   inet     10.10.212.5/30  \n                                   multiservice\nae0.312                 up    up   inet     10.31.2.1/30    \n                                   multiservice\nae0.313                 up    up   inet     10.31.1.1/30    \n                                   multiservice\nae0.412                 up    up   inet     10.10.214.0/31  \n                                   multiservice\nae0.413                 up    up   inet     10.10.214.3/31  \n                                   multiservice\nae0.32767               up    up   multiservice\nae1                     up    up\nae1.101                 up    up   inet     101.101.101.22/30\n                                   multiservice\nae1.32767               up    up   multiservice\nae2                     up    down\nae10                    up    down\nae10.0                  up    down bridge  \nae10.32767              up    down multiservice\nae12                    up    down\nae12.0                  up    down inet     109.74.16.102/30\n                                   iso     \n                                   mpls    \n                                   multiservice\ncbp0                    up    up\ndemux0                  up    up\ndsc                     up    up\nem2                     up    up\nem2.32768               up    up   inet     192.168.1.1/24  \nem3                     up    up\nem3.0                   up    up   inet     10.0.0.1/8      \n                                            128.0.0.1/2     \n                                            128.0.0.4/2     \n                                   tnp      0x4             \nem4                     up    up\nem4.0                   up    up   inet     10.0.0.1/8      \n                                            128.0.0.1/2     \n                                            128.0.0.4/2     \n                                   tnp      0x4             \nesi                     up    up\nfti0                    up    up\nfti1                    up    up\nfti2                    up    up\nfti3                    up    up\nfti4                    up    up\nfti5                    up    up\nfti6                    up    up\nfti7                    up    up\nfxp0                    up    up\nfxp0.0                  up    up   inet     10.80.71.55/23  \ngre                     up    up\nipip                    up    up\nirb                     up    up\njsrv                    up    up\njsrv.1                  up    up   inet     128.0.0.127/2   \nlo0                     up    up\nlo0.0                   up    up   inet     194.180.107.5       --> 0/0\n                                   iso      49.0001.1940.1800.1075\nlo0.2                   up    up   inet     109.74.16.14        --> 0/0\nlo0.3                   up    up   inet     109.74.17.14        --> 0/0\nlo0.5                   up    up   inet     91.34.191.254       --> 0/0\n                                            185.102.253.252     --> 0/0\n                                            193.29.89.252       --> 0/0\n                                            193.29.91.252       --> 0/0\n                                            193.29.94.252       --> 0/0\nlo0.6                   up    up   inet     6.0.0.1             --> 0/0\nlo0.7                   up    up   inet     6.0.0.7             --> 0/0\nlo0.15                  up    up   inet     2.1.1.5             --> 0/0\nlo0.51                  up    up   inet     10.10.51.1          --> 0/0\nlo0.117                 up    up   inet     11.11.11.17         --> 0/0\nlo0.16384               up    up   inet     127.0.0.1           --> 0/0\nlo0.16385               up    up   inet    \nlsi                     up    up\nlsi.0                   up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.1                   up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.2                   up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.3                   up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.4                   up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.5                   up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.6                   up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.7                   up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.8                   up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.9                   up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.10                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.11                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.12                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.13                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.14                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.15                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.16                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.17                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.18                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.19                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.20                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.21                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.22                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.23                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.24                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.25                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.26                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.27                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.28                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.29                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.30                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.31                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.32                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.33                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.34                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.35                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.36                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.37                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.38                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.39                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.40                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.41                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.42                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.43                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.44                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.45                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.46                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.47                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.48                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.49                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.50                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.51                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.52                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.53                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.54                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.55                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.56                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.57                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.58                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.59                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.60                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.61                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.62                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.63                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.64                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.65                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.66                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.67                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.68                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.69                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.70                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.71                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.72                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.73                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.74                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.75                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.76                  up    up   inet    \n                                   iso     \n                                   inet6   \nlsi.77                  up    up   inet    \n                                   iso     \n                                   inet6   \nmif                     up    up\nmtun                    up    up\npimd                    up    up\npime                    up    up\npip0                    up    up\npp0                     up    up\nrbeb                    up    up\nrlt0                    up    down\nrlt1                    up    down\nrlt2                    up    down\nrlt3                    up    down\nrlt4                    up    down\ntap                     up    up\nvtep                    up    up\n",
-        "json": {},
-        "exception": "no parser registered"
-      },
-      {
-        "cmd": "show rsvp session | match DN | no-more",
-        "output": "",
-        "json": {},
-        "exception": "no parser registered"
-      },
-      {
-        "cmd": "show mpls lsp unidirectional | match Dn | no-more",
-        "output": "109.74.16.10    0.0.0.0         Dn     0       -                EFF01-BME01\n109.74.16.2     0.0.0.0         Dn     0       -                EFF01-IXL01\n",
-        "json": {},
-        "exception": "no parser registered"
-      }
-    ],
-    "post": [],
-    "upgrade": {}
-  }
-}(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ ^C
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$
+
+show interface terse | no-more
+Interface               Admin Link Proto    Local                 Remote
+gr-0/0/0                up    up
+ip-0/0/0                up    up
+lc-0/0/0                up    up
+lc-0/0/0.32769          up    up   vpls    
+lt-0/0/0                up    up
+lt-0/0/0.11             up    up   inet     10.0.0.176/31   
+lt-0/0/0.12             up    up   inet     10.0.0.177/31   
+lt-0/0/0.176            up    up   inet     66.1.0.176/31   
+lt-0/0/0.177            up    up   inet     66.1.0.177/31   
+lt-0/0/0.32767          up    up  
+mt-0/0/0                up    up
+pd-0/0/0                up    up
+pd-0/0/0.32790          up    up   inet    
+pd-0/0/0.32793          up    up   inet    
+pe-0/0/0                up    up
+pe-0/0/0.32781          up    down inet    
+pe-0/0/0.32782          up    down inet    
+pe-0/0/0.32784          up    down inet    
+pe-0/0/0.32787          up    down inet    
+pfe-0/0/0               up    up
+pfe-0/0/0.16383         up    up   inet    
+                                   inet6   
+pfh-0/0/0               up    up
+pfh-0/0/0.16383         up    up   inet    
+pfh-0/0/0.16384         up    up   inet    
+ud-0/0/0                up    up
+ut-0/0/0                up    up
+vt-0/0/0                up    up
+vt-0/0/0.1              up    up   inet    
+vt-0/0/0.2              up    up   inet    
+vt-0/0/0.5              up    up   inet    
+vt-0/0/0.112            up    up   inet    
+vt-0/0/0.117            up    up   inet    
+vt-0/0/0.2115           up    up   inet    
+vt-0/0/0.2097152        up    up   inet    
+                                   mpls    
+xe-0/0/0:0              up    up
+xe-0/0/0:0.0            up    up   aenet    --> ae10.0
+xe-0/0/0:0.32767        up    up   aenet    --> ae10.32767
+xe-0/0/0:1              up    up
+xe-0/0/0:1.2000         up    up   inet     172.17.20.9/30  
+                                   multiservice
+xe-0/0/0:1.2001         up    up   inet     172.17.21.9/30  
+                                   multiservice
+xe-0/0/0:1.2002         up    up   inet     172.17.22.9/30  
+                                   multiservice
+xe-0/0/0:1.2003         up    up   inet     172.17.23.9/24  
+                                   multiservice
+xe-0/0/0:1.2004         up    up   inet     172.17.24.9/24  
+                                   multiservice
+xe-0/0/0:1.2005         up    up   inet     172.17.24.9/24  
+                                   multiservice
+xe-0/0/0:1.2006         up    up   inet     172.17.25.9/24  
+                                   multiservice
+xe-0/0/0:1.2007         up    up   inet     172.17.26.9/24  
+                                   multiservice
+xe-0/0/0:1.2008         up    up   inet     172.17.27.9/24  
+                                   multiservice
+xe-0/0/0:1.2009         up    up   inet     172.17.28.9/24  
+                                   multiservice
+xe-0/0/0:1.32767        up    up   multiservice
+xe-0/0/0:2              up    up
+xe-0/0/0:2.16386        up    up  
+xe-0/0/0:3              up    down
+xe-0/0/0:3.16386        up    down
+xe-0/0/1:0              up    up
+xe-0/0/1:0.0            up    up   aenet    --> ae10.0
+xe-0/0/1:0.32767        up    up   aenet    --> ae10.32767
+xe-0/0/1:1              up    up
+xe-0/0/1:1.16386        up    up  
+xe-0/0/1:2              up    up
+xe-0/0/1:2.101          up    up   aenet    --> ae1.101
+xe-0/0/1:2.32767        up    up   aenet    --> ae1.32767
+xe-0/0/1:3              up    up
+et-0/0/2                up    up
+et-0/0/2.20             up    up   inet     100.96.112.46/31
+                                   multiservice
+et-0/0/2.32767          up    up   multiservice
+xe-0/0/3:0              up    up
+xe-0/0/3:0.3400         up    up   inet     213.86.204.109/30
+                                   multiservice
+xe-0/0/3:0.32767        up    up   multiservice
+xe-0/0/3:1              up    up
+xe-0/0/3:1.3400         up    up   inet     213.86.204.110/30
+                                   multiservice
+xe-0/0/3:1.32767        up    up   multiservice
+xe-0/0/3:2              up    up
+xe-0/0/3:2.100          up    up   inet     169.254.152.186/30
+                                   multiservice
+xe-0/0/3:2.32767        up    up   multiservice
+xe-0/0/3:3              up    up
+xe-0/0/3:3.100          up    up   inet     169.254.152.185/30
+                                   multiservice
+xe-0/0/3:3.32767        up    up   multiservice
+gr-0/1/0                up    up
+ip-0/1/0                up    up
+lt-0/1/0                up    up
+mt-0/1/0                up    up
+pd-0/1/0                up    up
+pd-0/1/0.32789          up    up   inet    
+pd-0/1/0.32791          up    up   inet    
+pd-0/1/0.32792          up    up   inet    
+pe-0/1/0                up    up
+pe-0/1/0.32779          up    up   inet    
+pe-0/1/0.32780          up    down inet    
+pe-0/1/0.32783          up    down inet    
+pe-0/1/0.32785          up    down inet    
+pe-0/1/0.32786          up    down inet    
+ud-0/1/0                up    up
+ut-0/1/0                up    up
+vt-0/1/0                up    up
+vt-0/1/0.211            up    up   inet    
+vt-0/1/0.2115           up    up   inet    
+vt-0/1/0.2097153        up    up   inet    
+                                   mpls    
+xe-0/1/0                up    down
+xe-0/1/0.0              up    down inet    
+                                   multiservice
+xe-0/1/1                up    up
+xe-0/1/1.0              up    up   inet    
+                                   multiservice
+xe-0/1/2                up    up
+xe-0/1/3                up    up
+xe-0/1/3.1              up    up   aenet    --> ae0.1
+xe-0/1/3.2              up    up   aenet    --> ae0.2
+xe-0/1/3.101            up    up   aenet    --> ae0.101
+xe-0/1/3.102            up    up   aenet    --> ae0.102
+xe-0/1/3.104            up    up   aenet    --> ae0.104
+xe-0/1/3.105            up    up   aenet    --> ae0.105
+xe-0/1/3.111            up    up   aenet    --> ae0.111
+xe-0/1/3.112            up    up   aenet    --> ae0.112
+xe-0/1/3.121            up    up   aenet    --> ae0.121
+xe-0/1/3.122            up    up   aenet    --> ae0.122
+xe-0/1/3.123            up    up   aenet    --> ae0.123
+xe-0/1/3.124            up    up   aenet    --> ae0.124
+xe-0/1/3.125            up    up   aenet    --> ae0.125
+xe-0/1/3.126            up    up   aenet    --> ae0.126
+xe-0/1/3.127            up    up   aenet    --> ae0.127
+xe-0/1/3.128            up    up   aenet    --> ae0.128
+xe-0/1/3.129            up    up   aenet    --> ae0.129
+xe-0/1/3.130            up    up   aenet    --> ae0.130
+xe-0/1/3.172            up    up   aenet    --> ae0.172
+xe-0/1/3.173            up    up   aenet    --> ae0.173
+xe-0/1/3.201            up    up   aenet    --> ae0.201
+xe-0/1/3.202            up    up   aenet    --> ae0.202
+xe-0/1/3.211            up    up   aenet    --> ae0.211
+xe-0/1/3.212            up    up   aenet    --> ae0.212
+xe-0/1/3.312            up    up   aenet    --> ae0.312
+xe-0/1/3.313            up    up   aenet    --> ae0.313
+xe-0/1/3.412            up    up   aenet    --> ae0.412
+xe-0/1/3.413            up    up   aenet    --> ae0.413
+xe-0/1/3.32767          up    up   aenet    --> ae0.32767
+xe-0/1/4                up    up
+xe-0/1/4.0              up    up   inet     10.0.0.1/30     
+                                            109.74.16.86/30 
+                                   iso     
+                                   mpls    
+                                   multiservice
+xe-0/1/5                up    up
+xe-0/1/5.0              up    up   inet     109.74.16.89/30 
+                                   iso     
+                                   mpls    
+                                   multiservice
+xe-0/1/6                up    down
+xe-0/1/6.0              up    down aenet    --> ae12.0
+xe-0/1/7                up    up
+xe-0/1/7.0              up    up   inet     10.0.0.9/30     
+                                            109.74.16.45/30 
+                                   iso     
+                                   mpls    
+                                   multiservice
+ae0                     up    up
+ae0.1                   up    up   inet     100.70.48.2/30  
+                                   multiservice
+ae0.2                   up    up   inet     100.70.52.6/30  
+                                   multiservice
+ae0.101                 up    up   inet     10.10.101.1/30  
+                                   multiservice
+ae0.102                 up    up   inet     10.10.102.1/30  
+                                   multiservice
+ae0.104                 up    up   inet     10.10.104.1/30  
+                                   multiservice
+ae0.105                 up    up   inet     10.10.105.1/30  
+                                   multiservice
+ae0.111                 up    up   inet     10.10.11.1/30   
+                                   multiservice
+ae0.112                 up    up   inet     10.10.112.1/30  
+                                   multiservice
+ae0.121                 up    up   inet     10.10.121.1/30  
+                                   multiservice
+ae0.122                 up    up   inet     10.10.122.1/30  
+                                   multiservice
+ae0.123                 up    up   inet     10.10.123.1/30  
+                                   multiservice
+ae0.124                 up    up   inet     10.10.124.1/30  
+                                   multiservice
+ae0.125                 up    up   inet     10.10.125.1/30  
+                                   multiservice
+ae0.126                 up    up   inet     10.10.126.1/30  
+                                   multiservice
+ae0.127                 up    up   inet     10.10.127.1/30  
+                                   multiservice
+ae0.128                 up    up   inet     10.10.128.1/30  
+                                   multiservice
+ae0.129                 up    up   inet     10.10.129.1/30  
+                                   multiservice
+ae0.130                 up    up   inet     10.10.130.1/30  
+                                   multiservice
+ae0.172                 up    up   inet     172.16.172.1/30 
+                                   multiservice
+ae0.173                 up    up   inet     172.16.173.1/30 
+                                   multiservice
+ae0.201                 up    up   inet     10.10.201.1/30  
+                                   multiservice
+ae0.202                 up    up   inet     10.10.202.1/30  
+                                   multiservice
+ae0.211                 up    up   inet     10.10.211.5/30  
+                                   multiservice
+ae0.212                 up    up   inet     10.10.212.5/30  
+                                   multiservice
+ae0.312                 up    up   inet     10.31.2.1/30    
+                                   multiservice
+ae0.313                 up    up   inet     10.31.1.1/30    
+                                   multiservice
+ae0.412                 up    up   inet     10.10.214.0/31  
+                                   multiservice
+ae0.413                 up    up   inet     10.10.214.3/31  
+                                   multiservice
+ae0.32767               up    up   multiservice
+ae1                     up    up
+ae1.101                 up    up   inet     101.101.101.22/30
+                                   multiservice
+ae1.32767               up    up   multiservice
+ae2                     up    down
+ae10                    up    down
+ae10.0                  up    down bridge  
+ae10.32767              up    down multiservice
+ae12                    up    down
+ae12.0                  up    down inet     109.74.16.102/30
+                                   iso     
+                                   mpls    
+                                   multiservice
+cbp0                    up    up
+demux0                  up    up
+dsc                     up    up
+em2                     up    up
+em2.32768               up    up   inet     192.168.1.1/24  
+em3                     up    up
+em3.0                   up    up   inet     10.0.0.1/8      
+                                            128.0.0.1/2     
+                                            128.0.0.4/2     
+                                   tnp      0x4             
+em4                     up    up
+em4.0                   up    up   inet     10.0.0.1/8      
+                                            128.0.0.1/2     
+                                            128.0.0.4/2     
+                                   tnp      0x4             
+esi                     up    up
+fti0                    up    up
+fti1                    up    up
+fti2                    up    up
+fti3                    up    up
+fti4                    up    up
+fti5                    up    up
+fti6                    up    up
+fti7                    up    up
+fxp0                    up    up
+fxp0.0                  up    up   inet     10.80.71.55/23  
+gre                     up    up
+ipip                    up    up
+irb                     up    up
+jsrv                    up    up
+jsrv.1                  up    up   inet     128.0.0.127/2   
+lo0                     up    up
+lo0.0                   up    up   inet     194.180.107.5       --> 0/0
+                                   iso      49.0001.1940.1800.1075
+lo0.2                   up    up   inet     109.74.16.14        --> 0/0
+lo0.3                   up    up   inet     109.74.17.14        --> 0/0
+lo0.5                   up    up   inet     91.34.191.254       --> 0/0
+                                            185.102.253.252     --> 0/0
+                                            193.29.89.252       --> 0/0
+                                            193.29.91.252       --> 0/0
+                                            193.29.94.252       --> 0/0
+lo0.6                   up    up   inet     6.0.0.1             --> 0/0
+lo0.7                   up    up   inet     6.0.0.7             --> 0/0
+lo0.15                  up    up   inet     2.1.1.5             --> 0/0
+lo0.51                  up    up   inet     10.10.51.1          --> 0/0
+lo0.117                 up    up   inet     11.11.11.17         --> 0/0
+lo0.16384               up    up   inet     127.0.0.1           --> 0/0
+lo0.16385               up    up   inet    
+lsi                     up    up
+lsi.0                   up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.1                   up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.2                   up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.3                   up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.4                   up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.5                   up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.6                   up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.7                   up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.8                   up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.9                   up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.10                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.11                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.12                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.13                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.14                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.15                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.16                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.17                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.18                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.19                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.20                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.21                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.22                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.23                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.24                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.25                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.26                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.27                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.28                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.29                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.30                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.31                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.32                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.33                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.34                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.35                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.36                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.37                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.38                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.39                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.40                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.41                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.42                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.43                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.44                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.45                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.46                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.47                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.48                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.49                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.50                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.51                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.52                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.53                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.54                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.55                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.56                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.57                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.58                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.59                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.60                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.61                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.62                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.63                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.64                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.65                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.66                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.67                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.68                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.69                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.70                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.71                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.72                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.73                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.74                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.75                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.76                  up    up   inet    
+                                   iso     
+                                   inet6   
+lsi.77                  up    up   inet    
+                                   iso     
+                                   inet6   
+mif                     up    up
+mtun                    up    up
+pimd                    up    up
+pime                    up    up
+pip0                    up    up
+pp0                     up    up
+rbeb                    up    up
+rlt0                    up    down
+rlt1                    up    down
+rlt2                    up    down
+rlt3                    up    down
+rlt4                    up    down
+tap                     up    up
+vtep                    up    up
+{
+  "error": "Error parsing show interface terse | no-more: list index out of range"
+}
+show rsvp session | match DN | no-more
+(empty)
+(not parsed)
+show mpls lsp unidirectional | match Dn | no-more
+109.74.16.10    0.0.0.0         Dn     0       -                EFF01-BME01
+109.74.16.2     0.0.0.0         Dn     0       -                EFF01-IXL01
+(not parsed)
+no parser registered
+
+
+
+see in rsvp - show some empty dictionary 
+fix unidirectional cmd - interface terse 
+and htis is from the json - just in a  diff way
