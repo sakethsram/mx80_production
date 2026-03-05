@@ -300,7 +300,7 @@ def setup_logger(name: str, vendor: str = "", model: str = ""):
 
     file_logger = logging.getLogger(f"{vendor}_{model}")
     file_logger.setLevel(logging.DEBUG)
-    file_logger.propagate = False
+    file_logger.propagate = True
     handler   = logging.FileHandler(log_path)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s",
                                   datefmt="%Y-%m-%d_%H:%M:%S")

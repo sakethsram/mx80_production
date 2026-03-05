@@ -30,12 +30,31 @@ juniper_mx204:
   # - show isis adjacency extensive | no-more
   # - show route summary | no-more
   # - show rsvp session | match DN | no-more
-  # - show mpls lsp unidirectional | match Dn | no-morec
+  # - show mpls lsp unidirectional | match Dn | no-more
   # - show ldp neighbor | no-more
   # - show connections | no-more
   # - show log messages | last 200 | no-more
 
-
 cisco_asr9910:
   - show install active summary
-  -  show isis adjacency
+  - show isis adjacency
+  - show bfd session
+  - show route summary
+  - show bgp all summary
+  - show bgp vrf all summary
+  - show ipv4 vrf all interface brief
+  - show mpls ldp neighbor
+  - show pim neighbor
+  - show pfm location all
+  - show processes cpu
+  - show watchdog memory-state location all
+  - show redundancy
+  - show interfaces description
+  - show filesystem
+  - show interfaces Bundle-Ether
+  - show msdp peer
+  - show l2vpn xconnect brief
+  - show hw-module fpd
+  - show platform
+  - show media location 0/RSP1/CPU0
+  - show version
