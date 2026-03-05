@@ -1,4 +1,22 @@
 devices:
+  - host: "10.80.71.55"
+    vendor: "juniper"
+    model: mx204
+    device_type: "juniper"
+    current_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
+    expected_os: 23.4R2-S5.6
+    intermediate_os: False
+    min_disk_gb: 5
+    username: "lab"
+    password: "lab123"
+    target_image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
+    remote_backup_server: sftp://backup@10.10.20.20/backups/
+    cleanup_files:
+      - list of files
+    intermediate_image: junos-os-21.2R2-S5.bin
+    rollback: False
+    md5checksum_file: "dec5349a0d238dad686dc01f468a0bbe"
+  
   - host: "10.80.109.250"
     vendor: "cisco"
     model: asr9910
@@ -19,21 +37,3 @@ devices:
     intermediate_image: junos-os-21.2R2-S5.bin
     md5checksum_file: "3e97c983380ac3a1b28e143219c8960a"
     local_image_path: ""
-
-  - host: "10.80.71.55"
-    vendor: "juniper"
-    model: mx204
-    device_type: "juniper"
-    current_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
-    expected_os: 23.4R2-S5.6
-    intermediate_os: False
-    min_disk_gb: 5
-    username: "lab"
-    password: "lab123"
-    target_image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
-    remote_backup_server: sftp://backup@10.10.20.20/backups/
-    cleanup_files:
-      - list of files
-    intermediate_image: junos-os-21.2R2-S5.bin
-    rollback: False
-    md5checksum_file: "dec5349a0d238dad686dc01f468a0bbe"
