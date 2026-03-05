@@ -36,7 +36,143 @@ from models.cisco.cisco_asr9910 import (
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# show redundancy
+# ---------------------------------------------------------------------------
+def show_redundancy(content: str) -> List[Dict[str, Any]]:
+    """
+    Parse 'show redundancy' output.
 
+    :param content: Raw command output string.
+    :return: List of parsed dicts.
+    """
+    try:
+        cmd = "show redundancy"
+
+        if not content:
+            raise ValueError(f"No output found for command: {cmd}")
+
+        active_match = re.search(r'Active node:\s+(\S+)', content)
+        standby_match = re.search(r'Standby node:\s+(\S+)', content)
+        state_match = re.search(r'Redundancy state:\s+(.+)', content)
+        mode_match = re.search(r'Redundancy mode:\s+(.+)', content)
+        last_sw_match = re.search(r'Last switchover:\s+(.+)', content)
+
+        result = [asdict(ShowRedundancy(
+            ActiveNode=active_match.group(1).strip() if active_match else "",
+            StandbyNode=standby_match.group(1).strip() if standby_match else "",
+            RedundancyState=state_match.group(1).strip() if state_match else "",
+            RedundancyMode=mode_match.group(1).strip() if mode_match else "",
+            LastSwitchover=last_sw_match.group(1).strip() if last_sw_match else ""
+        ))]
+
+        return result
+
+    except Exception as e:
+        return [{"error": f"Error parsing command output: {str(e)}"}]
+
+# ---------------------------------------------------------------------------
+# show bfd session
+# ---------------------------------------------------------------------------
+def show_bfd_session(content: str) -> List[Dict[str, Any]]:
+    try:
+        cmd = "show bfd session"
+        if not content:
+            raise ValueError(f"No output found for command: {cmd}")
+
+        result = []
+
+        # Matches any interface name (BE1, Te0/0/0/1, Gi0/0/0/0, etc.)
+        # Echo and Async columns can be "n/a" or "value(interval*mult)"
+        bfd_pattern = re.compile(
+            r'(?m)^(?P<interface>\S+)\s+'
+            r'(?P<destAddr>\S+)\s+'
+            r'(?P<echo>\S+)\s+'
+            r'(?P<async_val>\S+)\s+'
+            r'(?P<state>\S+)\s*\n\s+'
+            r'(?P<hw>\S+)\s+(?P<npu>\S+)'
+        )
+
+        for match in bfd_pattern.finditer(content):
+            # Skip the header line if accidentally matched
+            if match.group("interface") in ("Interface", "---"):
+                continue
+            entry = ShowbfdSession(
+                interface=match.group("interface"),
+                destAddr=match.group("destAddr"),
+                localDettime=[{
+                    "echo": match.group("echo"),
+                    "async": match.group("async_val")
+                }],
+                hw=match.group("hw"),
+                npu=match.group("npu"),
+                state=match.group("state")
+            )
+            result.append(asdict(entry))
+
+        return result
+
+    except Exception as e:
+        return [{"error": f"Error parsing command output: {str(e)}"}]
+
+# ---------------------------------------------------------------------------
+# show processes cpu
+# ---------------------------------------------------------------------------
+def show_processes_cpu(content: str) -> List[Dict[str, Any]]:
+    try:
+        cmd = "show processes cpu"
+        if not content:
+            raise ValueError(f"No output found for command: {cmd}")
+
+        # XR format: "CPU utilization for one minute: 2%; five minutes: 2%; fifteen minutes: 2%"
+        cpu_match = re.search(
+            r'CPU utilization for one minute:\s*(\d+)%;\s*five minutes:\s*(\d+)%;\s*fifteen minutes:\s*(\d+)%',
+            content
+        )
+
+        one_min  = cpu_match.group(1) if cpu_match else ""
+        five_min = cpu_match.group(2) if cpu_match else ""
+        fifteen  = cpu_match.group(3) if cpu_match else ""
+
+        # XR per-process format: "PID    1Min    5Min    15Min Process"
+        # e.g.  "1        0%      0%       0% init"
+        process_pattern = re.compile(
+            r'^\s*(\d+)\s+'
+            r'(\d+)%\s+'
+            r'(\d+)%\s+'
+            r'(\d+)%\s+'
+            r'(.+)$',
+            re.MULTILINE
+        )
+
+        processes = []
+        for m in process_pattern.finditer(content):
+            processes.append(asdict(ShowProcessesCpu(
+                PID=m.group(1),
+                Runtime="",      # not present in XR format
+                Invoked="",      # not present in XR format
+                uSecs="",        # not present in XR format
+                FiveSec="",      # not present in XR format
+                OneMin=m.group(2),
+                FiveMin=m.group(3),
+                TTY="",          # not present in XR format
+                Process=m.group(5).strip()
+            )))
+
+        result = [{
+            "CPUUtilization": {
+                "FiveSeconds": "",      # XR does not report 5-sec
+                "OneMinute":   one_min,
+                "FiveMinutes": five_min,
+                "FifteenMinutes": fifteen
+            },
+            "Processes": processes
+        }]
+
+        return result
+
+    except Exception as e:
+        return [{"error": f"Error parsing command output: {str(e)}"}]
 # ---------------------------------------------------------------------------
 # show install active summary
 # ---------------------------------------------------------------------------
@@ -151,51 +287,6 @@ def show_isis_adjacency(content: str) -> List[Dict[str, Any]]:
         return [{"error": f"Error parsing command output: {str(e)}"}]
 
 
-# ---------------------------------------------------------------------------
-# show bfd session
-# ---------------------------------------------------------------------------
-def show_bfd_session(content: str) -> List[Dict[str, Any]]:
-    """
-    Parse 'show bfd session' output.
-
-    :param content: Raw command output string.
-    :return: List of parsed dicts.
-    """
-    try:
-        cmd = "show bfd session"
-
-        if not content:
-            raise ValueError(f"No output found for command: {cmd}")
-
-        result = []
-
-        bfd_pattern = re.compile(
-            r'(?m)^(?P<interface>\w+/\d+/\d+/\d+)\s+'
-            r'(?P<destAddr>\S+)\s+'
-            r'(?P<echo>\S+\(\S+\*\d+\))\s+'
-            r'(?P<async_val>\S+\(\S+\*\d+\))\s+'
-            r'(?P<state>\S+)\s*\n\s+'
-            r'(?P<hw>\S+)\s+(?P<npu>\S+)'
-        )
-
-        for match in bfd_pattern.finditer(content):
-            entry = ShowbfdSession(
-                interface=match.group("interface"),
-                destAddr=match.group("destAddr"),
-                localDettime=[{
-                    "echo": match.group("echo"),
-                    "async": match.group("async_val")
-                }],
-                hw=match.group("hw"),
-                npu=match.group("npu"),
-                state=match.group("state")
-            )
-            result.append(asdict(entry))
-
-        return result
-
-    except Exception as e:
-        return [{"error": f"Error parsing command output: {str(e)}"}]
 
 
 # ---------------------------------------------------------------------------
@@ -624,70 +715,6 @@ def show_pfm_location_all(content: str) -> List[Dict[str, Any]]:
 
 
 # ---------------------------------------------------------------------------
-# show processes cpu
-# ---------------------------------------------------------------------------
-def show_processes_cpu(content: str) -> List[Dict[str, Any]]:
-    """
-    Parse 'show processes cpu' output.
-
-    :param content: Raw command output string.
-    :return: List of parsed dicts.
-    """
-    try:
-        cmd = "show processes cpu"
-
-        if not content:
-            raise ValueError(f"No output found for command: {cmd}")
-
-        # Overall CPU utilization line
-        cpu_match = re.search(
-            r'CPU utilization for five seconds:\s*(\S+)%?;'
-            r'\s*one minute:\s*(\S+)%?;'
-            r'\s*five minutes:\s*(\S+)%?',
-            content
-        )
-
-        five_sec = cpu_match.group(1) if cpu_match else ""
-        one_min = cpu_match.group(2) if cpu_match else ""
-        five_min = cpu_match.group(3) if cpu_match else ""
-
-        # Per-process rows: PID Runtime(ms) Invoked uSecs 5Sec 1Min 5Min TTY Process
-        process_pattern = re.compile(
-            r'^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+'
-            r'(\d+\.\d+)%?\s+(\d+\.\d+)%?\s+(\d+\.\d+)%?\s+(\d+)\s+(.+)$',
-            re.MULTILINE
-        )
-
-        processes = []
-        for m in process_pattern.finditer(content):
-            processes.append(asdict(ShowProcessesCpu(
-                PID=m.group(1),
-                Runtime=m.group(2),
-                Invoked=m.group(3),
-                uSecs=m.group(4),
-                FiveSec=m.group(5),
-                OneMin=m.group(6),
-                FiveMin=m.group(7),
-                TTY=m.group(8),
-                Process=m.group(9).strip()
-            )))
-
-        result = [{
-            "CPUUtilization": {
-                "FiveSeconds": five_sec,
-                "OneMinute": one_min,
-                "FiveMinutes": five_min
-            },
-            "Processes": processes
-        }]
-
-        return result
-
-    except Exception as e:
-        return [{"error": f"Error parsing command output: {str(e)}"}]
-
-
-# ---------------------------------------------------------------------------
 # show watchdog memory-state location all
 # ---------------------------------------------------------------------------
 def show_watchdog_memory_state(content: str) -> List[Dict[str, Any]]:
@@ -731,41 +758,6 @@ def show_watchdog_memory_state(content: str) -> List[Dict[str, Any]]:
     except Exception as e:
         return [{"error": f"Error parsing command output: {str(e)}"}]
 
-
-# ---------------------------------------------------------------------------
-# show redundancy
-# ---------------------------------------------------------------------------
-def show_redundancy(content: str) -> List[Dict[str, Any]]:
-    """
-    Parse 'show redundancy' output.
-
-    :param content: Raw command output string.
-    :return: List of parsed dicts.
-    """
-    try:
-        cmd = "show redundancy"
-
-        if not content:
-            raise ValueError(f"No output found for command: {cmd}")
-
-        active_match = re.search(r'Active node:\s+(\S+)', content)
-        standby_match = re.search(r'Standby node:\s+(\S+)', content)
-        state_match = re.search(r'Redundancy state:\s+(.+)', content)
-        mode_match = re.search(r'Redundancy mode:\s+(.+)', content)
-        last_sw_match = re.search(r'Last switchover:\s+(.+)', content)
-
-        result = [asdict(ShowRedundancy(
-            ActiveNode=active_match.group(1).strip() if active_match else "",
-            StandbyNode=standby_match.group(1).strip() if standby_match else "",
-            RedundancyState=state_match.group(1).strip() if state_match else "",
-            RedundancyMode=mode_match.group(1).strip() if mode_match else "",
-            LastSwitchover=last_sw_match.group(1).strip() if last_sw_match else ""
-        ))]
-
-        return result
-
-    except Exception as e:
-        return [{"error": f"Error parsing command output: {str(e)}"}]
 
 
 # ---------------------------------------------------------------------------

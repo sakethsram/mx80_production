@@ -221,15 +221,15 @@ class ShowPfmLocationAll:
 @dataclass
 class ShowProcessesCpu:
     PID: str
-    Runtime: str
-    Invoked: str
-    uSecs: str
-    FiveSec: str
     OneMin: str
     FiveMin: str
-    TTY: str
     Process: str
-
+    Runtime: str = ""     # IOS only
+    Invoked: str = ""     # IOS only
+    uSecs: str = ""       # IOS only
+    FiveSec: str = ""     # IOS only
+    TTY: str = ""         # IOS only
+    FifteenMin: str = ""  # XR only
 
 # ---------------------------------------------------------------------------
 # Watchdog Memory State
