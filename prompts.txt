@@ -1,15 +1,655 @@
- },
-      {
-        "cmd": "show redundancy",
-        "output": "\nRedundancy information for node 0/RSP0/CPU0:\n==========================================\nNode 0/RSP0/CPU0 is in ACTIVE role\nPartner n>
-        "json": [
-          {
-            "ActiveNode": "",
-            "StandbyNode": "",
-            "RedundancyState": "",
-            "RedundancyMode": "",
-            "LastSwitchover": ""
-          }
-        ],
-        "exception": ""
-      }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ nano inputs/show_cmd_list.yaml
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ p main.py
+2026-03-05 12:00:59,594 - INFO - [MAIN] Initialised device_results for [10_80_109_250_cisco_asr9910] host=10.80.109.250
+2026-03-05 12:00:59,595 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
+2026-03-05 12:00:59,595 - INFO - [MAIN] Spawning threads for 2 device(s)
+2026-03-05 12:00:59,595 - INFO - [THREAD-136606977550016] [10_80_109_250_cisco_asr9910] Prechecks started at 2026-03-05 12:00:59.595746
+2026-03-05 12:00:59,596 - INFO - [THREAD-136606969157312] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-05 12:00:59.596823
+2026-03-05 12:00:59,596 - INFO - Connecting to 10.80.109.250
+2026-03-05 12:00:59,597 - INFO - Connecting to 10.80.71.55
+2026-03-05 12:00:59,598 - INFO - Connecting to 10.80.109.250 using Netmiko...
+2026-03-05 12:00:59,598 - INFO - Connecting to 10.80.71.55 using Netmiko...
+2026-03-05 12:00:59,644 - INFO - Connected (version 2.0, client OpenSSH_9.7)
+2026-03-05 12:00:59,881 - INFO - Authentication (password) successful!
+2026-03-05 12:01:00,141 - INFO - Login Successful to 10.80.71.55
+2026-03-05 12:01:00,141 - INFO - 10.80.71.55: Connected successfully
+connection.. <netmiko.juniper.juniper.JuniperSSH object at 0x7c3e4a9d42c0>
+2026-03-05 12:01:00,143 - INFO - [THREAD-136606969157312] [10_80_71_55_juniper_mx204] Starting command pipeline — 4 command(s)
+2026-03-05 12:01:00,143 - INFO - [10_80_71_55_juniper_mx204] STEP 1 collect_outputs — 4 command(s), check_type=pre
+2026-03-05 12:01:00,144 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system processes extensive | match rpd | no-more'
+2026-03-05 12:01:00,186 - INFO - Connected (version 2.0, client Cisco-2.0)
+
+================================================================================
+>>> OUTPUT FROM COMMAND: show system processes extensive | match rpd | no-more
+--------------------------------------------------------------------------------
+18621 root         20    0  1176M   272M kqread   4   0:05   0.00% rpd{rpd}
+18674 root         20    0   958M   153M kqread   0   0:02   0.00% rpd{rpd}
+18673 root         20    0   954M   152M kqread   3   0:02   0.00% rpd{rpd}
+18675 root         20    0   946M   149M kqread   3   0:02   0.00% rpd{rpd}
+18673 root         20    0   954M   152M kqread   2   0:01   0.00% rpd{TraceThread}
+18675 root         20    0   946M   149M kqread   1   0:01   0.00% rpd{TraceThread}
+18674 root         20    0   958M   153M kqread   3   0:01   0.00% rpd{TraceThread}
+18621 root         20    0  1176M   272M kqread   0   0:00   0.00% rpd{TraceThread}
+18670 root         20    0   799M    14M kqread   4   0:00   0.00% rpdtmd
+18621 root         20    0  1176M   272M kqread   3   0:00   0.00% rpd{krtio-th}
+18621 root         20    0  1176M   272M kqread   0   0:00   0.00% rpd{rsvp-io}
+18621 root         20    0  1176M   272M kqread   0   0:00   0.00% rpd{bgpio-0-th}
+18674 root         20    0   958M   153M kqread   0   0:00   0.00% rpd{krtio-th}
+18673 root         20    0   954M   152M kqread   1   0:00   0.00% rpd{bgpio-0-th}
+18674 root         20    0   958M   153M kqread   1   0:00   0.00% rpd{bgpio-0-th}
+18673 root         20    0   954M   152M kqread   1   0:00   0.00% rpd{krtio-th}
+18675 root         20    0   946M   149M kqread   0   0:00   0.00% rpd{krtio-th}
+
+[10_80_71_55_juniper_mx204] 'show system processes extensive | match rpd | no-more' — 1367 chars received
+================================================================================
+
+[10_80_71_55_juniper_mx204] 'show system processes extensive | match rpd | no-more' — 1367 chars received
+the outputs of the cmd {cmd }:,{outuput}===================
+2026-03-05 12:01:00,228 - INFO - [10_80_71_55_juniper_mx204] 'show system processes extensive | match rpd | no-more' collected=True (1366 chars)
+2026-03-05 12:01:00,228 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show interface terse | no-more'
+
+================================================================================
+>>> OUTPUT FROM COMMAND: show interface terse | no-more
+--------------------------------------------------------------------------------
+Interface               Admin Link Proto    Local                 Remote
+gr-0/0/0                up    up
+ip-0/0/0                up    up
+lc-0/0/0                up    up
+lc-0/0/0.32769          up    up   vpls
+lt-0/0/0                up    up
+lt-0/0/0.11             up    up   inet     10.0.0.176/31
+lt-0/0/0.12             up    up   inet     10.0.0.177/31
+lt-0/0/0.176            up    up   inet     66.1.0.176/31
+lt-0/0/0.177            up    up   inet     66.1.0.177/31
+lt-0/0/0.32767          up    up
+mt-0/0/0                up    up
+pd-0/0/0                up    up
+pd-0/0/0.32789          up    up   inet
+pd-0/0/0.32791          up    up   inet
+pe-0/0/0                up    up
+pe-0/0/0.32782          up    down inet
+pe-0/0/0.32784          up    down inet
+pe-0/0/0.32785          up    down inet
+pe-0/0/0.32786          up    down inet
+pe-0/0/0.32787          up    down inet
+pfe-0/0/0               up    up
+pfe-0/0/0.16383         up    up   inet
+                                   inet6
+pfh-0/0/0               up    up
+pfh-0/0/0.16383         up    up   inet
+pfh-0/0/0.16384         up    up   inet
+ud-0/0/0                up    up
+ut-0/0/0                up    up
+vt-0/0/0                up    up
+vt-0/0/0.1              up    up   inet
+vt-0/0/0.2              up    up   inet
+vt-0/0/0.5              up    up   inet
+vt-0/0/0.112            up    up   inet
+vt-0/0/0.117            up    up   inet
+vt-0/0/0.2115           up    up   inet
+vt-0/0/0.2097152        up    up   inet
+                                   mpls
+xe-0/0/0:0              up    up
+xe-0/0/0:0.0            up    up   aenet    --> ae10.0
+xe-0/0/0:0.32767        up    up   aenet    --> ae10.32767
+xe-0/0/0:1              up    up
+xe-0/0/0:1.2000         up    up   inet     172.17.20.9/30
+                                   multiservice
+xe-0/0/0:1.2001         up    up   inet     172.17.21.9/30
+                                   multiservice
+xe-0/0/0:1.2002         up    up   inet     172.17.22.9/30
+                                   multiservice
+xe-0/0/0:1.2003         up    up   inet     172.17.23.9/24
+                                   multiservice
+xe-0/0/0:1.2004         up    up   inet     172.17.24.9/24
+                                   multiservice
+xe-0/0/0:1.2005         up    up   inet     172.17.24.9/24
+                                   multiservice
+xe-0/0/0:1.2006         up    up   inet     172.17.25.9/24
+                                   multiservice
+xe-0/0/0:1.2007         up    up   inet     172.17.26.9/24
+                                   multiservice
+xe-0/0/0:1.2008         up    up   inet     172.17.27.9/24
+                                   multiservice
+xe-0/0/0:1.2009         up    up   inet     172.17.28.9/24
+                                   multiservice
+xe-0/0/0:1.32767        up    up   multiservice
+xe-0/0/0:2              up    up
+xe-0/0/0:2.16386        up    up
+xe-0/0/0:3              up    down
+xe-0/0/0:3.16386        up    down
+xe-0/0/1:0              up    up
+xe-0/0/1:0.0            up    up   aenet    --> ae10.0
+xe-0/0/1:0.32767        up    up   aenet    --> ae10.32767
+xe-0/0/1:1              up    up
+xe-0/0/1:1.16386        up    up
+xe-0/0/1:2              up    up
+xe-0/0/1:2.101          up    up   aenet    --> ae1.101
+xe-0/0/1:2.32767        up    up   aenet    --> ae1.32767
+xe-0/0/1:3              up    up
+et-0/0/2                up    up
+et-0/0/2.20             up    up   inet     100.96.112.46/31
+                                   multiservice
+et-0/0/2.32767          up    up   multiservice
+xe-0/0/3:0              up    up
+xe-0/0/3:0.3400         up    up   inet     213.86.204.109/30
+                                   multiservice
+xe-0/0/3:0.32767        up    up   multiservice
+xe-0/0/3:1              up    up
+xe-0/0/3:1.3400         up    up   inet     213.86.204.110/30
+                                   multiservice
+xe-0/0/3:1.32767        up    up   multiservice
+xe-0/0/3:2              up    up
+xe-0/0/3:2.100          up    up   inet     169.254.152.186/30
+                                   multiservice
+xe-0/0/3:2.32767        up    up   multiservice
+xe-0/0/3:3              up    up
+xe-0/0/3:3.100          up    up   inet     169.254.152.185/30
+                                   multiservice
+xe-0/0/3:3.32767        up    up   multiservice
+gr-0/1/0                up    up
+ip-0/1/0                up    up
+lt-0/1/0                up    up
+mt-0/1/0                up    up
+pd-0/1/0                up    up
+pd-0/1/0.32790          up    up   inet
+pd-0/1/0.32792          up    up   inet
+pd-0/1/0.32793          up    up   inet
+pe-0/1/0                up    up
+pe-0/1/0.32779          up    up   inet
+pe-0/1/0.32780          up    down inet
+pe-0/1/0.32781          up    down inet
+pe-0/1/0.32783          up    down inet
+ud-0/1/0                up    up
+ut-0/1/0                up    up
+vt-0/1/0                up    up
+vt-0/1/0.211            up    up   inet
+vt-0/1/0.2115           up    up   inet
+vt-0/1/0.2097153        up    up   inet
+                                   mpls
+xe-0/1/0                up    down
+xe-0/1/0.0              up    down inet
+                                   multiservice
+xe-0/1/1                up    up
+xe-0/1/1.0              up    up   inet
+                                   multiservice
+xe-0/1/2                up    up
+xe-0/1/3                up    up
+xe-0/1/3.1              up    up   aenet    --> ae0.1
+xe-0/1/3.2              up    up   aenet    --> ae0.2
+xe-0/1/3.101            up    up   aenet    --> ae0.101
+xe-0/1/3.102            up    up   aenet    --> ae0.102
+xe-0/1/3.104            up    up   aenet    --> ae0.104
+xe-0/1/3.105            up    up   aenet    --> ae0.105
+xe-0/1/3.111            up    up   aenet    --> ae0.111
+xe-0/1/3.112            up    up   aenet    --> ae0.112
+xe-0/1/3.121            up    up   aenet    --> ae0.121
+xe-0/1/3.122            up    up   aenet    --> ae0.122
+xe-0/1/3.123            up    up   aenet    --> ae0.123
+xe-0/1/3.124            up    up   aenet    --> ae0.124
+xe-0/1/3.125            up    up   aenet    --> ae0.125
+xe-0/1/3.126            up    up   aenet    --> ae0.126
+xe-0/1/3.127            up    up   aenet    --> ae0.127
+xe-0/1/3.128            up    up   aenet    --> ae0.128
+xe-0/1/3.129            up    up   aenet    --> ae0.129
+xe-0/1/3.130            up    up   aenet    --> ae0.130
+xe-0/1/3.172            up    up   aenet    --> ae0.172
+xe-0/1/3.173            up    up   aenet    --> ae0.173
+xe-0/1/3.201            up    up   aenet    --> ae0.201
+xe-0/1/3.202            up    up   aenet    --> ae0.202
+xe-0/1/3.211            up    up   aenet    --> ae0.211
+xe-0/1/3.212            up    up   aenet    --> ae0.212
+xe-0/1/3.312            up    up   aenet    --> ae0.312
+xe-0/1/3.313            up    up   aenet    --> ae0.313
+xe-0/1/3.412            up    up   aenet    --> ae0.412
+xe-0/1/3.413            up    up   aenet    --> ae0.413
+xe-0/1/3.32767          up    up   aenet    --> ae0.32767
+xe-0/1/4                up    up
+xe-0/1/4.0              up    up   inet     10.0.0.1/30
+                                            109.74.16.86/30
+                                   iso
+                                   mpls
+                                   multiservice
+xe-0/1/5                up    up
+xe-0/1/5.0              up    up   inet     109.74.16.89/30
+                                   iso
+                                   mpls
+                                   multiservice
+xe-0/1/6                up    down
+xe-0/1/6.0              up    down aenet    --> ae12.0
+xe-0/1/7                up    up
+xe-0/1/7.0              up    up   inet     10.0.0.9/30
+                                            109.74.16.45/30
+                                   iso
+                                   mpls
+                                   multiservice
+ae0                     up    up
+ae0.1                   up    up   inet     100.70.48.2/30
+                                   multiservice
+ae0.2                   up    up   inet     100.70.52.6/30
+                                   multiservice
+ae0.101                 up    up   inet     10.10.101.1/30
+                                   multiservice
+ae0.102                 up    up   inet     10.10.102.1/30
+                                   multiservice
+ae0.104                 up    up   inet     10.10.104.1/30
+                                   multiservice
+ae0.105                 up    up   inet     10.10.105.1/30
+                                   multiservice
+ae0.111                 up    up   inet     10.10.11.1/30
+                                   multiservice
+ae0.112                 up    up   inet     10.10.112.1/30
+                                   multiservice
+ae0.121                 up    up   inet     10.10.121.1/30
+                                   multiservice
+ae0.122                 up    up   inet     10.10.122.1/30
+                                   multiservice
+ae0.123                 up    up   inet     10.10.123.1/30
+                                   multiservice
+ae0.124                 up    up   inet     10.10.124.1/30
+                                   multiservice
+ae0.125                 up    up   inet     10.10.125.1/30
+                                   multiservice
+ae0.126                 up    up   inet     10.10.126.1/30
+                                   multiservice
+ae0.127                 up    up   inet     10.10.127.1/30
+                                   multiservice
+ae0.128                 up    up   inet     10.10.128.1/30
+                                   multiservice
+ae0.129                 up    up   inet     10.10.129.1/30
+                                   multiservice
+ae0.130                 up    up   inet     10.10.130.1/30
+                                   multiservice
+ae0.172                 up    up   inet     172.16.172.1/30
+                                   multiservice
+ae0.173                 up    up   inet     172.16.173.1/30
+                                   multiservice
+ae0.201                 up    up   inet     10.10.201.1/30
+                                   multiservice
+ae0.202                 up    up   inet     10.10.202.1/30
+                                   multiservice
+ae0.211                 up    up   inet     10.10.211.5/30
+                                   multiservice
+ae0.212                 up    up   inet     10.10.212.5/30
+                                   multiservice
+ae0.312                 up    up   inet     10.31.2.1/30
+                                   multiservice
+ae0.313                 up    up   inet     10.31.1.1/30
+                                   multiservice
+ae0.412                 up    up   inet     10.10.214.0/31
+                                   multiservice
+ae0.413                 up    up   inet     10.10.214.3/31
+                                   multiservice
+ae0.32767               up    up   multiservice
+ae1                     up    up
+ae1.101                 up    up   inet     101.101.101.22/30
+                                   multiservice
+ae1.32767               up    up   multiservice
+ae2                     up    down
+ae10                    up    down
+ae10.0                  up    down bridge
+ae10.32767              up    down multiservice
+ae12                    up    down
+ae12.0                  up    down inet     109.74.16.102/30
+                                   iso
+                                   mpls
+                                   multiservice
+cbp0                    up    up
+demux0                  up    up
+dsc                     up    up
+em2                     up    up
+em2.32768               up    up   inet     192.168.1.1/24
+em3                     up    up
+em3.0                   up    up   inet     10.0.0.1/8
+                                            128.0.0.1/2
+                                            128.0.0.4/2
+                                   tnp      0x4
+em4                     up    up
+em4.0                   up    up   inet     10.0.0.1/8
+                                            128.0.0.1/2
+                                            128.0.0.4/2
+                                   tnp      0x4
+esi                     up    up
+fti0                    up    up
+fti1                    up    up
+fti2                    up    up
+fti3                    up    up
+fti4                    up    up
+fti5                    up    up
+fti6                    up    up
+fti7                    up    up
+fxp0                    up    up
+fxp0.0                  up    up   inet     10.80.71.55/23
+gre                     up    up
+ipip                    up    up
+irb                     up    up
+jsrv                    up    up
+jsrv.1                  up    up   inet     128.0.0.127/2
+lo0                     up    up
+lo0.0                   up    up   inet     194.180.107.5       --> 0/0
+                                   iso      49.0001.1940.1800.1075
+lo0.2                   up    up   inet     109.74.16.14        --> 0/0
+lo0.3                   up    up   inet     109.74.17.14        --> 0/0
+lo0.5                   up    up   inet     91.34.191.254       --> 0/0
+                                            185.102.253.252     --> 0/0
+                                            193.29.89.252       --> 0/0
+                                            193.29.91.252       --> 0/0
+                                            193.29.94.252       --> 0/0
+lo0.6                   up    up   inet     6.0.0.1             --> 0/0
+lo0.7                   up    up   inet     6.0.0.7             --> 0/0
+lo0.15                  up    up   inet     2.1.1.5             --> 0/0
+lo0.51                  up    up   inet     10.10.51.1          --> 0/0
+lo0.117                 up    up   inet     11.11.11.17         --> 0/0
+lo0.16384               up    up   inet     127.0.0.1           --> 0/0
+lo0.16385               up    up   inet
+lsi                     up    up
+lsi.0                   up    up   inet
+                                   iso
+                                   inet6
+lsi.1                   up    up   inet
+                                   iso
+                                   inet6
+lsi.2                   up    up   inet
+                                   iso
+                                   inet6
+lsi.3                   up    up   inet
+                                   iso
+                                   inet6
+lsi.4                   up    up   inet
+                                   iso
+                                   inet6
+lsi.5                   up    up   inet
+                                   iso
+                                   inet6
+lsi.6                   up    up   inet
+                                   iso
+                                   inet6
+lsi.7                   up    up   inet
+                                   iso
+                                   inet6
+lsi.8                   up    up   inet
+                                   iso
+                                   inet6
+lsi.9                   up    up   inet
+                                   iso
+                                   inet6
+lsi.10                  up    up   inet
+                                   iso
+                                   inet6
+lsi.11                  up    up   inet
+                                   iso
+                                   inet6
+lsi.12                  up    up   inet
+                                   iso
+                                   inet6
+lsi.13                  up    up   inet
+                                   iso
+                                   inet6
+lsi.14                  up    up   inet
+                                   iso
+                                   inet6
+lsi.15                  up    up   inet
+                                   iso
+                                   inet6
+lsi.16                  up    up   inet
+                                   iso
+                                   inet6
+lsi.17                  up    up   inet
+                                   iso
+                                   inet6
+lsi.18                  up    up   inet
+                                   iso
+                                   inet6
+lsi.19                  up    up   inet
+                                   iso
+                                   inet6
+lsi.20                  up    up   inet
+                                   iso
+                                   inet6
+lsi.21                  up    up   inet
+                                   iso
+                                   inet6
+lsi.22                  up    up   inet
+                                   iso
+                                   inet6
+lsi.23                  up    up   inet
+                                   iso
+                                   inet6
+lsi.24                  up    up   inet
+                                   iso
+                                   inet6
+lsi.25                  up    up   inet
+                                   iso
+                                   inet6
+lsi.26                  up    up   inet
+                                   iso
+                                   inet6
+lsi.27                  up    up   inet
+                                   iso
+                                   inet6
+lsi.28                  up    up   inet
+                                   iso
+                                   inet6
+lsi.29                  up    up   inet
+                                   iso
+                                   inet6
+lsi.30                  up    up   inet
+                                   iso
+                                   inet6
+lsi.31                  up    up   inet
+                                   iso
+                                   inet6
+lsi.32                  up    up   inet
+                                   iso
+                                   inet6
+lsi.33                  up    up   inet
+                                   iso
+                                   inet6
+lsi.34                  up    up   inet
+                                   iso
+                                   inet6
+lsi.35                  up    up   inet
+                                   iso
+                                   inet6
+lsi.36                  up    up   inet
+                                   iso
+                                   inet6
+lsi.37                  up    up   inet
+                                   iso
+                                   inet6
+lsi.38                  up    up   inet
+                                   iso
+                                   inet6
+lsi.39                  up    up   inet
+                                   iso
+                                   inet6
+lsi.40                  up    up   inet
+                                   iso
+                                   inet6
+lsi.41                  up    up   inet
+                                   iso
+                                   inet6
+lsi.42                  up    up   inet
+                                   iso
+                                   inet6
+lsi.43                  up    up   inet
+                                   iso
+                                   inet6
+lsi.44                  up    up   inet
+                                   iso
+                                   inet6
+lsi.45                  up    up   inet
+                                   iso
+                                   inet6
+lsi.46                  up    up   inet
+                                   iso
+                                   inet6
+lsi.47                  up    up   inet
+                                   iso
+                                   inet6
+lsi.48                  up    up   inet
+                                   iso
+                                   inet6
+lsi.49                  up    up   inet
+                                   iso
+                                   inet6
+lsi.50                  up    up   inet
+                                   iso
+                                   inet6
+lsi.51                  up    up   inet
+                                   iso
+                                   inet6
+lsi.52                  up    up   inet
+                                   iso
+                                   inet6
+lsi.53                  up    up   inet
+                                   iso
+                                   inet6
+lsi.54                  up    up   inet
+                                   iso
+                                   inet6
+lsi.55                  up    up   inet
+                                   iso
+                                   inet6
+lsi.56                  up    up   inet
+                                   iso
+                                   inet6
+lsi.57                  up    up   inet
+                                   iso
+                                   inet6
+lsi.58                  up    up   inet
+                                   iso
+                                   inet6
+lsi.59                  up    up   inet
+                                   iso
+                                   inet6
+lsi.60                  up    up   inet
+                                   iso
+                                   inet6
+lsi.61                  up    up   inet
+                                   iso
+                                   inet6
+lsi.62                  up    up   inet
+                                   iso
+                                   inet6
+lsi.63                  up    up   inet
+                                   iso
+                                   inet6
+lsi.64                  up    up   inet
+                                   iso
+                                   inet6
+lsi.65                  up    up   inet
+                                   iso
+                                   inet6
+lsi.66                  up    up   inet
+                                   iso
+                                   inet6
+lsi.67                  up    up   inet
+                                   iso
+                                   inet6
+lsi.68                  up    up   inet
+                                   iso
+                                   inet6
+lsi.69                  up    up   inet
+                                   iso
+                                   inet6
+lsi.70                  up    up   inet
+                                   iso
+                                   inet6
+lsi.71                  up    up   inet
+                                   iso
+                                   inet6
+lsi.72                  up    up   inet
+                                   iso
+                                   inet6
+lsi.73                  up    up   inet
+                                   iso
+                                   inet6
+lsi.74                  up    up   inet
+                                   iso
+                                   inet6
+lsi.75                  up    up   inet
+                                   iso
+                                   inet6
+lsi.76                  up    up   inet
+                                   iso
+                                   inet6
+lsi.77                  up    up   inet
+                                   iso
+                                   inet6
+mif                     up    up
+mtun                    up    up
+pimd                    up    up
+pime                    up    up
+pip0                    up    up
+pp0                     up    up
+rbeb                    up    up
+rlt0                    up    down
+rlt1                    up    down
+rlt2                    up    down
+rlt3                    up    down
+rlt4                    up    down
+tap                     up    up
+vtep                    up    up
+
+[10_80_71_55_juniper_mx204] 'show interface terse | no-more' — 25060 chars received
+================================================================================
+
+[10_80_71_55_juniper_mx204] 'show interface terse | no-more' — 25060 chars received
+the outputs of the cmd {cmd }:,{outuput}===================
+2026-03-05 12:01:00,542 - INFO - [10_80_71_55_juniper_mx204] 'show interface terse | no-more' collected=True (25059 chars)
+2026-03-05 12:01:00,542 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp neighbor | no-more'
+
+================================================================================
+>>> OUTPUT FROM COMMAND: show rsvp neighbor | no-more
+--------------------------------------------------------------------------------
+RSVP neighbor: 5 learned
+Address            Idle Up/Dn LastChange HelloInt HelloTx/Rx MsgRcvd
+109.74.16.0           0  1/0        9:42        9    66/64   0
+109.74.16.9           0  1/0        9:09        9    63/62   0
+109.74.16.85          0  1/0        9:59        9    61/60   59
+10.0.0.30         10:10  0/0       10:08        9    68/0    0
+109.74.16.90          0  1/0        9:59        9    59/58   15
+
+[10_80_71_55_juniper_mx204] 'show rsvp neighbor | no-more' — 411 chars received
+================================================================================
+
+[10_80_71_55_juniper_mx204] 'show rsvp neighbor | no-more' — 411 chars received
+the outputs of the cmd {cmd }:,{outuput}===================
+2026-03-05 12:01:00,625 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp neighbor | no-more' collected=True (410 chars)
+2026-03-05 12:01:00,625 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp session | match DN | no-more'
+
+================================================================================
+>>> OUTPUT FROM COMMAND: show rsvp session | match DN | no-more
+--------------------------------------------------------------------------------
+<no output>
+[10_80_71_55_juniper_mx204] 'show rsvp session | match DN | no-more' — 0 chars received
+================================================================================
+
+[10_80_71_55_juniper_mx204] 'show rsvp session | match DN | no-more' — 0 chars received
+the outputs of the cmd {cmd }:,{outuput}===================
+2026-03-05 12:01:00,708 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp session | match DN | no-more' collected=False (0 chars)
+2026-03-05 12:01:00,708 - INFO - [10_80_71_55_juniper_mx204] STEP 1 done — 4 entries stored
+2026-03-05 12:01:00,709 - INFO - [merge] device_key='10_80_71_55_juniper_mx204' merged into device_results
+2026-03-05 12:01:00,709 - INFO - [THREAD-136606969157312] [10_80_71_55_juniper_mx204] All pre-checks passed
+2026-03-05 12:01:00,709 - INFO - Logging out from device
+2026-03-05 12:01:00,720 - INFO - Logout successful from 10.80.71.55
+2026-03-05 12:01:00,721 - INFO - [THREAD-136606969157312] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-05 12:01:00.721134
+2026-03-05 12:01:00,721 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> passed
+2026-03-05 12:01:10,520 - INFO - Authentication (password) successful!
+2026-03-05 12:01:12,765 - INFO - Login Successful to 10.80.109.250
+2026-03-05 12:01:12,765 - INFO - 10.80.109.250: Connected successfully
+connection.. <netmiko.cisco.cisco_xr.CiscoXrSSH object at 0x7c3e4a7def30>
+2026-03-05 12:01:12,767 - ERROR - [THREAD-136606977550016] [10_80_109_250_cisco_asr9910] FATAL missing command list: 'cisco_asr9910'
+2026-03-05 12:01:12,767 - INFO - [merge] device_key='10_80_109_250_cisco_asr9910' merged into device_results
+2026-03-05 12:01:12,768 - INFO - Logging out from device
+2026-03-05 12:01:12,778 - INFO - Logout successful from 10.80.109.250
+2026-03-05 12:01:12,778 - INFO - [THREAD-136606977550016] [10_80_109_250_cisco_asr9910] Prechecks completed at 2026-03-05 12:01:12.778956
+2026-03-05 12:01:12,779 - INFO - [MAIN] 10_80_109_250_cisco_asr9910 -> failed
+[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation2/precheck_jsons/all_devices_summary_2026-03-05_12-05-12.json
+[REPORT] HTML report saved -> /home/colt/Documents/MS1Automation2/reports/upgrade_report_05_03_26_12_01_12.html
+[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation2/precheck_jsons/all_devices_summary_2026-03-05_12-05-12.json
+[REPORT] HTML report saved -> /home/colt/Documents/MS1Automation2/reports/upgrade_report_05_03_26_12_01_12.html
+2026-03-05 12:01:12,785 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation2/precheck_jsons
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$
+
