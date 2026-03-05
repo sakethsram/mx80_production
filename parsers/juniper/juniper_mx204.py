@@ -647,12 +647,20 @@ def parse_show_interfaces_terse(text_content: str) -> Dict[str, Any]:
             if not parts:
                 continue
 
+            # skip continuation lines (proto-only lines like "inet6", "mpls", "iso")
+            if len(parts) < 3:
+                continue
+
+            # skip if first token is not an interface name (no slash or colon)
+            if parts[0] in ('inet', 'inet6', 'iso', 'mpls', 'tnp', 'multiservice',
+                            'aenet', 'vpls', 'bridge', '-->', 'tnp'):
+                continue
+
             entry = InterfaceEntry(
                 interface=parts[0],
                 admin=parts[1],
                 link=parts[2],
             )
-
             if len(parts) > 3:
                 idx = 3
                 if parts[idx] not in ["up", "down", "testing"]:
@@ -1656,7 +1664,6 @@ def parse_show_mpls_lsp_unidirectional_no_more(text_content: str) -> Dict[str, A
         }
     except Exception as e:
         return {"error": f"Error parsing {cmd}: {str(e)}"}
-
 # ────────────────────────────────────────────────────────────────────────────────
 def parse_36_show_ldp_neighbor(text_content: str) -> Dict[str, Any]:
     cmd = "show ldp neighbor | no-more"

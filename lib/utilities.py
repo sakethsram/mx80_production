@@ -106,6 +106,10 @@ def build_juniper_registries():
         ("juniper", "show system processes extensive | match rpd | no-more"): parse_show_system_processes_rpd_match,
         ("juniper", "show interface terse | no-more"): parse_show_interfaces_terse,
         ("juniper", "show rsvp session | match dn | no-more"): parse_show_rsvp_session_match_DN,
+        ("juniper", "show system processes extensive | match rpd | no-more"): parse_show_system_processes_rpd_match,
+        ("juniper", "show interface terse | no-more"):                         parse_show_interfaces_terse,
+        ("juniper", "show rsvp session | match dn | no-more"):                 parse_show_rsvp_session_match_DN,
+        ("juniper", "show mpls lsp unidirectional | match dn | no-more"):      parse_show_mpls_lsp_unidirectional_no_more,
     }
     return {
         (vendor, normalise(cmd)): fn
