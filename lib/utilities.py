@@ -15,6 +15,7 @@ from parsers.cisco.cisco_asr9910 import *
 from datetime import datetime, timedelta
 import threading
 from workflow_report_generator import generate_upgrade_report
+
 MIN_OUTPUT_CHARS = 5
 
 logging.basicConfig(
@@ -28,18 +29,30 @@ logger = logging.getLogger(__name__)
 # Keyed by device_key (e.g. "10_0_0_1_juniper_mx204").
 # Shape per key:
 #   {
+#     "status":      "passed | failed | aborted | ",
 #     "device_info": { host, vendor, model, hostname, version },
 #     "conn":        <netmiko connection | None>,
 #     "yaml":        <raw device yaml dict>,
-#     "pre":         [ {cmd, output, json, exception}, ... ],
-#     "post":        [ {cmd, output, json, exception}, ... ],
-#     "upgrade":     {},
+#     "pre": {
+#         "steps": {
+#             "connect":               { status, started_at, finished_at, duration_ms, exception },
+#             "execute_show_commands": { status, started_at, finished_at, duration_ms, exception },
+#             # "backup_running_config": { status, exception },
+#             # "transfer_image":        { status, exception },
+#             # "validate_md5":          { status, exception },
+#             # "check_storage":         { status, exception },
+#         },
+#         "commands": [
+#             { cmd, output, json, exception },
+#             ...
+#         ]
+#     },
+#     "post":    [],
+#     "upgrade": {},
 #   }
 # ─────────────────────────────────────────────────────────────
 device_results: dict = {}
 
-# Final exportable summary (conn stripped) — written to JSON by
-# export_device_summary().
 all_devices_summary: dict = {}
 
 results_lock = threading.Lock()
@@ -47,6 +60,7 @@ results_lock = threading.Lock()
 
 def init_device_results(device_key: str, host: str, vendor: str, model: str, device_yaml: dict):
     device_results[device_key] = {
+        "status": "",
         "device_info": {
             "host":     host,
             "vendor":   vendor,
@@ -56,7 +70,29 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
         },
         "conn":    None,
         "yaml":    device_yaml,
-        "pre":     [],
+        "pre": {
+            "steps": {
+                "connect": {
+                    "status":      "",
+                    "started_at":  None,
+                    "finished_at": None,
+                    "duration_ms": None,
+                    "exception":   None,
+                },
+                "execute_show_commands": {
+                    "status":      "",
+                    "started_at":  None,
+                    "finished_at": None,
+                    "duration_ms": None,
+                    "exception":   None,
+                },
+                # "backup_running_config": {"status": "", "exception": None},
+                # "transfer_image":        {"status": "", "exception": None},
+                # "validate_md5":          {"status": "", "exception": None},
+                # "check_storage":         {"status": "", "exception": None},
+            },
+            "commands": []   # list of dicts: [{cmd, output, json, exception}, ...]
+        },
         "post":    [],
         "upgrade": {},
     }
@@ -103,13 +139,10 @@ def build_juniper_registries():
         ("juniper", "show ldp neighbor | no-more"):                                                    parse_36_show_ldp_neighbor,
         ("juniper", "show connections | no-more"):                                                     parse_37_show_connections,
         ("juniper", "show log messages | last 200 | no-more"):                                         parse_show_log_messages_last_200,
-        ("juniper", "show system processes extensive | match rpd | no-more"): parse_show_system_processes_rpd_match,
-        ("juniper", "show interface terse | no-more"): parse_show_interfaces_terse,
-        ("juniper", "show rsvp session | match dn | no-more"): parse_show_rsvp_session_match_DN,
-        ("juniper", "show system processes extensive | match rpd | no-more"): parse_show_system_processes_rpd_match,
-        ("juniper", "show interface terse | no-more"):                         parse_show_interfaces_terse,
-        ("juniper", "show rsvp session | match dn | no-more"):                 parse_show_rsvp_session_match_DN,
-        ("juniper", "show mpls lsp unidirectional | match dn | no-more"):      parse_show_mpls_lsp_unidirectional_no_more,
+        ("juniper", "show system processes extensive | match rpd | no-more"):                          parse_show_system_processes_rpd_match,
+        ("juniper", "show interface terse | no-more"):                                                 parse_show_interfaces_terse,
+        ("juniper", "show rsvp session | match dn | no-more"):                                        parse_show_rsvp_session_match_DN,
+        ("juniper", "show mpls lsp unidirectional | match dn | no-more"):                             parse_show_mpls_lsp_unidirectional_no_more,
     }
     return {
         (vendor, normalise(cmd)): fn
@@ -119,71 +152,28 @@ def build_juniper_registries():
 
 def build_cisco_registries():
     raw = {
-        # ── show install active summary ───────────────────────────────
-        ("cisco", "show install active summary"):           show_install_active_summary,
-
-        # ── show isis adjacency ───────────────────────────────────────
-        ("cisco", "show isis adjacency"):                   show_isis_adjacency,
-
-        # ── show bfd session ─────────────────────────────────────────
-        ("cisco", "show bfd session"):                      show_bfd_session,
-
-        # ── show route summary ────────────────────────────────────────
-        ("cisco", "show route summary"):                    show_route_summary,
-
-        # ── show bgp all summary ──────────────────────────────────────
-        ("cisco", "show bgp all summary"):                  show_bgp_all_summary,
-
-        # ── show bgp vrf all summary ──────────────────────────────────
-        ("cisco", "show bgp vrf all summary"):              show_bgp_vrf_all_summary,
-
-        # ── show ipv4 vrf all interface brief ─────────────────────────
-        ("cisco", "show ipv4 vrf all interface brief"):     show_ipv4_vrf_all_interface_brief,
-
-        # ── show mpls ldp neighbor ────────────────────────────────────
-        ("cisco", "show mpls ldp neighbor"):                show_mpls_ldp_neighbor,
-
-        # ── show pim neighbor ─────────────────────────────────────────
-        ("cisco", "show pim neighbor"):                     show_pim_neighbor,
-
-        # ── show pfm location all ─────────────────────────────────────
-        ("cisco", "show pfm location all"):                 show_pfm_location_all,
-
-        # ── show processes cpu ────────────────────────────────────────
-        ("cisco", "show processes cpu"):                    show_processes_cpu,
-
-        # ── show watchdog memory-state location all ───────────────────
+        ("cisco", "show install active summary"):             show_install_active_summary,
+        ("cisco", "show isis adjacency"):                     show_isis_adjacency,
+        ("cisco", "show bfd session"):                        show_bfd_session,
+        ("cisco", "show route summary"):                      show_route_summary,
+        ("cisco", "show bgp all summary"):                    show_bgp_all_summary,
+        ("cisco", "show bgp vrf all summary"):                show_bgp_vrf_all_summary,
+        ("cisco", "show ipv4 vrf all interface brief"):       show_ipv4_vrf_all_interface_brief,
+        ("cisco", "show mpls ldp neighbor"):                  show_mpls_ldp_neighbor,
+        ("cisco", "show pim neighbor"):                       show_pim_neighbor,
+        ("cisco", "show pfm location all"):                   show_pfm_location_all,
+        ("cisco", "show processes cpu"):                      show_processes_cpu,
         ("cisco", "show watchdog memory-state location all"): show_watchdog_memory_state,
-
-        # ── show redundancy ───────────────────────────────────────────
-        ("cisco", "show redundancy"):                       show_redundancy,
-
-        # ── show interfaces description ───────────────────────────────
-        ("cisco", "show interfaces description"):           show_interfaces_description,
-
-        # ── show filesystem ───────────────────────────────────────────
-        ("cisco", "show filesystem"):                       show_filesystem,
-
-        # ── show interfaces Bundle-Ether ──────────────────────────────
-        ("cisco", "show interfaces Bundle-Ether"):          show_interfaces,
-
-        # ── show msdp peer ────────────────────────────────────────────
-        ("cisco", "show msdp peer"):                        show_msdp_peer,
-
-        # ── show l2vpn xconnect brief ─────────────────────────────────
-        ("cisco", "show l2vpn xconnect brief"):             show_l2vpn_xconnect_brief,
-
-        # ── show hw-module fpd ────────────────────────────────────────
-        ("cisco", "show hw-module fpd"):                    show_hw_module_fpd,
-
-        # ── show platform ─────────────────────────────────────────────
-        ("cisco", "show platform"):                         show_platform,
-
-        # ── show media location 0/RSP1/CPU0 ──────────────────────────
-        ("cisco", "show media location 0/RSP1/CPU0"):       show_media_location,
-
-        # ── show version ──────────────────────────────────────────────
-        ("cisco", "show version"):                          show_version,
+        ("cisco", "show redundancy"):                         show_redundancy,
+        ("cisco", "show interfaces description"):             show_interfaces_description,
+        ("cisco", "show filesystem"):                         show_filesystem,
+        ("cisco", "show interfaces Bundle-Ether"):            show_interfaces,
+        ("cisco", "show msdp peer"):                          show_msdp_peer,
+        ("cisco", "show l2vpn xconnect brief"):               show_l2vpn_xconnect_brief,
+        ("cisco", "show hw-module fpd"):                      show_hw_module_fpd,
+        ("cisco", "show platform"):                           show_platform,
+        ("cisco", "show media location 0/RSP1/CPU0"):         show_media_location,
+        ("cisco", "show version"):                            show_version,
     }
     return {
         (vendor, normalise(cmd)): fn
@@ -200,10 +190,7 @@ VENDOR_REGISTRY = {
 def collect_outputs(device_key: str, vendor: str, commands: list,
                     check_type: str, conn, log) -> list:
 
-    log.info(f"[{device_key}] STEP 1 collect_outputs — {len(commands)} command(s), check_type={check_type}")
-
-    if device_key not in device_results:
-        device_results[device_key] = {}
+    log.info(f"[{device_key}] collect_outputs — {len(commands)} command(s), check_type={check_type}")
 
     entries = []
     for cmd in commands:
@@ -212,16 +199,7 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
         output        = ""
         try:
             output = conn.send_command(cmd)
-            
-            # print("\n" + "=" * 80)
-            # print(f"\033[1;93m>>> OUTPUT FROM COMMAND: {cmd}\033[0m")   # Bright yellow + bold
-            # print("-" * 80)
-            # print(output if output.strip() else "\033[2m<no output>\033[0m")
-
-            # print("=" * 80 + "\n")
             print(f"[{device_key}] '{cmd}' — {len(output)} chars received")
-            # print("=" * 80 + "\n")
-
         except Exception:
             import traceback as tb
             exception_str = tb.format_exc()
@@ -238,62 +216,51 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
         entries.append(entry)
         log.info(f"[{device_key}] '{cmd}' collected={collected} ({len(stripped)} chars)")
 
-    device_results[device_key][check_type] = entries
-    log.info(f"[{device_key}] STEP 1 done — {len(entries)} entries stored")
+    # ── write into pre.commands (not pre directly) ────────────────────
+    device_results[device_key]["pre"]["commands"] = entries
+    log.info(f"[{device_key}] collect_outputs done — {len(entries)} entries stored")
     return entries
 
 
 def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
 
     registry = VENDOR_REGISTRY.get(vendor)
-
     if registry is None:
-        log.error(f"[{device_key}] STEP 2 — No registry for vendor='{vendor}'")
+        log.error(f"[{device_key}] No registry for vendor='{vendor}'")
         return False
 
-    entries = device_results.get(device_key, {}).get(check_type, [])
-
+    # ── read from pre.commands ────────────────────────────────────────
+    entries = device_results.get(device_key, {}).get("pre", {}).get("commands", [])
     if not entries:
-        log.warning(f"[{device_key}] STEP 2 — Nothing in device_results to parse")
+        log.warning(f"[{device_key}] Nothing in pre.commands to parse")
         return False
 
     all_ok = True
 
     for entry in entries:
-
         cmd      = entry.get("cmd")
         output   = entry.get("output", "")
         norm_cmd = normalise(cmd)
 
         parser_fn = registry.get((vendor, norm_cmd))
-
         if parser_fn is None:
             entry["exception"] = "no parser registered"
             continue
 
         stripped = output.strip() if output else ""
-
         if len(stripped) <= MIN_OUTPUT_CHARS:
-            if parser_fn is not None:
-                entry["json"]      = parser_fn("")
-                entry["exception"] = ""
-            else:
-                entry["json"]      = {}
-                entry["exception"] = ""
+            entry["json"]      = parser_fn("")
+            entry["exception"] = ""
             continue
+
         try:
             result = parser_fn(output)
-
-            if not result or (
-                isinstance(result, dict) and all(not v for v in result.values())
-            ):
+            if not result or (isinstance(result, dict) and all(not v for v in result.values())):
                 entry["exception"] = "parser returned empty result"
                 all_ok = False
                 continue
-
             entry["json"]      = result
             entry["exception"] = ""
-
         except Exception:
             entry["exception"] = f"parser failed for '{cmd}'"
             all_ok = False
@@ -416,7 +383,6 @@ def export_device_summary(device_key: str):
         json.dump(all_devices_summary, f, indent=2, default=str)
     print(f"[EXPORT] Summary JSON saved -> {summary_file}")
 
-    # ── generate HTML report ──────────────────────────────────
     report_dir  = os.path.join(os.getcwd(), "reports")
     report_path = generate_upgrade_report(all_devices_summary, output_dir=report_dir)
     print(f"[REPORT] HTML report saved -> {report_path}")
@@ -435,11 +401,12 @@ def merge_thread_result(device_key: str, result: dict):
             if value:
                 slot["device_info"][field] = value
         logger.info(f"[merge] device_key='{device_key}' merged into device_results")
-        
+
+
 def connect(device_key: str, dev: dict, logger):
-    host       = dev["host"]
-    vendor     = dev["vendor"].lower()
-    model      = str(dev["model"]).lower().replace("-", "")
+    host  = dev["host"]
+    vendor = dev["vendor"].lower()
+    model  = str(dev["model"]).lower().replace("-", "")
 
     session_log_dir = os.path.join(os.getcwd(), "outputs")
     os.makedirs(session_log_dir, exist_ok=True)
@@ -463,7 +430,7 @@ def connect(device_key: str, dev: dict, logger):
 
     except Exception as e:
         logger.error(f"[{device_key}] Connection failed: {e}")
-        device_results[device_key]["pre"].append({
+        device_results[device_key]["pre"]["commands"].append({
             "cmd":       "connect",
             "output":    "",
             "json":      {},
@@ -479,7 +446,7 @@ def disconnect(device_key: str, logger):
 
     if conn is None:
         logger.error(f"[{device_key}] disconnect called but conn is None")
-        device_results[device_key]["pre"].append({
+        device_results[device_key]["pre"]["commands"].append({
             "cmd":       "disconnect",
             "output":    "",
             "json":      {},

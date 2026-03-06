@@ -5,13 +5,12 @@ import traceback
 import threading
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-# from prechecks import *
 from lib.utilities import *
 from parsers.juniper.juniper_mx204 import *
 import os
 
 MAX_THREADS    = 5
-PRECHECKS_ONLY = True   # <--- Run prechecks only; skip upgrade in main()
+PRECHECKS_ONLY = True
 
 
 # ----------------------------------------------------
@@ -22,7 +21,7 @@ def execute_show_commands(device_key, vendor, model, conn, check_type, logger):
     if not commands:
         logger.error(f"[{device_key}] execute_show_commands — no commands loaded, aborting")
         return False
-    entries  = collect_outputs(device_key, vendor, commands, check_type, conn, logger)
+    entries = collect_outputs(device_key, vendor, commands, check_type, conn, logger)
     if not entries:
         logger.warning(f"[{device_key}] execute_show_commands — collect_outputs returned nothing")
     parse_ok = parse_outputs(device_key, vendor, check_type, logger)
@@ -51,7 +50,7 @@ def run_prechecks(dev, device_key, logger):
                 raise ConnectionError("connect() returned None")
         except Exception as e:
             logger.error(f"[{device_key}] STEP 1 CONNECT failed — {e}")
-            device_results[device_key]["pre"].append({"cmd": "connect", "output": "", "json": {}, "exception": str(e)})
+            device_results[device_key]["pre"]["commands"].append({"cmd": "connect", "output": "", "json": {}, "exception": str(e)})
             return False
 
         # ── STEP 2: Execute show commands ─────────────────────────────
@@ -61,13 +60,13 @@ def run_prechecks(dev, device_key, logger):
                 raise RuntimeError("execute_show_commands returned False")
         except Exception as e:
             logger.error(f"[{device_key}] STEP 2 EXECUTE failed — {e}")
-            device_results[device_key]["pre"].append({"cmd": "execute_show_commands", "output": "", "json": {}, "exception": str(e)})
+            device_results[device_key]["pre"]["commands"].append({"cmd": "execute_show_commands", "output": "", "json": {}, "exception": str(e)})
             return False
 
         # ── STEP 3: Merge results ─────────────────────────────────────
         try:
             thread_result = {
-                "pre":         device_results.get(device_key, {}).get("pre", []),
+                "pre":         device_results.get(device_key, {}).get("pre", {}),
                 "device_info": device_results.get(device_key, {}).get("device_info", {}),
                 "post":        [],
                 "upgrade":     {},
@@ -75,7 +74,7 @@ def run_prechecks(dev, device_key, logger):
             merge_thread_result(device_key, thread_result)
         except Exception as e:
             logger.error(f"[{device_key}] STEP 3 STORE failed — {e}")
-            device_results[device_key]["pre"].append({"cmd": "merge_thread_result", "output": "", "json": {}, "exception": str(e)})
+            device_results[device_key]["pre"]["commands"].append({"cmd": "merge_thread_result", "output": "", "json": {}, "exception": str(e)})
             return False
 
         logger.info(f"[THREAD-{tid}] [{device_key}] All pre-checks passed")
@@ -88,10 +87,11 @@ def run_prechecks(dev, device_key, logger):
     finally:
         disconnect(device_key, logger)
         logger.info(f"[THREAD-{tid}] [{device_key}] Prechecks completed at {datetime.now()}")
+
+
 # ----------------------------------------------------
 # Main Function
 # ----------------------------------------------------
-
 def main():
     devices  = load_yaml("deviceDetails.yaml")
     all_devs = devices["devices"]
@@ -142,7 +142,6 @@ def main():
         export_device_summary(device_key)
 
     main_logger.info(f"[MAIN] JSON files location -> {os.path.join(os.getcwd(), 'precheck_jsons')}")
-
     sys.exit(0)
 
 
