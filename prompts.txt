@@ -1,229 +1,319 @@
-2026-03-06 09:34:15,839 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
-2026-03-06 09:34:15,839 - INFO - [MAIN] Initialised device_results for [10_80_109_250_cisco_asr9910] host=10.80.109.250
-2026-03-06 09:34:15,839 - INFO - [MAIN] Spawning threads for 2 device(s)
-2026-03-06 09:34:15,840 - INFO - [THREAD-126371739133632] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-06 09:34:15.840129
-2026-03-06 09:34:15,841 - INFO - [THREAD-126371730740928] [10_80_109_250_cisco_asr9910] Prechecks started at 2026-03-06 09:34:15.841222
-2026-03-06 09:34:15,842 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
-2026-03-06 09:34:15,842 - INFO - Connecting to 10.80.71.55 using Netmiko...
-2026-03-06 09:34:15,843 - INFO - [10_80_109_250_cisco_asr9910] Connecting to 10.80.109.250
-2026-03-06 09:34:15,844 - INFO - Connecting to 10.80.109.250 using Netmiko...
-2026-03-06 09:34:15,890 - INFO - Connected (version 2.0, client OpenSSH_9.7)
-2026-03-06 09:34:16,131 - INFO - Authentication (password) successful!
-2026-03-06 09:34:16,390 - INFO - Login Successful to 10.80.71.55
-2026-03-06 09:34:16,390 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
-2026-03-06 09:34:16,395 - INFO - [load_commands] Loaded 35 commands for 'juniper_mx204'
-2026-03-06 09:34:16,395 - INFO - [10_80_71_55_juniper_mx204] collect_outputs — 35 command(s), check_type=pre
-2026-03-06 09:34:16,395 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show arp no-resolve | no-more'
-2026-03-06 09:34:16,452 - INFO - Connected (version 2.0, client Cisco-2.0)
-[10_80_71_55_juniper_mx204] 'show arp no-resolve | no-more' — 2707 chars received
-2026-03-06 09:34:16,506 - INFO - [10_80_71_55_juniper_mx204] 'show arp no-resolve | no-more' collected=True (2706 chars)
-2026-03-06 09:34:16,506 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show lldp neighbors | no-more'
-[10_80_71_55_juniper_mx204] 'show lldp neighbors | no-more' — 1718 chars received
-2026-03-06 09:34:16,589 - INFO - [10_80_71_55_juniper_mx204] 'show lldp neighbors | no-more' collected=True (1705 chars)
-2026-03-06 09:34:16,589 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis routing-engine | no-more'
-[10_80_71_55_juniper_mx204] 'show chassis routing-engine | no-more' — 1583 chars received
-2026-03-06 09:34:16,672 - INFO - [10_80_71_55_juniper_mx204] 'show chassis routing-engine | no-more' collected=True (1582 chars)
-2026-03-06 09:34:16,672 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system uptime | no-more'
-[10_80_71_55_juniper_mx204] 'show system uptime | no-more' — 301 chars received
-2026-03-06 09:34:16,781 - INFO - [10_80_71_55_juniper_mx204] 'show system uptime | no-more' collected=True (300 chars)
-2026-03-06 09:34:16,781 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show ntp associations no-resolve | no-more'
-[10_80_71_55_juniper_mx204] 'show ntp associations no-resolve | no-more' — 353 chars received
-2026-03-06 09:34:16,864 - INFO - [10_80_71_55_juniper_mx204] 'show ntp associations no-resolve | no-more' collected=True (347 chars)
-2026-03-06 09:34:16,864 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show vmhost version | no-more'
-[10_80_71_55_juniper_mx204] 'show vmhost version | no-more' — 668 chars received
-2026-03-06 09:34:24,633 - INFO - [10_80_71_55_juniper_mx204] 'show vmhost version | no-more' collected=True (667 chars)
-2026-03-06 09:34:24,634 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show vmhost snapshot | no-more'
-2026-03-06 09:34:26,793 - INFO - Authentication (password) successful!
-2026-03-06 09:34:29,089 - INFO - Login Successful to 10.80.109.250
-2026-03-06 09:34:29,089 - INFO - [10_80_109_250_cisco_asr9910] Connected successfully to 10.80.109.250
-2026-03-06 09:34:29,092 - INFO - [load_commands] Loaded 22 commands for 'cisco_asr9910'
-2026-03-06 09:34:29,092 - INFO - [10_80_109_250_cisco_asr9910] collect_outputs — 22 command(s), check_type=pre
-2026-03-06 09:34:29,092 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show install active summary'
-[10_80_109_250_cisco_asr9910] 'show install active summary' — 844 chars received
-2026-03-06 09:34:31,617 - INFO - [10_80_109_250_cisco_asr9910] 'show install active summary' collected=True (842 chars)
-2026-03-06 09:34:31,617 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show isis adjacency'
-[10_80_71_55_juniper_mx204] 'show vmhost snapshot | no-more' — 530 chars received
-2026-03-06 09:34:31,647 - INFO - [10_80_71_55_juniper_mx204] 'show vmhost snapshot | no-more' collected=True (528 chars)
-2026-03-06 09:34:31,647 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis hardware | no-more'
-[10_80_71_55_juniper_mx204] 'show chassis hardware | no-more' — 1775 chars received
-2026-03-06 09:34:31,730 - INFO - [10_80_71_55_juniper_mx204] 'show chassis hardware | no-more' collected=True (1774 chars)
-2026-03-06 09:34:31,730 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis fpc detail | no-more'
-[10_80_71_55_juniper_mx204] 'show chassis fpc detail | no-more' — 502 chars received
-2026-03-06 09:34:31,813 - INFO - [10_80_71_55_juniper_mx204] 'show chassis fpc detail | no-more' collected=True (499 chars)
-2026-03-06 09:34:31,813 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis alarms | no-more'
-[10_80_71_55_juniper_mx204] 'show chassis alarms | no-more' — 27 chars received
-2026-03-06 09:34:31,896 - INFO - [10_80_71_55_juniper_mx204] 'show chassis alarms | no-more' collected=True (26 chars)
-2026-03-06 09:34:31,896 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system alarms | no-more'
-[10_80_71_55_juniper_mx204] 'show system alarms | no-more' — 27 chars received
-2026-03-06 09:34:31,979 - INFO - [10_80_71_55_juniper_mx204] 'show system alarms | no-more' collected=True (26 chars)
-2026-03-06 09:34:31,979 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis environment | no-more'
-[10_80_71_55_juniper_mx204] 'show chassis environment | no-more' — 2105 chars received
-2026-03-06 09:34:32,062 - INFO - [10_80_71_55_juniper_mx204] 'show chassis environment | no-more' collected=True (2104 chars)
-2026-03-06 09:34:32,062 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system resource-monitor fpc | no-more'
-[10_80_71_55_juniper_mx204] 'show system resource-monitor fpc | no-more' — 426 chars received
-2026-03-06 09:34:32,145 - INFO - [10_80_71_55_juniper_mx204] 'show system resource-monitor fpc | no-more' collected=True (425 chars)
-2026-03-06 09:34:32,145 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system processes extensive | match rpd | no-more'
-[10_80_71_55_juniper_mx204] 'show system processes extensive | match rpd | no-more' — 1367 chars received
-2026-03-06 09:34:32,227 - INFO - [10_80_71_55_juniper_mx204] 'show system processes extensive | match rpd | no-more' collected=True (1366 chars)
-2026-03-06 09:34:32,228 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show interface terse | no-more'
-[10_80_109_250_cisco_asr9910] 'show isis adjacency' — 421 chars received
-2026-03-06 09:34:32,393 - INFO - [10_80_109_250_cisco_asr9910] 'show isis adjacency' collected=True (419 chars)
-2026-03-06 09:34:32,393 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show bfd session'
-[10_80_71_55_juniper_mx204] 'show interface terse | no-more' — 25060 chars received
-2026-03-06 09:34:32,540 - INFO - [10_80_71_55_juniper_mx204] 'show interface terse | no-more' collected=True (25059 chars)
-2026-03-06 09:34:32,541 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show oam ethernet connectivity-fault-management interfaces extensive | no-more'
-[10_80_71_55_juniper_mx204] 'show oam ethernet connectivity-fault-management interfaces extensive | no-more' — 402 chars received
-2026-03-06 09:34:32,777 - INFO - [10_80_71_55_juniper_mx204] 'show oam ethernet connectivity-fault-management interfaces extensive | no-more' collected=True (401 chars)
-2026-03-06 09:34:32,777 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show vrrp summary | no-more'
-[10_80_71_55_juniper_mx204] 'show vrrp summary | no-more' — 67 chars received
-2026-03-06 09:34:32,860 - INFO - [10_80_71_55_juniper_mx204] 'show vrrp summary | no-more' collected=True (66 chars)
-2026-03-06 09:34:32,860 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show bfd session | no-more'
-[10_80_71_55_juniper_mx204] 'show bfd session | no-more' — 629 chars received
-2026-03-06 09:34:32,943 - INFO - [10_80_71_55_juniper_mx204] 'show bfd session | no-more' collected=True (578 chars)
-2026-03-06 09:34:32,944 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp neighbor | no-more'
-[10_80_71_55_juniper_mx204] 'show rsvp neighbor | no-more' — 414 chars received
-2026-03-06 09:34:33,026 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp neighbor | no-more' collected=True (413 chars)
-2026-03-06 09:34:33,027 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp session | no-more'
-[10_80_71_55_juniper_mx204] 'show rsvp session | no-more' — 1407 chars received
-2026-03-06 09:34:33,109 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp session | no-more' collected=True (1406 chars)
-2026-03-06 09:34:33,110 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route table inet.0 | no-more'
-[10_80_109_250_cisco_asr9910] 'show bfd session' — 404 chars received
-2026-03-06 09:34:33,176 - INFO - [10_80_109_250_cisco_asr9910] 'show bfd session' collected=True (389 chars)
-2026-03-06 09:34:33,177 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show route summary'
-[10_80_71_55_juniper_mx204] 'show route table inet.0 | no-more' — 9988 chars received
-2026-03-06 09:34:33,300 - INFO - [10_80_71_55_juniper_mx204] 'show route table inet.0 | no-more' collected=True (9986 chars)
-2026-03-06 09:34:33,301 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route table inet.3 | no-more'
-[10_80_71_55_juniper_mx204] 'show route table inet.3 | no-more' — 2154 chars received
-2026-03-06 09:34:33,465 - INFO - [10_80_71_55_juniper_mx204] 'show route table inet.3 | no-more' collected=True (2152 chars)
-2026-03-06 09:34:33,466 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route table mpls.0 | no-more'
-[10_80_71_55_juniper_mx204] 'show route table mpls.0 | no-more' — 13542 chars received
-2026-03-06 09:34:33,656 - INFO - [10_80_71_55_juniper_mx204] 'show route table mpls.0 | no-more' collected=True (13540 chars)
-2026-03-06 09:34:33,657 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls interface | no-more'
-[10_80_71_55_juniper_mx204] 'show mpls interface | no-more' — 203 chars received
-2026-03-06 09:34:33,739 - INFO - [10_80_71_55_juniper_mx204] 'show mpls interface | no-more' collected=True (202 chars)
-2026-03-06 09:34:33,740 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls lsp | no-more'
-[10_80_71_55_juniper_mx204] 'show mpls lsp | no-more' — 1549 chars received
-2026-03-06 09:34:33,823 - INFO - [10_80_71_55_juniper_mx204] 'show mpls lsp | no-more' collected=True (1548 chars)
-2026-03-06 09:34:33,823 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls lsp p2mp | no-more'
-[10_80_71_55_juniper_mx204] 'show mpls lsp p2mp | no-more' — 2220 chars received
-2026-03-06 09:34:33,906 - INFO - [10_80_71_55_juniper_mx204] 'show mpls lsp p2mp | no-more' collected=True (2219 chars)
-2026-03-06 09:34:33,906 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show bgp summary | no-more'
-[10_80_71_55_juniper_mx204] 'show bgp summary | no-more' — 5840 chars received
-2026-03-06 09:34:33,989 - INFO - [10_80_71_55_juniper_mx204] 'show bgp summary | no-more' collected=True (5839 chars)
-2026-03-06 09:34:33,989 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show bgp neighbor | no-more'
-[10_80_109_250_cisco_asr9910] 'show route summary' — 892 chars received
-2026-03-06 09:34:34,052 - INFO - [10_80_109_250_cisco_asr9910] 'show route summary' collected=True (881 chars)
-2026-03-06 09:34:34,053 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show bgp all summary'
-[10_80_109_250_cisco_asr9910] 'show bgp all summary' — 79 chars received
-2026-03-06 09:34:34,178 - INFO - [10_80_109_250_cisco_asr9910] 'show bgp all summary' collected=True (41 chars)
-2026-03-06 09:34:34,178 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show bgp vrf all summary'
-[10_80_71_55_juniper_mx204] 'show bgp neighbor | no-more' — 75245 chars received
-2026-03-06 09:34:34,205 - INFO - [10_80_71_55_juniper_mx204] 'show bgp neighbor | no-more' collected=True (75244 chars)
-2026-03-06 09:34:34,205 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show isis adjacency extensive | no-more'
-[10_80_71_55_juniper_mx204] 'show isis adjacency extensive | no-more' — 935 chars received
-2026-03-06 09:34:34,288 - INFO - [10_80_71_55_juniper_mx204] 'show isis adjacency extensive | no-more' collected=True (926 chars)
-2026-03-06 09:34:34,288 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route summary | no-more'
-[10_80_71_55_juniper_mx204] 'show route summary | no-more' — 23637 chars received
-2026-03-06 09:34:34,397 - INFO - [10_80_71_55_juniper_mx204] 'show route summary | no-more' collected=True (23636 chars)
-2026-03-06 09:34:34,398 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp session | match DN | no-more'
-[10_80_71_55_juniper_mx204] 'show rsvp session | match DN | no-more' — 0 chars received
-2026-03-06 09:34:34,480 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp session | match DN | no-more' collected=False (0 chars)
-2026-03-06 09:34:34,481 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls lsp unidirectional | match Dn | no-more'
-[10_80_71_55_juniper_mx204] 'show mpls lsp unidirectional | match Dn | no-more' — 152 chars received
-2026-03-06 09:34:34,563 - INFO - [10_80_71_55_juniper_mx204] 'show mpls lsp unidirectional | match Dn | no-more' collected=True (151 chars)
-2026-03-06 09:34:34,564 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show ldp neighbor | no-more'
-[10_80_71_55_juniper_mx204] 'show ldp neighbor | no-more' — 384 chars received
-2026-03-06 09:34:34,647 - INFO - [10_80_71_55_juniper_mx204] 'show ldp neighbor | no-more' collected=True (383 chars)
-2026-03-06 09:34:34,647 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show connections | no-more'
-[10_80_71_55_juniper_mx204] 'show connections | no-more' — 31 chars received
-2026-03-06 09:34:34,730 - INFO - [10_80_71_55_juniper_mx204] 'show connections | no-more' collected=True (30 chars)
-2026-03-06 09:34:34,730 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show log messages | last 200 | no-more'
-[10_80_71_55_juniper_mx204] 'show log messages | last 200 | no-more' — 37115 chars received
-2026-03-06 09:34:34,839 - INFO - [10_80_71_55_juniper_mx204] 'show log messages | last 200 | no-more' collected=True (37114 chars)
-2026-03-06 09:34:34,839 - INFO - [10_80_71_55_juniper_mx204] collect_outputs done — 35 entries stored
-2026-03-06 09:34:34,855 - INFO - [merge] device_key='10_80_71_55_juniper_mx204' merged into device_results
-2026-03-06 09:34:34,855 - INFO - [THREAD-126371739133632] [10_80_71_55_juniper_mx204] All pre-checks passed
-2026-03-06 09:34:34,948 - INFO - Logout successful from 10.80.71.55
-2026-03-06 09:34:34,948 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
-2026-03-06 09:34:34,948 - INFO - [THREAD-126371739133632] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-06 09:34:34.948916
-2026-03-06 09:34:34,949 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> passed
-[10_80_109_250_cisco_asr9910] 'show bgp vrf all summary' — 48028 chars received
-2026-03-06 09:34:36,261 - INFO - [10_80_109_250_cisco_asr9910] 'show bgp vrf all summary' collected=True (48026 chars)
-2026-03-06 09:34:36,262 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show ipv4 vrf all interface brief'
-[10_80_109_250_cisco_asr9910] 'show ipv4 vrf all interface brief' — 19938 chars received
-2026-03-06 09:34:37,086 - INFO - [10_80_109_250_cisco_asr9910] 'show ipv4 vrf all interface brief' collected=True (19936 chars)
-2026-03-06 09:34:37,086 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show mpls ldp neighbor'
-[10_80_109_250_cisco_asr9910] 'show mpls ldp neighbor' — 0 chars received
-2026-03-06 09:34:37,899 - INFO - [10_80_109_250_cisco_asr9910] 'show mpls ldp neighbor' collected=False (0 chars)
-2026-03-06 09:34:37,899 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show pim neighbor'
-[10_80_109_250_cisco_asr9910] 'show pim neighbor' — 483 chars received
-2026-03-06 09:34:38,743 - INFO - [10_80_109_250_cisco_asr9910] 'show pim neighbor' collected=True (482 chars)
-2026-03-06 09:34:38,743 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show pfm location all'
-[10_80_109_250_cisco_asr9910] 'show pfm location all' — 1637 chars received
-2026-03-06 09:34:39,150 - INFO - [10_80_109_250_cisco_asr9910] 'show pfm location all' collected=True (1635 chars)
-2026-03-06 09:34:39,151 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show processes cpu'
-[10_80_109_250_cisco_asr9910] 'show processes cpu' — 20421 chars received
-2026-03-06 09:34:39,710 - INFO - [10_80_109_250_cisco_asr9910] 'show processes cpu' collected=True (20419 chars)
-2026-03-06 09:34:39,710 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show watchdog memory-state location all'
-[10_80_109_250_cisco_asr9910] 'show watchdog memory-state location all' — 419 chars received
-2026-03-06 09:34:40,107 - INFO - [10_80_109_250_cisco_asr9910] 'show watchdog memory-state location all' collected=True (418 chars)
-2026-03-06 09:34:40,108 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show redundancy'
-[10_80_109_250_cisco_asr9910] 'show redundancy' — 1110 chars received
-2026-03-06 09:34:40,496 - INFO - [10_80_109_250_cisco_asr9910] 'show redundancy' collected=True (1108 chars)
-2026-03-06 09:34:40,496 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show interfaces description'
-[10_80_109_250_cisco_asr9910] 'show interfaces description' — 15599 chars received
-2026-03-06 09:34:41,252 - INFO - [10_80_109_250_cisco_asr9910] 'show interfaces description' collected=True (15597 chars)
-2026-03-06 09:34:41,252 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show filesystem'
-[10_80_109_250_cisco_asr9910] 'show filesystem' — 573 chars received
-2026-03-06 09:34:41,974 - INFO - [10_80_109_250_cisco_asr9910] 'show filesystem' collected=True (572 chars)
-2026-03-06 09:34:41,974 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show interfaces Bundle-Ether'
-[10_80_109_250_cisco_asr9910] 'show interfaces Bundle-Ether' — 22 chars received
-2026-03-06 09:34:42,097 - INFO - [10_80_109_250_cisco_asr9910] 'show interfaces Bundle-Ether' collected=True (21 chars)
-2026-03-06 09:34:42,098 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show msdp peer'
-[10_80_109_250_cisco_asr9910] 'show msdp peer' — 6294 chars received
-2026-03-06 09:34:42,840 - INFO - [10_80_109_250_cisco_asr9910] 'show msdp peer' collected=True (6293 chars)
-2026-03-06 09:34:42,840 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show l2vpn xconnect brief'
-[10_80_109_250_cisco_asr9910] 'show l2vpn xconnect brief' — 376 chars received
-2026-03-06 09:34:44,028 - INFO - [10_80_109_250_cisco_asr9910] 'show l2vpn xconnect brief' collected=True (375 chars)
-2026-03-06 09:34:44,028 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show hw-module fpd'
-[10_80_109_250_cisco_asr9910] 'show hw-module fpd' — 4561 chars received
-2026-03-06 09:34:44,436 - INFO - [10_80_109_250_cisco_asr9910] 'show hw-module fpd' collected=True (4556 chars)
-2026-03-06 09:34:44,436 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show platform'
-[10_80_109_250_cisco_asr9910] 'show platform' — 571 chars received
-2026-03-06 09:34:45,065 - INFO - [10_80_109_250_cisco_asr9910] 'show platform' collected=True (570 chars)
-2026-03-06 09:34:45,066 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show media location 0/RSP1/CPU0'
-[10_80_109_250_cisco_asr9910] 'show media location 0/RSP1/CPU0' — 731 chars received
-2026-03-06 09:34:45,645 - INFO - [10_80_109_250_cisco_asr9910] 'show media location 0/RSP1/CPU0' collected=True (730 chars)
-2026-03-06 09:34:45,645 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show version'
-[10_80_109_250_cisco_asr9910] 'show version' — 426 chars received
-2026-03-06 09:34:46,103 - INFO - [10_80_109_250_cisco_asr9910] 'show version' collected=True (424 chars)
-2026-03-06 09:34:46,103 - INFO - [10_80_109_250_cisco_asr9910] collect_outputs done — 22 entries stored
-2026-03-06 09:34:46,114 - INFO - [merge] device_key='10_80_109_250_cisco_asr9910' merged into device_results
-2026-03-06 09:34:46,114 - INFO - [THREAD-126371730740928] [10_80_109_250_cisco_asr9910] All pre-checks passed
-2026-03-06 09:34:46,125 - INFO - Logout successful from 10.80.109.250
-2026-03-06 09:34:46,125 - INFO - [10_80_109_250_cisco_asr9910] Disconnected from 10.80.109.250
-2026-03-06 09:34:46,125 - INFO - [THREAD-126371730740928] [10_80_109_250_cisco_asr9910] Prechecks completed at 2026-03-06 09:34:46.125500
-2026-03-06 09:34:46,125 - INFO - [MAIN] 10_80_109_250_cisco_asr9910 -> passed
-[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation2/precheck_jsons/all_devices_summary_2026-03-06_09-38-46.json
-Traceback (most recent call last):
-  File "/home/colt/Documents/MS1Automation2/main.py", line 149, in <module>
-    main()
-  File "/home/colt/Documents/MS1Automation2/main.py", line 142, in main
-    export_device_summary(device_key)
-  File "/home/colt/Documents/MS1Automation2/lib/utilities.py", line 387, in export_device_summary
-    report_path = generate_upgrade_report(all_devices_summary, output_dir=report_dir)
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/colt/Documents/MS1Automation2/workflow_report_generator.py", line 236, in generate_upgrade_report
-    device_panels    = '\n'.join(_build_device_panel(dk, workflow_data[dk], i == 0) for i, dk in enumerate(device_keys))
-                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/colt/Documents/MS1Automation2/workflow_report_generator.py", line 236, in <genexpr>
-    device_panels    = '\n'.join(_build_device_panel(dk, workflow_data[dk], i == 0) for i, dk in enumerate(device_keys))
-                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/colt/Documents/MS1Automation2/workflow_report_generator.py", line 127, in _build_device_panel
-    pre_ok    = sum(1 for c in pre_cmds  if not (c.get('exception') or ''))
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/colt/Documents/MS1Automation2/workflow_report_generator.py", line 127, in <genexpr>
-    pre_ok    = sum(1 for c in pre_cmds  if not (c.get('exception') or ''))
-                                                 ^^^^^
-AttributeError: 'str' object has no attribute 'get'
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ cat precheck_jsons/all_devices_summary_2026-03-06_09-45-23.json
+{
+  "10_80_71_55_juniper_mx204": {
+    "status": "",
+    "device_info": {
+      "host": "10.80.71.55",
+      "vendor": "juniper",
+      "model": "mx204",
+      "hostname": "",
+      "version": ""
+    },
+    "yaml": {
+      "host": "10.80.71.55",
+      "vendor": "juniper",
+      "model": "mx204",
+      "device_type": "juniper",
+      "current_image": "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
+      "expected_os": "23.4R2-S5.6",
+      "intermediate_os": false,
+      "min_disk_gb": 5,
+      "username": "lab",
+      "password": "lab123",
+      "target_image": "junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz",
+      "remote_backup_server": "sftp://backup@10.10.20.20/backups/",
+      "cleanup_files": [
+        "list of files"
+      ],
+      "intermediate_image": "junos-os-21.2R2-S5.bin",
+      "rollback": false,
+      "md5checksum_file": "dec5349a0d238dad686dc01f468a0bbe"
+    },
+    "pre": {
+      "steps": {
+        "connect": {
+          "status": "",
+          "started_at": null,
+          "finished_at": null,
+          "duration_ms": null,
+          "exception": null
+        },
+        "execute_show_commands": {
+          "status": "",
+          "started_at": null,
+          "finished_at": null,
+          "duration_ms": null,
+          "exception": null
+        }
+      },
+      "commands": [
+        {
+          "cmd": "show arp no-resolve | no-more",
+          "output": "MAC Address       Address         Interface                Flags\nca:fe:6a:82:88:53 10.0.0.176      lt-0/0/0.12              none\nca:fe:6a:82:88:54 10.0.0.177      lt-0/0/0.11              none\n1c:9c:8c:f8:6c:40 10.10.11.2      ae0.111                  none\n1c:9c:8c:f8:6c:40 10.10.101.2     ae0.101                  none\n1c:9c:8c:f8:6c:40 10.10.102.2     ae0.102                  none\n1c:9c:8c:f8:6c:40 10.10.104.2     ae0.104                  none\n1c:9c:8c:f8:6c:40 10.10.105.2     ae0.105                  none\n1c:9c:8c:f8:6c:40 10.10.112.2     ae0.112                  none\n1c:9c:8c:f8:6c:40 10.10.121.2     ae0.121                  none\n1c:9c:8c:f8:6c:40 10.10.122.2     ae0.122                  none\n1c:9c:8c:f8:6c:40 10.10.123.2     ae0.123                  none\n1c:9c:8c:f8:6c:40 10.10.124.2     ae0.124                  none\n1c:9c:8c:f8:6c:40 10.10.125.2     ae0.125                  none\n1c:9c:8c:f8:6c:40 10.10.126.2     ae0.126                  none\n1c:9c:8c:f8:6c:40 10.10.127.2     ae0.127                  none\n1c:9c:8c:f8:6c:40 10.10.128.2     ae0.128                  none\n1c:9c:8c:f8:6c:40 10.10.129.2     ae0.129                  none\n1c:9c:8c:f8:6c:40 10.10.130.2     ae0.130                  none\n1c:9c:8c:f8:6c:40 10.10.201.2     ae0.201                  none\n1c:9c:8c:f8:6c:40 10.10.202.2     ae0.202                  none\n1c:9c:8c:f8:6c:40 10.10.211.6     ae0.211                  none\n1c:9c:8c:f8:6c:40 10.10.212.6     ae0.212                  none\n1c:9c:8c:f8:6c:40 10.10.214.1     ae0.412                  none\n1c:9c:8c:f8:6c:40 10.10.214.2     ae0.413                  none\n1c:9c:8c:f8:6c:40 10.31.1.2       ae0.313                  none\n1c:9c:8c:f8:6c:40 10.31.2.2       ae0.312                  none\n94:33:d8:ae:3b:03 10.80.70.1      fxp0.0                   none\nec:38:73:d7:12:41 10.80.70.6      fxp0.0                   none\nca:fe:6a:82:88:53 66.1.0.176      lt-0/0/0.177             none\nca:fe:6a:82:88:54 66.1.0.177      lt-0/0/0.176             none\n80:71:1f:75:02:84 109.74.16.85    xe-0/1/4.0               none\n80:71:1f:76:ea:81 109.74.16.90    xe-0/1/5.0               none\nfe:54:00:a6:cc:cc 128.0.0.16      em3.0                    none\nfe:54:00:a6:cc:cc 128.0.0.101     em3.0                    none\nc8:fe:6a:82:88:62 169.254.152.185 xe-0/0/3:2.100           none\nc8:fe:6a:82:88:61 169.254.152.186 xe-0/0/3:3.100           none\n1c:9c:8c:f8:6c:40 172.16.172.2    ae0.172                  none\n1c:9c:8c:f8:6c:40 172.16.173.2    ae0.173                  none\nfe:54:00:40:e4:35 192.168.1.2     em2.32768                none\nc8:fe:6a:82:88:5f 213.86.204.109  xe-0/0/3:1.3400          none\nc8:fe:6a:82:88:60 213.86.204.110  xe-0/0/3:0.3400          none\nTotal entries: 41\n",
+          "json": {
+            "entries": [
+              {
+                "mac_address": "ca:fe:6a:82:88:53",
+                "ip_address": "10.0.0.176",
+                "interface": "lt-0/0/0.12",
+                "flags": "none"
+              },
+              {
+                "mac_address": "ca:fe:6a:82:88:54",
+                "ip_address": "10.0.0.177",
+                "interface": "lt-0/0/0.11",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.11.2",
+                "interface": "ae0.111",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.101.2",
+                "interface": "ae0.101",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.102.2",
+                "interface": "ae0.102",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.104.2",
+                "interface": "ae0.104",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.105.2",
+                "interface": "ae0.105",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.112.2",
+                "interface": "ae0.112",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.121.2",
+                "interface": "ae0.121",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.122.2",
+                "interface": "ae0.122",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.123.2",
+                "interface": "ae0.123",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.124.2",
+                "interface": "ae0.124",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.125.2",
+                "interface": "ae0.125",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.126.2",
+                "interface": "ae0.126",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.127.2",
+                "interface": "ae0.127",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.128.2",
+                "interface": "ae0.128",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.129.2",
+                "interface": "ae0.129",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.130.2",
+                "interface": "ae0.130",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.201.2",
+                "interface": "ae0.201",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.202.2",
+                "interface": "ae0.202",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.211.6",
+                "interface": "ae0.211",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.212.6",
+                "interface": "ae0.212",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.214.1",
+                "interface": "ae0.412",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.10.214.2",
+                "interface": "ae0.413",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.31.1.2",
+                "interface": "ae0.313",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "10.31.2.2",
+                "interface": "ae0.312",
+                "flags": "none"
+              },
+              {
+                "mac_address": "94:33:d8:ae:3b:03",
+                "ip_address": "10.80.70.1",
+                "interface": "fxp0.0",
+                "flags": "none"
+              },
+              {
+                "mac_address": "ec:38:73:d7:12:41",
+                "ip_address": "10.80.70.6",
+                "interface": "fxp0.0",
+                "flags": "none"
+              },
+              {
+                "mac_address": "ca:fe:6a:82:88:53",
+                "ip_address": "66.1.0.176",
+                "interface": "lt-0/0/0.177",
+                "flags": "none"
+              },
+              {
+                "mac_address": "ca:fe:6a:82:88:54",
+                "ip_address": "66.1.0.177",
+                "interface": "lt-0/0/0.176",
+                "flags": "none"
+              },
+              {
+                "mac_address": "80:71:1f:75:02:84",
+                "ip_address": "109.74.16.85",
+                "interface": "xe-0/1/4.0",
+                "flags": "none"
+              },
+              {
+                "mac_address": "80:71:1f:76:ea:81",
+                "ip_address": "109.74.16.90",
+                "interface": "xe-0/1/5.0",
+                "flags": "none"
+              },
+              {
+                "mac_address": "fe:54:00:a6:cc:cc",
+                "ip_address": "128.0.0.16",
+                "interface": "em3.0",
+                "flags": "none"
+              },
+              {
+                "mac_address": "fe:54:00:a6:cc:cc",
+                "ip_address": "128.0.0.101",
+                "interface": "em3.0",
+                "flags": "none"
+              },
+              {
+                "mac_address": "c8:fe:6a:82:88:62",
+                "ip_address": "169.254.152.185",
+                "interface": "xe-0/0/3:2.100",
+                "flags": "none"
+              },
+              {
+                "mac_address": "c8:fe:6a:82:88:61",
+                "ip_address": "169.254.152.186",
+                "interface": "xe-0/0/3:3.100",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "172.16.172.2",
+                "interface": "ae0.172",
+                "flags": "none"
+              },
+              {
+                "mac_address": "1c:9c:8c:f8:6c:40",
+                "ip_address": "172.16.173.2",
+                "interface": "ae0.173",
+                "flags": "none"
+              },
+              {
+                "mac_address": "fe:54:00:40:e4:35",
+                "ip_address": "192.168.1.2",
+                "interface": "em2.32768",
+                "flags": "none"
+              },
+              {
+                "mac_address": "c8:fe:6a:82:88:5f",
+                "ip_address": "213.86.204.109",
+                "interface": "xe-0/0/3:1.3400",
+                "flags": "none"
+              },
+              {
+                "mac_address": "c8:fe:6a:82:88:60",
+                "ip_address": "213.86.204.110",
+                "interface": "xe-0/0/3:0.3400",
+                "flags": "none"
+              }
+            ],
+            "total_entries": 41
+          },
+          "exception": ""
+        },
+        {
+          "cmd": "show vrrp summary | no-more",
+          "output": "warning: vrrp subsystem not running - not needed by configuration.\n",
+          "json": {
+            "vrrp_summary": "None"
+          },
+          "exception": ""
+        }
+      ]
+    },
+    "post": [],
+    "upgrade": {}
+  }
+}(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$
