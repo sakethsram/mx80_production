@@ -1,319 +1,163 @@
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ cat precheck_jsons/all_devices_summary_2026-03-06_09-45-23.json
-{
-  "10_80_71_55_juniper_mx204": {
-    "status": "",
-    "device_info": {
-      "host": "10.80.71.55",
-      "vendor": "juniper",
-      "model": "mx204",
-      "hostname": "",
-      "version": ""
-    },
-    "yaml": {
-      "host": "10.80.71.55",
-      "vendor": "juniper",
-      "model": "mx204",
-      "device_type": "juniper",
-      "current_image": "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
-      "expected_os": "23.4R2-S5.6",
-      "intermediate_os": false,
-      "min_disk_gb": 5,
-      "username": "lab",
-      "password": "lab123",
-      "target_image": "junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz",
-      "remote_backup_server": "sftp://backup@10.10.20.20/backups/",
-      "cleanup_files": [
-        "list of files"
-      ],
-      "intermediate_image": "junos-os-21.2R2-S5.bin",
-      "rollback": false,
-      "md5checksum_file": "dec5349a0d238dad686dc01f468a0bbe"
-    },
-    "pre": {
-      "steps": {
-        "connect": {
-          "status": "",
-          "started_at": null,
-          "finished_at": null,
-          "duration_ms": null,
-          "exception": null
-        },
-        "execute_show_commands": {
-          "status": "",
-          "started_at": null,
-          "finished_at": null,
-          "duration_ms": null,
-          "exception": null
-        }
-      },
-      "commands": [
-        {
-          "cmd": "show arp no-resolve | no-more",
-          "output": "MAC Address       Address         Interface                Flags\nca:fe:6a:82:88:53 10.0.0.176      lt-0/0/0.12              none\nca:fe:6a:82:88:54 10.0.0.177      lt-0/0/0.11              none\n1c:9c:8c:f8:6c:40 10.10.11.2      ae0.111                  none\n1c:9c:8c:f8:6c:40 10.10.101.2     ae0.101                  none\n1c:9c:8c:f8:6c:40 10.10.102.2     ae0.102                  none\n1c:9c:8c:f8:6c:40 10.10.104.2     ae0.104                  none\n1c:9c:8c:f8:6c:40 10.10.105.2     ae0.105                  none\n1c:9c:8c:f8:6c:40 10.10.112.2     ae0.112                  none\n1c:9c:8c:f8:6c:40 10.10.121.2     ae0.121                  none\n1c:9c:8c:f8:6c:40 10.10.122.2     ae0.122                  none\n1c:9c:8c:f8:6c:40 10.10.123.2     ae0.123                  none\n1c:9c:8c:f8:6c:40 10.10.124.2     ae0.124                  none\n1c:9c:8c:f8:6c:40 10.10.125.2     ae0.125                  none\n1c:9c:8c:f8:6c:40 10.10.126.2     ae0.126                  none\n1c:9c:8c:f8:6c:40 10.10.127.2     ae0.127                  none\n1c:9c:8c:f8:6c:40 10.10.128.2     ae0.128                  none\n1c:9c:8c:f8:6c:40 10.10.129.2     ae0.129                  none\n1c:9c:8c:f8:6c:40 10.10.130.2     ae0.130                  none\n1c:9c:8c:f8:6c:40 10.10.201.2     ae0.201                  none\n1c:9c:8c:f8:6c:40 10.10.202.2     ae0.202                  none\n1c:9c:8c:f8:6c:40 10.10.211.6     ae0.211                  none\n1c:9c:8c:f8:6c:40 10.10.212.6     ae0.212                  none\n1c:9c:8c:f8:6c:40 10.10.214.1     ae0.412                  none\n1c:9c:8c:f8:6c:40 10.10.214.2     ae0.413                  none\n1c:9c:8c:f8:6c:40 10.31.1.2       ae0.313                  none\n1c:9c:8c:f8:6c:40 10.31.2.2       ae0.312                  none\n94:33:d8:ae:3b:03 10.80.70.1      fxp0.0                   none\nec:38:73:d7:12:41 10.80.70.6      fxp0.0                   none\nca:fe:6a:82:88:53 66.1.0.176      lt-0/0/0.177             none\nca:fe:6a:82:88:54 66.1.0.177      lt-0/0/0.176             none\n80:71:1f:75:02:84 109.74.16.85    xe-0/1/4.0               none\n80:71:1f:76:ea:81 109.74.16.90    xe-0/1/5.0               none\nfe:54:00:a6:cc:cc 128.0.0.16      em3.0                    none\nfe:54:00:a6:cc:cc 128.0.0.101     em3.0                    none\nc8:fe:6a:82:88:62 169.254.152.185 xe-0/0/3:2.100           none\nc8:fe:6a:82:88:61 169.254.152.186 xe-0/0/3:3.100           none\n1c:9c:8c:f8:6c:40 172.16.172.2    ae0.172                  none\n1c:9c:8c:f8:6c:40 172.16.173.2    ae0.173                  none\nfe:54:00:40:e4:35 192.168.1.2     em2.32768                none\nc8:fe:6a:82:88:5f 213.86.204.109  xe-0/0/3:1.3400          none\nc8:fe:6a:82:88:60 213.86.204.110  xe-0/0/3:0.3400          none\nTotal entries: 41\n",
-          "json": {
-            "entries": [
-              {
-                "mac_address": "ca:fe:6a:82:88:53",
-                "ip_address": "10.0.0.176",
-                "interface": "lt-0/0/0.12",
-                "flags": "none"
-              },
-              {
-                "mac_address": "ca:fe:6a:82:88:54",
-                "ip_address": "10.0.0.177",
-                "interface": "lt-0/0/0.11",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.11.2",
-                "interface": "ae0.111",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.101.2",
-                "interface": "ae0.101",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.102.2",
-                "interface": "ae0.102",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.104.2",
-                "interface": "ae0.104",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.105.2",
-                "interface": "ae0.105",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.112.2",
-                "interface": "ae0.112",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.121.2",
-                "interface": "ae0.121",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.122.2",
-                "interface": "ae0.122",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.123.2",
-                "interface": "ae0.123",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.124.2",
-                "interface": "ae0.124",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.125.2",
-                "interface": "ae0.125",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.126.2",
-                "interface": "ae0.126",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.127.2",
-                "interface": "ae0.127",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.128.2",
-                "interface": "ae0.128",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.129.2",
-                "interface": "ae0.129",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.130.2",
-                "interface": "ae0.130",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.201.2",
-                "interface": "ae0.201",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.202.2",
-                "interface": "ae0.202",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.211.6",
-                "interface": "ae0.211",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.212.6",
-                "interface": "ae0.212",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.214.1",
-                "interface": "ae0.412",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.10.214.2",
-                "interface": "ae0.413",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.31.1.2",
-                "interface": "ae0.313",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "10.31.2.2",
-                "interface": "ae0.312",
-                "flags": "none"
-              },
-              {
-                "mac_address": "94:33:d8:ae:3b:03",
-                "ip_address": "10.80.70.1",
-                "interface": "fxp0.0",
-                "flags": "none"
-              },
-              {
-                "mac_address": "ec:38:73:d7:12:41",
-                "ip_address": "10.80.70.6",
-                "interface": "fxp0.0",
-                "flags": "none"
-              },
-              {
-                "mac_address": "ca:fe:6a:82:88:53",
-                "ip_address": "66.1.0.176",
-                "interface": "lt-0/0/0.177",
-                "flags": "none"
-              },
-              {
-                "mac_address": "ca:fe:6a:82:88:54",
-                "ip_address": "66.1.0.177",
-                "interface": "lt-0/0/0.176",
-                "flags": "none"
-              },
-              {
-                "mac_address": "80:71:1f:75:02:84",
-                "ip_address": "109.74.16.85",
-                "interface": "xe-0/1/4.0",
-                "flags": "none"
-              },
-              {
-                "mac_address": "80:71:1f:76:ea:81",
-                "ip_address": "109.74.16.90",
-                "interface": "xe-0/1/5.0",
-                "flags": "none"
-              },
-              {
-                "mac_address": "fe:54:00:a6:cc:cc",
-                "ip_address": "128.0.0.16",
-                "interface": "em3.0",
-                "flags": "none"
-              },
-              {
-                "mac_address": "fe:54:00:a6:cc:cc",
-                "ip_address": "128.0.0.101",
-                "interface": "em3.0",
-                "flags": "none"
-              },
-              {
-                "mac_address": "c8:fe:6a:82:88:62",
-                "ip_address": "169.254.152.185",
-                "interface": "xe-0/0/3:2.100",
-                "flags": "none"
-              },
-              {
-                "mac_address": "c8:fe:6a:82:88:61",
-                "ip_address": "169.254.152.186",
-                "interface": "xe-0/0/3:3.100",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "172.16.172.2",
-                "interface": "ae0.172",
-                "flags": "none"
-              },
-              {
-                "mac_address": "1c:9c:8c:f8:6c:40",
-                "ip_address": "172.16.173.2",
-                "interface": "ae0.173",
-                "flags": "none"
-              },
-              {
-                "mac_address": "fe:54:00:40:e4:35",
-                "ip_address": "192.168.1.2",
-                "interface": "em2.32768",
-                "flags": "none"
-              },
-              {
-                "mac_address": "c8:fe:6a:82:88:5f",
-                "ip_address": "213.86.204.109",
-                "interface": "xe-0/0/3:1.3400",
-                "flags": "none"
-              },
-              {
-                "mac_address": "c8:fe:6a:82:88:60",
-                "ip_address": "213.86.204.110",
-                "interface": "xe-0/0/3:0.3400",
-                "flags": "none"
-              }
-            ],
-            "total_entries": 41
-          },
-          "exception": ""
-        },
-        {
-          "cmd": "show vrrp summary | no-more",
-          "output": "warning: vrrp subsystem not running - not needed by configuration.\n",
-          "json": {
-            "vrrp_summary": "None"
-          },
-          "exception": ""
-        }
-      ]
-    },
-    "post": [],
-    "upgrade": {}
-  }
-}(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ ll
+total 160
+drwxrwxr-x 15 colt colt  4096 Mar  6 10:41 ./
+drwxr-xr-x  4 colt colt  4096 Mar  4 09:55 ../
+-rw-rw-r--  1 colt colt    18 Mar  4 09:55 .gitignore
+drwxrwxr-x  2 colt colt  4096 Mar  6 10:44 inputs/
+drwxrwxr-x  3 colt colt  4096 Mar  6 10:41 lib/
+drwxrwxr-x  2 colt colt 16384 Mar  6 10:01 logging/
+-rw-------  1 colt colt 12288 Mar  6 10:41 .main.py.swp
+drwxrwxr-x  4 colt colt  4096 Mar  4 09:55 models/
+drwxrwxr-x  2 colt colt 16384 Mar  6 10:01 outputs/
+drwxrwxr-x  5 colt colt  4096 Mar  4 09:55 parsers/
+-rw-rw-r--  1 colt colt  8014 Mar  4 09:55 postchecks.py
+drwxrwxr-x  2 colt colt  4096 Mar  6 10:02 precheck_jsons/
+-rw-rw-r--  1 colt colt 13996 Mar  4 11:16 prechecks.py
+drwxrwxr-x  2 colt colt  4096 Mar  4 17:03 __pycache__/
+-rw-rw-r--  1 colt colt    72 Mar  4 09:55 README.md
+drwxrwxr-x  2 colt colt  4096 Mar  5 18:30 reports/
+drwxrwxr-x  2 colt colt  4096 Mar  4 09:55 testing/
+-rw-rw-r--  1 colt colt  8193 Mar  4 09:55 upgrade.py
+drwxrwxr-x  5 colt colt  4096 Mar  4 09:55 .venv/
+drwxrwxr-x  5 colt colt  4096 Mar  4 09:55 venv/
+drwxrwxr-x  2 colt colt  4096 Mar  4 09:55 .vscode/
+-rw-rw-r--  1 colt colt 20437 Mar  4 17:03 workflow_report_generator.py
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ rm main
+rm: cannot remove 'main': No such file or directory
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ vi main.py
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ vi lib/utilities.py
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ p main.py
+2026-03-06 10:45:11,667 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
+2026-03-06 10:45:11,667 - INFO - [MAIN] Spawning threads for 1 device(s)
+2026-03-06 10:45:11,668 - INFO - [THREAD-128512661661376] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-06 10:45:11.668212
+2026-03-06 10:45:11,668 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
+2026-03-06 10:45:11,669 - INFO - Connecting to 10.80.71.55 using Netmiko...
+2026-03-06 10:45:21,682 - ERROR - 10.80.71.55: Connection Timed out
+2026-03-06 10:45:21,682 - ERROR - [10_80_71_55_juniper_mx204] Connection failed: TCP connection to device failed.
+
+Common causes of this problem are:
+1. Incorrect hostname or IP address.
+2. Wrong TCP port.
+3. Intermediate firewall blocking access.
+
+Device settings: juniper 10.80.71.55:22
+
+
+2026-03-06 10:45:21,682 - ERROR - [10_80_71_55_juniper_mx204] STEP 1 CONNECT failed — connect() returned None
+2026-03-06 10:45:21,682 - ERROR - [10_80_71_55_juniper_mx204] disconnect called but conn is None
+2026-03-06 10:45:21,683 - INFO - [THREAD-128512661661376] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-06 10:45:21.683078
+2026-03-06 10:45:21,683 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> failed
+[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation2/precheck_jsons/all_devices_summary_2026-03-06_10-49-21.json
+2026-03-06 10:45:21,685 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation2/precheck_jsons
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ cd inputs/
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/inputs$ ll
+total 16
+drwxrwxr-x  2 colt colt 4096 Mar  6 10:44 ./
+drwxrwxr-x 15 colt colt 4096 Mar  6 10:44 ../
+-rw-rw-r--  1 colt colt 1336 Mar  6 09:41 deviceDetails.yaml
+-rw-rw-r--  1 colt colt 2068 Mar  6 10:44 show_cmd_list.yaml
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/inputs$ cat deviceDetails.yaml
+devices:
+  - host: "10.80.71.55"
+    vendor: "juniper"
+    model: mx204
+    device_type: "juniper"
+    current_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
+    expected_os: 23.4R2-S5.6
+    intermediate_os: False
+    min_disk_gb: 5
+    username: "lab"
+    password: "lab123"
+    target_image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
+    remote_backup_server: sftp://backup@10.10.20.20/backups/
+    cleanup_files:
+      - list of files
+    intermediate_image: junos-os-21.2R2-S5.bin
+    rollback: False
+    md5checksum_file: "dec5349a0d238dad686dc01f468a0bbe"
+
+  # - host: "10.80.109.250"
+  #   vendor: "cisco"
+  #   model: asr9910
+  #   device_type: "cisco_xr"
+  #   current_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
+  #   expected_os: 23.4R2-S5.1
+  #   intermediate_os: False
+  #   min_disk_gb: 6
+  #   username: "admin"
+  #   password: "Colt@123"
+  #   target_image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
+  #   image_path: "/home/automation2/software/juniper/junos/MX204"
+  #   remote_backup_sarerver: "automation2@10.80.109.134"
+  #   remote_password: "kTRq8amH888r"
+  #   cleanup_files:
+  #     - juniper_mx204_2026-*
+  #     - /var/tmp/juniper_mx204_2026-*
+  #   intermediate_image: junos-os-21.2R2-S5.bin
+  #   md5checksum_file: "3e97c983380ac3a1b28e143219c8960a"
+  #   local_image_path: ""
+
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/inputs$
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/inputs$ cat show_cmd_list.yaml
+juniper_mx204:
+  - show arp no-resolve | no-more
+  # - show lldp neighbors | no-more
+  # - show chassis routing-engine | no-more
+  # - show system uptime | no-more
+  # - show ntp associations no-resolve | no-more
+  # - show vmhost version | no-more
+  # - show vmhost snapshot | no-more
+  # - show chassis hardware | no-more
+  # - show chassis fpc detail | no-more
+  # - show chassis alarms | no-more
+  # - show system alarms | no-more
+  # - show chassis environment | no-more
+  # - show system resource-monitor fpc | no-more
+  # - show system processes extensive | match rpd | no-more
+  # - show interface terse | no-more
+  # - show oam ethernet connectivity-fault-management interfaces extensive | no-more
+ # - show vrrp summary | no-more
+  # - show bfd session | no-more
+  # - show rsvp neighbor | no-more
+  # - show rsvp session | no-more
+  # - show route table inet.0 | no-more
+  # - show route table inet.3 | no-more
+  # - show route table mpls.0 | no-more
+  # - show mpls interface | no-more
+  # - show mpls lsp | no-more
+  # - show mpls lsp p2mp | no-more
+  # - show bgp summary | no-more
+  # - show bgp neighbor | no-more
+  # - show isis adjacency extensive | no-more
+  # - show route summary | no-more
+  # - show rsvp session | match DN | no-more
+  # - show mpls lsp unidirectional | match Dn | no-more
+  # - show ldp neighbor | no-more
+  # - show connections | no-more
+  # - show log messages | last 200 | no-more
+
+# cisco_asr9910:
+#   - show install active summary
+#   - show isis adjacency
+#   - show bfd session
+#   - show route summary
+#   - show bgp all summary
+#   - show bgp vrf all summary
+#   - show ipv4 vrf all interface brief
+#   - show mpls ldp neighbor
+#   - show pim neighbor
+#   - show pfm location all
+#   - show processes cpu
+#   - show watchdog memory-state location all
+#   - show redundancy
+#   - show interfaces description
+#   - show filesystem
+#   - show interfaces Bundle-Ether
+#   - show msdp peer
+#   - show l2vpn xconnect brief
+#   - show hw-module fpd
+#   - show platform
+#   - show media location 0/RSP1/CPU0
+#   - show version
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/inputs$ ^C
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/inputs$
