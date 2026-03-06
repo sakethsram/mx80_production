@@ -33,73 +33,23 @@ logger = logging.getLogger(__name__)
 #     "conn":        <netmiko connection | None>,
 #     "yaml":        <raw device yaml dict>,
 #     "pre": {
-#         "connect": {
-#             "status":    True/False,
-#             "exception": "",
-#         },
-#         "execute_show_commands": {
-#             "status":      "not_started",
-#             "started_at":  "1970-01-01T00:00:00",
-#             "finished_at": "1970-01-01T00:00:00",
-#             "duration_ms": 0,
-#             "exception":   "",
-#             "commands":    [],
-#         },
-#         "show_version": {
-#             "status":      "not_started",
-#             "started_at":  "1970-01-01T00:00:00",
-#             "finished_at": "1970-01-01T00:00:00",
-#             "duration_ms": 0,
-#             "exception":   "",
-#             "version":     "",
-#             "platform":    "",
-#         },
-#         "check_storage": {
-#             "status":       "not_started",
-#             "started_at":   "1970-01-01T00:00:00",
-#             "finished_at":  "1970-01-01T00:00:00",
-#             "duration_ms":  0,
-#             "exception":    "",
-#             "available_mb": 0,
-#             "required_mb":  0,
-#             "sufficient":   False,
-#         },
-#         "backup_active_filesystem": {
-#             "status":        "not_started",
-#             "started_at":    "1970-01-01T00:00:00",
-#             "finished_at":   "1970-01-01T00:00:00",
-#             "duration_ms":   0,
-#             "exception":     "",
-#             "snapshot_slot": "",
-#             "verified":      False,
-#         },
-#         "backup_running_config": {
-#             "status":      "not_started",
-#             "started_at":  "1970-01-01T00:00:00",
-#             "finished_at": "1970-01-01T00:00:00",
-#             "duration_ms": 0,
-#             "exception":   "",
-#             "destination": "",
-#             "md5_ok":      False,
-#         },
-#         "transfer_image": {
-#             "status":      "not_started",
-#             "started_at":  "1970-01-01T00:00:00",
-#             "finished_at": "1970-01-01T00:00:00",
-#             "duration_ms": 0,
-#             "exception":   "",
-#             "image":       "",
-#             "destination": "",
-#         },
-#         "validate_md5": {
-#             "status":      "not_started",
-#             "started_at":  "1970-01-01T00:00:00",
-#             "finished_at": "1970-01-01T00:00:00",
-#             "duration_ms": 0,
-#             "exception":   "",
-#             "expected":    "",
-#             "computed":    "",
-#             "match":       False,
+#         "steps": {
+#             "connect": {
+#                 "status":    True/False,
+#                 "exception": "",
+#             },
+#             "execute_show_commands": {
+#                 "status":      "not_started",
+#                 "started_at":  "1970-01-01T00:00:00",
+#                 "finished_at": "1970-01-01T00:00:00",
+#                 "duration_ms": 0,
+#                 "exception":   "",
+#                 "commands":    [],
+#             },
+#             # "backup_running_config": { status, started_at, finished_at, duration_ms, exception },
+#             # "transfer_image":        { status, started_at, finished_at, duration_ms, exception },
+#             # "validate_md5":          { status, started_at, finished_at, duration_ms, exception },
+#             # "check_storage":         { status, started_at, finished_at, duration_ms, exception },
 #         },
 #     },
 #     "post":    [],
@@ -126,73 +76,23 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
         "conn":    None,
         "yaml":    device_yaml,
         "pre": {
-            "connect": {
-                "status":    False,
-                "exception": "",
-            },
-            "execute_show_commands": {
-                "status":      "not_started",
-                "started_at":  "1970-01-01T00:00:00",
-                "finished_at": "1970-01-01T00:00:00",
-                "duration_ms": 0,
-                "exception":   "",
-                "commands":    [],
-            },
-            "show_version": {
-                "status":      "not_started",
-                "started_at":  "1970-01-01T00:00:00",
-                "finished_at": "1970-01-01T00:00:00",
-                "duration_ms": 0,
-                "exception":   "",
-                "version":     "",
-                "platform":    "",
-            },
-            "check_storage": {
-                "status":       "not_started",
-                "started_at":   "1970-01-01T00:00:00",
-                "finished_at":  "1970-01-01T00:00:00",
-                "duration_ms":  0,
-                "exception":    "",
-                "available_mb": 0,
-                "required_mb":  0,
-                "sufficient":   False,
-            },
-            "backup_active_filesystem": {
-                "status":        "not_started",
-                "started_at":    "1970-01-01T00:00:00",
-                "finished_at":   "1970-01-01T00:00:00",
-                "duration_ms":   0,
-                "exception":     "",
-                "snapshot_slot": "",
-                "verified":      False,
-            },
-            "backup_running_config": {
-                "status":      "not_started",
-                "started_at":  "1970-01-01T00:00:00",
-                "finished_at": "1970-01-01T00:00:00",
-                "duration_ms": 0,
-                "exception":   "",
-                "destination": "",
-                "md5_ok":      False,
-            },
-            "transfer_image": {
-                "status":      "not_started",
-                "started_at":  "1970-01-01T00:00:00",
-                "finished_at": "1970-01-01T00:00:00",
-                "duration_ms": 0,
-                "exception":   "",
-                "image":       "",
-                "destination": "",
-            },
-            "validate_md5": {
-                "status":      "not_started",
-                "started_at":  "1970-01-01T00:00:00",
-                "finished_at": "1970-01-01T00:00:00",
-                "duration_ms": 0,
-                "exception":   "",
-                "expected":    "",
-                "computed":    "",
-                "match":       False,
+            "steps": {
+                "connect": {
+                    "status":    False,
+                    "exception": "",
+                },
+                "execute_show_commands": {
+                    "status":      "not_started",
+                    "started_at":  "1970-01-01T00:00:00",
+                    "finished_at": "1970-01-01T00:00:00",
+                    "duration_ms": 0,
+                    "exception":   "",
+                    "commands":    [],
+                },
+                # "backup_running_config": {"status": "not_started", "started_at": "1970-01-01T00:00:00", "finished_at": "1970-01-01T00:00:00", "duration_ms": 0, "exception": ""},
+                # "transfer_image":        {"status": "not_started", "started_at": "1970-01-01T00:00:00", "finished_at": "1970-01-01T00:00:00", "duration_ms": 0, "exception": ""},
+                # "validate_md5":          {"status": "not_started", "started_at": "1970-01-01T00:00:00", "finished_at": "1970-01-01T00:00:00", "duration_ms": 0, "exception": ""},
+                # "check_storage":         {"status": "not_started", "started_at": "1970-01-01T00:00:00", "finished_at": "1970-01-01T00:00:00", "duration_ms": 0, "exception": ""},
             },
         },
         "post":    [],
@@ -294,10 +194,6 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
 
     log.info(f"[{device_key}] collect_outputs — {len(commands)} command(s), check_type={check_type}")
 
-    started_at = datetime.now()
-    device_results[device_key]["pre"]["execute_show_commands"]["status"]     = "in_progress"
-    device_results[device_key]["pre"]["execute_show_commands"]["started_at"] = started_at.strftime("%Y-%m-%dT%H:%M:%S")
-
     entries = []
     for cmd in commands:
         log.info(f"[{device_key}] Sending: '{cmd}'")
@@ -322,14 +218,8 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
         entries.append(entry)
         log.info(f"[{device_key}] '{cmd}' collected={collected} ({len(stripped)} chars)")
 
-    finished_at = datetime.now()
-    duration_ms = int((finished_at - started_at).total_seconds() * 1000)
-
-    # ── write into execute_show_commands ──────────────────────────────
-    device_results[device_key]["pre"]["execute_show_commands"]["commands"]    = entries
-    device_results[device_key]["pre"]["execute_show_commands"]["finished_at"] = finished_at.strftime("%Y-%m-%dT%H:%M:%S")
-    device_results[device_key]["pre"]["execute_show_commands"]["duration_ms"] = duration_ms
-
+    # ── write into execute_show_commands.commands ─────────────────────
+    device_results[device_key]["pre"]["steps"]["execute_show_commands"]["commands"] = entries
     log.info(f"[{device_key}] collect_outputs done — {len(entries)} entries stored")
     return entries
 
@@ -342,7 +232,7 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
         return False
 
     # ── read from execute_show_commands.commands ──────────────────────
-    entries = device_results.get(device_key, {}).get("pre", {}).get("execute_show_commands", {}).get("commands", [])
+    entries = device_results.get(device_key, {}).get("pre", {}).get("steps", {}).get("execute_show_commands", {}).get("commands", [])
     if not entries:
         log.warning(f"[{device_key}] Nothing in execute_show_commands.commands to parse")
         return False
@@ -377,10 +267,6 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
             entry["exception"] = f"parser failed for '{cmd}'"
             all_ok = False
             continue
-
-    status = "completed" if all_ok else "completed_with_errors"
-    device_results[device_key]["pre"]["execute_show_commands"]["status"]    = status
-    device_results[device_key]["pre"]["execute_show_commands"]["exception"] = "" if all_ok else "one or more parsers failed"
 
     return all_ok
 
@@ -537,15 +423,15 @@ def connect(device_key: str, dev: dict, logger):
             logger           = logger,
         )
         device_results[device_key]["conn"] = conn
-        device_results[device_key]["pre"]["connect"]["status"]    = True
-        device_results[device_key]["pre"]["connect"]["exception"] = ""
+        device_results[device_key]["pre"]["steps"]["connect"]["status"]    = True
+        device_results[device_key]["pre"]["steps"]["connect"]["exception"] = ""
         logger.info(f"[{device_key}] Connected successfully to {host}")
         return conn
 
     except Exception as e:
         logger.error(f"[{device_key}] Connection failed: {e}")
-        device_results[device_key]["pre"]["connect"]["status"]    = False
-        device_results[device_key]["pre"]["connect"]["exception"] = str(e)
+        device_results[device_key]["pre"]["steps"]["connect"]["status"]    = False
+        device_results[device_key]["pre"]["steps"]["connect"]["exception"] = str(e)
         return None
 
 

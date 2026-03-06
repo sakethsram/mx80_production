@@ -50,7 +50,7 @@ def run_prechecks(dev, device_key, logger):
                 raise ConnectionError("connect() returned None")
         except Exception as e:
             logger.error(f"[{device_key}] STEP 1 CONNECT failed — {e}")
-            device_results[device_key]["pre"]["connect"]["exception"] = str(e)
+            device_results[device_key]["pre"]["steps"]["connect"]["exception"] = str(e)
             return False
 
         # ── STEP 2: Execute show commands ─────────────────────────────
@@ -60,14 +60,14 @@ def run_prechecks(dev, device_key, logger):
                 raise RuntimeError("execute_show_commands returned False")
         except Exception as e:
             logger.error(f"[{device_key}] STEP 2 EXECUTE failed — {e}")
-            device_results[device_key]["pre"]["execute_show_commands"]["exception"] = str(e)
+            device_results[device_key]["pre"]["steps"]["execute_show_commands"]["exception"] = str(e)
             return False
 
         # ── STEP 3: Show version ──────────────────────────────────────
         # TODO: Run `show version` (or equivalent) on the device via conn.
         #       Parse the output to extract current OS version, platform info.
         #       Store result into:
-        #           device_results[device_key]["pre"]["show_version"]
+        #           device_results[device_key]["pre"]["steps"]["show_version"]
         #       If version is incompatible or parse fails, log and return False.
 
         # ── STEP 4: Storage check ─────────────────────────────────────
@@ -75,7 +75,7 @@ def run_prechecks(dev, device_key, logger):
         #       Parse available vs required space for the upgrade image.
         #       Determine if sufficient space exists on the target disk/partition.
         #       Store result into:
-        #           device_results[device_key]["pre"]["check_storage"]
+        #           device_results[device_key]["pre"]["steps"]["check_storage"]
         #       If insufficient space, log a clear error and return False.
 
         # ── STEP 5: Backup active running filesystem ──────────────────
@@ -84,7 +84,7 @@ def run_prechecks(dev, device_key, logger):
         #       Trigger a snapshot/backup of the active running filesystem on-device.
         #       Verify the backup completed successfully (status, size, integrity).
         #       Store result into:
-        #           device_results[device_key]["pre"]["backup_active_filesystem"]
+        #           device_results[device_key]["pre"]["steps"]["backup_active_filesystem"]
         #       If backup fails or no valid slot found, log and return False.
 
         # ── STEP 6: Backup running config (device → NMS) ─────────────
@@ -93,7 +93,7 @@ def run_prechecks(dev, device_key, logger):
         #       Write / push the config to the NMS (file server, TFTP, SCP, etc.).
         #       Confirm the file arrived on the NMS side (size / md5 sanity check).
         #       Store result into:
-        #           device_results[device_key]["pre"]["backup_running_config"]
+        #           device_results[device_key]["pre"]["steps"]["backup_running_config"]
         #       If transfer fails, log and return False.
 
         # ── STEP 7: Transfer upgrade image (NMS → device) ────────────
@@ -101,7 +101,7 @@ def run_prechecks(dev, device_key, logger):
         #       Monitor transfer progress where possible; enforce a timeout.
         #       Confirm the file is present on the device after transfer.
         #       Store result into:
-        #           device_results[device_key]["pre"]["transfer_image"]
+        #           device_results[device_key]["pre"]["steps"]["transfer_image"]
         #       If transfer fails or times out, log and return False.
 
         # ── STEP 8: Validate MD5 checksum ────────────────────────────
@@ -110,7 +110,7 @@ def run_prechecks(dev, device_key, logger):
         #       Compare the computed MD5 against the known-good reference value
         #       (sourced from NMS / manifest / config).
         #       Store result into:
-        #           device_results[device_key]["pre"]["validate_md5"]
+        #           device_results[device_key]["pre"]["steps"]["validate_md5"]
         #       If checksum mismatch, log a critical error and return False.
 
         # ── STEP 9: Merge results ─────────────────────────────────────
