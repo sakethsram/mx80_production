@@ -384,8 +384,8 @@ def export_device_summary(device_key: str):
     print(f"[EXPORT] Summary JSON saved -> {summary_file}")
 
     report_dir  = os.path.join(os.getcwd(), "reports")
-    report_path = generate_upgrade_report(all_devices_summary, output_dir=report_dir)
-    print(f"[REPORT] HTML report saved -> {report_path}")
+    # report_path = generate_upgrade_report(all_devices_summary, output_dir=report_dir)
+    # print(f"[REPORT] HTML report saved -> {report_path}")
 
 
 def merge_thread_result(device_key: str, result: dict):
