@@ -1,0 +1,22 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Images
+*.png
+*.jpg
+*.jpeg
+
+# Logs
+logging/*.log
+*.log
+
+# Output folders
+outputs/
+
+# OS files
+.DS_Store
+
+# Environment files
+.env
+venv/
