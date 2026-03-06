@@ -14,7 +14,6 @@ from parsers.juniper.juniper_mx204 import *
 from parsers.cisco.cisco_asr9910 import *
 from datetime import datetime, timedelta
 import threading
-from workflow_report_generator import generate_upgrade_report
 
 MIN_OUTPUT_CHARS = 5
 
@@ -35,17 +34,23 @@ logger = logging.getLogger(__name__)
 #     "yaml":        <raw device yaml dict>,
 #     "pre": {
 #         "steps": {
-#             "connect":               { status, started_at, finished_at, duration_ms, exception },
-#             "execute_show_commands": { status, started_at, finished_at, duration_ms, exception },
-#             # "backup_running_config": { status, exception },
-#             # "transfer_image":        { status, exception },
-#             # "validate_md5":          { status, exception },
-#             # "check_storage":         { status, exception },
+#             "connect": {
+#                 "status":    True/False,
+#                 "exception": "",
+#             },
+#             "execute_show_commands": {
+#                 "status":      "not_started",
+#                 "started_at":  "1970-01-01T00:00:00",
+#                 "finished_at": "1970-01-01T00:00:00",
+#                 "duration_ms": 0,
+#                 "exception":   "",
+#                 "commands":    [],
+#             },
+#             # "backup_running_config": { status, started_at, finished_at, duration_ms, exception },
+#             # "transfer_image":        { status, started_at, finished_at, duration_ms, exception },
+#             # "validate_md5":          { status, started_at, finished_at, duration_ms, exception },
+#             # "check_storage":         { status, started_at, finished_at, duration_ms, exception },
 #         },
-#         "commands": [
-#             { cmd, output, json, exception },
-#             ...
-#         ]
 #     },
 #     "post":    [],
 #     "upgrade": {},
@@ -73,25 +78,22 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
         "pre": {
             "steps": {
                 "connect": {
-                    "status":      "",
-                    "started_at":  None,
-                    "finished_at": None,
-                    "duration_ms": None,
-                    "exception":   None,
+                    "status":    False,
+                    "exception": "",
                 },
                 "execute_show_commands": {
-                    "status":      "",
-                    "started_at":  None,
-                    "finished_at": None,
-                    "duration_ms": None,
-                    "exception":   None,
+                    "status":      "not_started",
+                    "started_at":  "1970-01-01T00:00:00",
+                    "finished_at": "1970-01-01T00:00:00",
+                    "duration_ms": 0,
+                    "exception":   "",
+                    "commands":    [],
                 },
-                # "backup_running_config": {"status": "", "exception": None},
-                # "transfer_image":        {"status": "", "exception": None},
-                # "validate_md5":          {"status": "", "exception": None},
-                # "check_storage":         {"status": "", "exception": None},
+                # "backup_running_config": {"status": "not_started", "started_at": "1970-01-01T00:00:00", "finished_at": "1970-01-01T00:00:00", "duration_ms": 0, "exception": ""},
+                # "transfer_image":        {"status": "not_started", "started_at": "1970-01-01T00:00:00", "finished_at": "1970-01-01T00:00:00", "duration_ms": 0, "exception": ""},
+                # "validate_md5":          {"status": "not_started", "started_at": "1970-01-01T00:00:00", "finished_at": "1970-01-01T00:00:00", "duration_ms": 0, "exception": ""},
+                # "check_storage":         {"status": "not_started", "started_at": "1970-01-01T00:00:00", "finished_at": "1970-01-01T00:00:00", "duration_ms": 0, "exception": ""},
             },
-            "commands": []   # list of dicts: [{cmd, output, json, exception}, ...]
         },
         "post":    [],
         "upgrade": {},
@@ -216,8 +218,8 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
         entries.append(entry)
         log.info(f"[{device_key}] '{cmd}' collected={collected} ({len(stripped)} chars)")
 
-    # ── write into pre.commands (not pre directly) ────────────────────
-    device_results[device_key]["pre"]["commands"] = entries
+    # ── write into execute_show_commands.commands ─────────────────────
+    device_results[device_key]["pre"]["steps"]["execute_show_commands"]["commands"] = entries
     log.info(f"[{device_key}] collect_outputs done — {len(entries)} entries stored")
     return entries
 
@@ -229,10 +231,10 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
         log.error(f"[{device_key}] No registry for vendor='{vendor}'")
         return False
 
-    # ── read from pre.commands ────────────────────────────────────────
-    entries = device_results.get(device_key, {}).get("pre", {}).get("commands", [])
+    # ── read from execute_show_commands.commands ──────────────────────
+    entries = device_results.get(device_key, {}).get("pre", {}).get("steps", {}).get("execute_show_commands", {}).get("commands", [])
     if not entries:
-        log.warning(f"[{device_key}] Nothing in pre.commands to parse")
+        log.warning(f"[{device_key}] Nothing in execute_show_commands.commands to parse")
         return False
 
     all_ok = True
@@ -383,10 +385,6 @@ def export_device_summary(device_key: str):
         json.dump(all_devices_summary, f, indent=2, default=str)
     print(f"[EXPORT] Summary JSON saved -> {summary_file}")
 
-    report_dir  = os.path.join(os.getcwd(), "reports")
-    # report_path = generate_upgrade_report(all_devices_summary, output_dir=report_dir)
-    # print(f"[REPORT] HTML report saved -> {report_path}")
-
 
 def merge_thread_result(device_key: str, result: dict):
     with results_lock:
@@ -404,7 +402,7 @@ def merge_thread_result(device_key: str, result: dict):
 
 
 def connect(device_key: str, dev: dict, logger):
-    host  = dev["host"]
+    host   = dev["host"]
     vendor = dev["vendor"].lower()
     model  = str(dev["model"]).lower().replace("-", "")
 
@@ -425,17 +423,15 @@ def connect(device_key: str, dev: dict, logger):
             logger           = logger,
         )
         device_results[device_key]["conn"] = conn
+        device_results[device_key]["pre"]["steps"]["connect"]["status"]    = True
+        device_results[device_key]["pre"]["steps"]["connect"]["exception"] = ""
         logger.info(f"[{device_key}] Connected successfully to {host}")
         return conn
 
     except Exception as e:
         logger.error(f"[{device_key}] Connection failed: {e}")
-        device_results[device_key]["pre"]["commands"].append({
-            "cmd":       "connect",
-            "output":    "",
-            "json":      {},
-            "exception": f"Connection failed: {e}",
-        })
+        device_results[device_key]["pre"]["steps"]["connect"]["status"]    = False
+        device_results[device_key]["pre"]["steps"]["connect"]["exception"] = str(e)
         return None
 
 
@@ -446,12 +442,6 @@ def disconnect(device_key: str, logger):
 
     if conn is None:
         logger.error(f"[{device_key}] disconnect called but conn is None")
-        device_results[device_key]["pre"]["commands"].append({
-            "cmd":       "disconnect",
-            "output":    "",
-            "json":      {},
-            "exception": "disconnect called but conn was None — connection never established",
-        })
         return
 
     logout_device(conn, host, logger)
