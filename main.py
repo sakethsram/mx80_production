@@ -50,7 +50,7 @@ def run_prechecks(dev, device_key, logger):
                 raise ConnectionError("connect() returned None")
         except Exception as e:
             logger.error(f"[{device_key}] STEP 1 CONNECT failed — {e}")
-            device_results[device_key]["pre"]["commands"].append({"cmd": "connect", "output": "", "json": {}, "exception": str(e)})
+            device_results[device_key]["pre"]["connect"]["exception"] = str(e)
             return False
 
         # ── STEP 2: Execute show commands ─────────────────────────────
@@ -60,10 +60,60 @@ def run_prechecks(dev, device_key, logger):
                 raise RuntimeError("execute_show_commands returned False")
         except Exception as e:
             logger.error(f"[{device_key}] STEP 2 EXECUTE failed — {e}")
-            device_results[device_key]["pre"]["commands"].append({"cmd": "execute_show_commands", "output": "", "json": {}, "exception": str(e)})
+            device_results[device_key]["pre"]["execute_show_commands"]["exception"] = str(e)
             return False
 
-        # ── STEP 3: Merge results ─────────────────────────────────────
+        # ── STEP 3: Show version ──────────────────────────────────────
+        # TODO: Run `show version` (or equivalent) on the device via conn.
+        #       Parse the output to extract current OS version, platform info.
+        #       Store result into:
+        #           device_results[device_key]["pre"]["show_version"]
+        #       If version is incompatible or parse fails, log and return False.
+
+        # ── STEP 4: Storage check ─────────────────────────────────────
+        # TODO: Run storage/filesystem check command (e.g. `show filesystem` / `show system storage`).
+        #       Parse available vs required space for the upgrade image.
+        #       Determine if sufficient space exists on the target disk/partition.
+        #       Store result into:
+        #           device_results[device_key]["pre"]["check_storage"]
+        #       If insufficient space, log a clear error and return False.
+
+        # ── STEP 5: Backup active running filesystem ──────────────────
+        # TODO: Identify the active boot disk/partition on the device.
+        #       Check for available snapshot or backup slots across relevant disks.
+        #       Trigger a snapshot/backup of the active running filesystem on-device.
+        #       Verify the backup completed successfully (status, size, integrity).
+        #       Store result into:
+        #           device_results[device_key]["pre"]["backup_active_filesystem"]
+        #       If backup fails or no valid slot found, log and return False.
+
+        # ── STEP 6: Backup running config (device → NMS) ─────────────
+        # TODO: Fetch the running configuration from the device via conn
+        #       (e.g. `show configuration | no-more` for Juniper).
+        #       Write / push the config to the NMS (file server, TFTP, SCP, etc.).
+        #       Confirm the file arrived on the NMS side (size / md5 sanity check).
+        #       Store result into:
+        #           device_results[device_key]["pre"]["backup_running_config"]
+        #       If transfer fails, log and return False.
+
+        # ── STEP 7: Transfer upgrade image (NMS → device) ────────────
+        # TODO: Initiate SCP / TFTP transfer of the upgrade image from NMS to device.
+        #       Monitor transfer progress where possible; enforce a timeout.
+        #       Confirm the file is present on the device after transfer.
+        #       Store result into:
+        #           device_results[device_key]["pre"]["transfer_image"]
+        #       If transfer fails or times out, log and return False.
+
+        # ── STEP 8: Validate MD5 checksum ────────────────────────────
+        # TODO: Run checksum command on device for the transferred image
+        #       (e.g. `file checksum md5 <path>`).
+        #       Compare the computed MD5 against the known-good reference value
+        #       (sourced from NMS / manifest / config).
+        #       Store result into:
+        #           device_results[device_key]["pre"]["validate_md5"]
+        #       If checksum mismatch, log a critical error and return False.
+
+        # ── STEP 9: Merge results ─────────────────────────────────────
         try:
             thread_result = {
                 "pre":         device_results.get(device_key, {}).get("pre", {}),
@@ -73,8 +123,7 @@ def run_prechecks(dev, device_key, logger):
             }
             merge_thread_result(device_key, thread_result)
         except Exception as e:
-            logger.error(f"[{device_key}] STEP 3 STORE failed — {e}")
-            device_results[device_key]["pre"]["commands"].append({"cmd": "merge_thread_result", "output": "", "json": {}, "exception": str(e)})
+            logger.error(f"[{device_key}] STEP 9 STORE failed — {e}")
             return False
 
         logger.info(f"[THREAD-{tid}] [{device_key}] All pre-checks passed")
@@ -87,7 +136,6 @@ def run_prechecks(dev, device_key, logger):
     finally:
         disconnect(device_key, logger)
         logger.info(f"[THREAD-{tid}] [{device_key}] Prechecks completed at {datetime.now()}")
-
 
 # ----------------------------------------------------
 # Main Function
