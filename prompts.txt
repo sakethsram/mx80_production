@@ -1,18 +1,229 @@
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ p main.py
-2026-03-05 17:52:46,836 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
-2026-03-05 17:52:46,837 - INFO - [MAIN] Initialised device_results for [10_80_109_250_cisco_asr9910] host=10.80.109.250
-2026-03-05 17:52:46,837 - INFO - [MAIN] Spawning threads for 2 device(s)
-2026-03-05 17:52:46,838 - INFO - [THREAD-133130178455232] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-05 17:52:46.837883
-2026-03-05 17:52:46,838 - ERROR - [THREAD-133130178455232] [10_80_71_55_juniper_mx204] FATAL connect failed: connect() missing 1 required positional argument: 'logger'
-2026-03-05 17:52:46,838 - INFO - [merge] device_key='10_80_71_55_juniper_mx204' merged into device_results
-2026-03-05 17:52:46,839 - INFO - [THREAD-133130178455232] [10_80_109_250_cisco_asr9910] Prechecks started at 2026-03-05 17:52:46.838971
-2026-03-05 17:52:46,839 - ERROR - [MAIN] 10_80_71_55_juniper_mx204 thread exception: cannot access local variable 'conn' where it is not associated with a value
-2026-03-05 17:52:46,839 - ERROR - [THREAD-133130178455232] [10_80_109_250_cisco_asr9910] FATAL connect failed: connect() missing 1 required positional argument: 'logger'
-2026-03-05 17:52:46,840 - INFO - [merge] device_key='10_80_109_250_cisco_asr9910' merged into device_results
-2026-03-05 17:52:46,840 - ERROR - [MAIN] 10_80_109_250_cisco_asr9910 thread exception: cannot access local variable 'conn' where it is not associated with a value
-[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation2/precheck_jsons/all_devices_summary_2026-03-05_17-56-46.json
-[REPORT] HTML report saved -> /home/colt/Documents/MS1Automation2/reports/upgrade_report_05_03_26_17_52_46.html
-[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation2/precheck_jsons/all_devices_summary_2026-03-05_17-56-46.json
-[REPORT] HTML report saved -> /home/colt/Documents/MS1Automation2/reports/upgrade_report_05_03_26_17_52_46.html
-2026-03-05 17:52:46,841 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation2/precheck_jsons
+2026-03-06 09:34:15,839 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
+2026-03-06 09:34:15,839 - INFO - [MAIN] Initialised device_results for [10_80_109_250_cisco_asr9910] host=10.80.109.250
+2026-03-06 09:34:15,839 - INFO - [MAIN] Spawning threads for 2 device(s)
+2026-03-06 09:34:15,840 - INFO - [THREAD-126371739133632] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-06 09:34:15.840129
+2026-03-06 09:34:15,841 - INFO - [THREAD-126371730740928] [10_80_109_250_cisco_asr9910] Prechecks started at 2026-03-06 09:34:15.841222
+2026-03-06 09:34:15,842 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
+2026-03-06 09:34:15,842 - INFO - Connecting to 10.80.71.55 using Netmiko...
+2026-03-06 09:34:15,843 - INFO - [10_80_109_250_cisco_asr9910] Connecting to 10.80.109.250
+2026-03-06 09:34:15,844 - INFO - Connecting to 10.80.109.250 using Netmiko...
+2026-03-06 09:34:15,890 - INFO - Connected (version 2.0, client OpenSSH_9.7)
+2026-03-06 09:34:16,131 - INFO - Authentication (password) successful!
+2026-03-06 09:34:16,390 - INFO - Login Successful to 10.80.71.55
+2026-03-06 09:34:16,390 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
+2026-03-06 09:34:16,395 - INFO - [load_commands] Loaded 35 commands for 'juniper_mx204'
+2026-03-06 09:34:16,395 - INFO - [10_80_71_55_juniper_mx204] collect_outputs — 35 command(s), check_type=pre
+2026-03-06 09:34:16,395 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show arp no-resolve | no-more'
+2026-03-06 09:34:16,452 - INFO - Connected (version 2.0, client Cisco-2.0)
+[10_80_71_55_juniper_mx204] 'show arp no-resolve | no-more' — 2707 chars received
+2026-03-06 09:34:16,506 - INFO - [10_80_71_55_juniper_mx204] 'show arp no-resolve | no-more' collected=True (2706 chars)
+2026-03-06 09:34:16,506 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show lldp neighbors | no-more'
+[10_80_71_55_juniper_mx204] 'show lldp neighbors | no-more' — 1718 chars received
+2026-03-06 09:34:16,589 - INFO - [10_80_71_55_juniper_mx204] 'show lldp neighbors | no-more' collected=True (1705 chars)
+2026-03-06 09:34:16,589 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis routing-engine | no-more'
+[10_80_71_55_juniper_mx204] 'show chassis routing-engine | no-more' — 1583 chars received
+2026-03-06 09:34:16,672 - INFO - [10_80_71_55_juniper_mx204] 'show chassis routing-engine | no-more' collected=True (1582 chars)
+2026-03-06 09:34:16,672 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system uptime | no-more'
+[10_80_71_55_juniper_mx204] 'show system uptime | no-more' — 301 chars received
+2026-03-06 09:34:16,781 - INFO - [10_80_71_55_juniper_mx204] 'show system uptime | no-more' collected=True (300 chars)
+2026-03-06 09:34:16,781 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show ntp associations no-resolve | no-more'
+[10_80_71_55_juniper_mx204] 'show ntp associations no-resolve | no-more' — 353 chars received
+2026-03-06 09:34:16,864 - INFO - [10_80_71_55_juniper_mx204] 'show ntp associations no-resolve | no-more' collected=True (347 chars)
+2026-03-06 09:34:16,864 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show vmhost version | no-more'
+[10_80_71_55_juniper_mx204] 'show vmhost version | no-more' — 668 chars received
+2026-03-06 09:34:24,633 - INFO - [10_80_71_55_juniper_mx204] 'show vmhost version | no-more' collected=True (667 chars)
+2026-03-06 09:34:24,634 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show vmhost snapshot | no-more'
+2026-03-06 09:34:26,793 - INFO - Authentication (password) successful!
+2026-03-06 09:34:29,089 - INFO - Login Successful to 10.80.109.250
+2026-03-06 09:34:29,089 - INFO - [10_80_109_250_cisco_asr9910] Connected successfully to 10.80.109.250
+2026-03-06 09:34:29,092 - INFO - [load_commands] Loaded 22 commands for 'cisco_asr9910'
+2026-03-06 09:34:29,092 - INFO - [10_80_109_250_cisco_asr9910] collect_outputs — 22 command(s), check_type=pre
+2026-03-06 09:34:29,092 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show install active summary'
+[10_80_109_250_cisco_asr9910] 'show install active summary' — 844 chars received
+2026-03-06 09:34:31,617 - INFO - [10_80_109_250_cisco_asr9910] 'show install active summary' collected=True (842 chars)
+2026-03-06 09:34:31,617 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show isis adjacency'
+[10_80_71_55_juniper_mx204] 'show vmhost snapshot | no-more' — 530 chars received
+2026-03-06 09:34:31,647 - INFO - [10_80_71_55_juniper_mx204] 'show vmhost snapshot | no-more' collected=True (528 chars)
+2026-03-06 09:34:31,647 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis hardware | no-more'
+[10_80_71_55_juniper_mx204] 'show chassis hardware | no-more' — 1775 chars received
+2026-03-06 09:34:31,730 - INFO - [10_80_71_55_juniper_mx204] 'show chassis hardware | no-more' collected=True (1774 chars)
+2026-03-06 09:34:31,730 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis fpc detail | no-more'
+[10_80_71_55_juniper_mx204] 'show chassis fpc detail | no-more' — 502 chars received
+2026-03-06 09:34:31,813 - INFO - [10_80_71_55_juniper_mx204] 'show chassis fpc detail | no-more' collected=True (499 chars)
+2026-03-06 09:34:31,813 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis alarms | no-more'
+[10_80_71_55_juniper_mx204] 'show chassis alarms | no-more' — 27 chars received
+2026-03-06 09:34:31,896 - INFO - [10_80_71_55_juniper_mx204] 'show chassis alarms | no-more' collected=True (26 chars)
+2026-03-06 09:34:31,896 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system alarms | no-more'
+[10_80_71_55_juniper_mx204] 'show system alarms | no-more' — 27 chars received
+2026-03-06 09:34:31,979 - INFO - [10_80_71_55_juniper_mx204] 'show system alarms | no-more' collected=True (26 chars)
+2026-03-06 09:34:31,979 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis environment | no-more'
+[10_80_71_55_juniper_mx204] 'show chassis environment | no-more' — 2105 chars received
+2026-03-06 09:34:32,062 - INFO - [10_80_71_55_juniper_mx204] 'show chassis environment | no-more' collected=True (2104 chars)
+2026-03-06 09:34:32,062 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system resource-monitor fpc | no-more'
+[10_80_71_55_juniper_mx204] 'show system resource-monitor fpc | no-more' — 426 chars received
+2026-03-06 09:34:32,145 - INFO - [10_80_71_55_juniper_mx204] 'show system resource-monitor fpc | no-more' collected=True (425 chars)
+2026-03-06 09:34:32,145 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system processes extensive | match rpd | no-more'
+[10_80_71_55_juniper_mx204] 'show system processes extensive | match rpd | no-more' — 1367 chars received
+2026-03-06 09:34:32,227 - INFO - [10_80_71_55_juniper_mx204] 'show system processes extensive | match rpd | no-more' collected=True (1366 chars)
+2026-03-06 09:34:32,228 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show interface terse | no-more'
+[10_80_109_250_cisco_asr9910] 'show isis adjacency' — 421 chars received
+2026-03-06 09:34:32,393 - INFO - [10_80_109_250_cisco_asr9910] 'show isis adjacency' collected=True (419 chars)
+2026-03-06 09:34:32,393 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show bfd session'
+[10_80_71_55_juniper_mx204] 'show interface terse | no-more' — 25060 chars received
+2026-03-06 09:34:32,540 - INFO - [10_80_71_55_juniper_mx204] 'show interface terse | no-more' collected=True (25059 chars)
+2026-03-06 09:34:32,541 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show oam ethernet connectivity-fault-management interfaces extensive | no-more'
+[10_80_71_55_juniper_mx204] 'show oam ethernet connectivity-fault-management interfaces extensive | no-more' — 402 chars received
+2026-03-06 09:34:32,777 - INFO - [10_80_71_55_juniper_mx204] 'show oam ethernet connectivity-fault-management interfaces extensive | no-more' collected=True (401 chars)
+2026-03-06 09:34:32,777 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show vrrp summary | no-more'
+[10_80_71_55_juniper_mx204] 'show vrrp summary | no-more' — 67 chars received
+2026-03-06 09:34:32,860 - INFO - [10_80_71_55_juniper_mx204] 'show vrrp summary | no-more' collected=True (66 chars)
+2026-03-06 09:34:32,860 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show bfd session | no-more'
+[10_80_71_55_juniper_mx204] 'show bfd session | no-more' — 629 chars received
+2026-03-06 09:34:32,943 - INFO - [10_80_71_55_juniper_mx204] 'show bfd session | no-more' collected=True (578 chars)
+2026-03-06 09:34:32,944 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp neighbor | no-more'
+[10_80_71_55_juniper_mx204] 'show rsvp neighbor | no-more' — 414 chars received
+2026-03-06 09:34:33,026 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp neighbor | no-more' collected=True (413 chars)
+2026-03-06 09:34:33,027 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp session | no-more'
+[10_80_71_55_juniper_mx204] 'show rsvp session | no-more' — 1407 chars received
+2026-03-06 09:34:33,109 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp session | no-more' collected=True (1406 chars)
+2026-03-06 09:34:33,110 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route table inet.0 | no-more'
+[10_80_109_250_cisco_asr9910] 'show bfd session' — 404 chars received
+2026-03-06 09:34:33,176 - INFO - [10_80_109_250_cisco_asr9910] 'show bfd session' collected=True (389 chars)
+2026-03-06 09:34:33,177 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show route summary'
+[10_80_71_55_juniper_mx204] 'show route table inet.0 | no-more' — 9988 chars received
+2026-03-06 09:34:33,300 - INFO - [10_80_71_55_juniper_mx204] 'show route table inet.0 | no-more' collected=True (9986 chars)
+2026-03-06 09:34:33,301 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route table inet.3 | no-more'
+[10_80_71_55_juniper_mx204] 'show route table inet.3 | no-more' — 2154 chars received
+2026-03-06 09:34:33,465 - INFO - [10_80_71_55_juniper_mx204] 'show route table inet.3 | no-more' collected=True (2152 chars)
+2026-03-06 09:34:33,466 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route table mpls.0 | no-more'
+[10_80_71_55_juniper_mx204] 'show route table mpls.0 | no-more' — 13542 chars received
+2026-03-06 09:34:33,656 - INFO - [10_80_71_55_juniper_mx204] 'show route table mpls.0 | no-more' collected=True (13540 chars)
+2026-03-06 09:34:33,657 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls interface | no-more'
+[10_80_71_55_juniper_mx204] 'show mpls interface | no-more' — 203 chars received
+2026-03-06 09:34:33,739 - INFO - [10_80_71_55_juniper_mx204] 'show mpls interface | no-more' collected=True (202 chars)
+2026-03-06 09:34:33,740 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls lsp | no-more'
+[10_80_71_55_juniper_mx204] 'show mpls lsp | no-more' — 1549 chars received
+2026-03-06 09:34:33,823 - INFO - [10_80_71_55_juniper_mx204] 'show mpls lsp | no-more' collected=True (1548 chars)
+2026-03-06 09:34:33,823 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls lsp p2mp | no-more'
+[10_80_71_55_juniper_mx204] 'show mpls lsp p2mp | no-more' — 2220 chars received
+2026-03-06 09:34:33,906 - INFO - [10_80_71_55_juniper_mx204] 'show mpls lsp p2mp | no-more' collected=True (2219 chars)
+2026-03-06 09:34:33,906 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show bgp summary | no-more'
+[10_80_71_55_juniper_mx204] 'show bgp summary | no-more' — 5840 chars received
+2026-03-06 09:34:33,989 - INFO - [10_80_71_55_juniper_mx204] 'show bgp summary | no-more' collected=True (5839 chars)
+2026-03-06 09:34:33,989 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show bgp neighbor | no-more'
+[10_80_109_250_cisco_asr9910] 'show route summary' — 892 chars received
+2026-03-06 09:34:34,052 - INFO - [10_80_109_250_cisco_asr9910] 'show route summary' collected=True (881 chars)
+2026-03-06 09:34:34,053 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show bgp all summary'
+[10_80_109_250_cisco_asr9910] 'show bgp all summary' — 79 chars received
+2026-03-06 09:34:34,178 - INFO - [10_80_109_250_cisco_asr9910] 'show bgp all summary' collected=True (41 chars)
+2026-03-06 09:34:34,178 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show bgp vrf all summary'
+[10_80_71_55_juniper_mx204] 'show bgp neighbor | no-more' — 75245 chars received
+2026-03-06 09:34:34,205 - INFO - [10_80_71_55_juniper_mx204] 'show bgp neighbor | no-more' collected=True (75244 chars)
+2026-03-06 09:34:34,205 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show isis adjacency extensive | no-more'
+[10_80_71_55_juniper_mx204] 'show isis adjacency extensive | no-more' — 935 chars received
+2026-03-06 09:34:34,288 - INFO - [10_80_71_55_juniper_mx204] 'show isis adjacency extensive | no-more' collected=True (926 chars)
+2026-03-06 09:34:34,288 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route summary | no-more'
+[10_80_71_55_juniper_mx204] 'show route summary | no-more' — 23637 chars received
+2026-03-06 09:34:34,397 - INFO - [10_80_71_55_juniper_mx204] 'show route summary | no-more' collected=True (23636 chars)
+2026-03-06 09:34:34,398 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp session | match DN | no-more'
+[10_80_71_55_juniper_mx204] 'show rsvp session | match DN | no-more' — 0 chars received
+2026-03-06 09:34:34,480 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp session | match DN | no-more' collected=False (0 chars)
+2026-03-06 09:34:34,481 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls lsp unidirectional | match Dn | no-more'
+[10_80_71_55_juniper_mx204] 'show mpls lsp unidirectional | match Dn | no-more' — 152 chars received
+2026-03-06 09:34:34,563 - INFO - [10_80_71_55_juniper_mx204] 'show mpls lsp unidirectional | match Dn | no-more' collected=True (151 chars)
+2026-03-06 09:34:34,564 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show ldp neighbor | no-more'
+[10_80_71_55_juniper_mx204] 'show ldp neighbor | no-more' — 384 chars received
+2026-03-06 09:34:34,647 - INFO - [10_80_71_55_juniper_mx204] 'show ldp neighbor | no-more' collected=True (383 chars)
+2026-03-06 09:34:34,647 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show connections | no-more'
+[10_80_71_55_juniper_mx204] 'show connections | no-more' — 31 chars received
+2026-03-06 09:34:34,730 - INFO - [10_80_71_55_juniper_mx204] 'show connections | no-more' collected=True (30 chars)
+2026-03-06 09:34:34,730 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show log messages | last 200 | no-more'
+[10_80_71_55_juniper_mx204] 'show log messages | last 200 | no-more' — 37115 chars received
+2026-03-06 09:34:34,839 - INFO - [10_80_71_55_juniper_mx204] 'show log messages | last 200 | no-more' collected=True (37114 chars)
+2026-03-06 09:34:34,839 - INFO - [10_80_71_55_juniper_mx204] collect_outputs done — 35 entries stored
+2026-03-06 09:34:34,855 - INFO - [merge] device_key='10_80_71_55_juniper_mx204' merged into device_results
+2026-03-06 09:34:34,855 - INFO - [THREAD-126371739133632] [10_80_71_55_juniper_mx204] All pre-checks passed
+2026-03-06 09:34:34,948 - INFO - Logout successful from 10.80.71.55
+2026-03-06 09:34:34,948 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
+2026-03-06 09:34:34,948 - INFO - [THREAD-126371739133632] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-06 09:34:34.948916
+2026-03-06 09:34:34,949 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> passed
+[10_80_109_250_cisco_asr9910] 'show bgp vrf all summary' — 48028 chars received
+2026-03-06 09:34:36,261 - INFO - [10_80_109_250_cisco_asr9910] 'show bgp vrf all summary' collected=True (48026 chars)
+2026-03-06 09:34:36,262 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show ipv4 vrf all interface brief'
+[10_80_109_250_cisco_asr9910] 'show ipv4 vrf all interface brief' — 19938 chars received
+2026-03-06 09:34:37,086 - INFO - [10_80_109_250_cisco_asr9910] 'show ipv4 vrf all interface brief' collected=True (19936 chars)
+2026-03-06 09:34:37,086 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show mpls ldp neighbor'
+[10_80_109_250_cisco_asr9910] 'show mpls ldp neighbor' — 0 chars received
+2026-03-06 09:34:37,899 - INFO - [10_80_109_250_cisco_asr9910] 'show mpls ldp neighbor' collected=False (0 chars)
+2026-03-06 09:34:37,899 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show pim neighbor'
+[10_80_109_250_cisco_asr9910] 'show pim neighbor' — 483 chars received
+2026-03-06 09:34:38,743 - INFO - [10_80_109_250_cisco_asr9910] 'show pim neighbor' collected=True (482 chars)
+2026-03-06 09:34:38,743 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show pfm location all'
+[10_80_109_250_cisco_asr9910] 'show pfm location all' — 1637 chars received
+2026-03-06 09:34:39,150 - INFO - [10_80_109_250_cisco_asr9910] 'show pfm location all' collected=True (1635 chars)
+2026-03-06 09:34:39,151 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show processes cpu'
+[10_80_109_250_cisco_asr9910] 'show processes cpu' — 20421 chars received
+2026-03-06 09:34:39,710 - INFO - [10_80_109_250_cisco_asr9910] 'show processes cpu' collected=True (20419 chars)
+2026-03-06 09:34:39,710 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show watchdog memory-state location all'
+[10_80_109_250_cisco_asr9910] 'show watchdog memory-state location all' — 419 chars received
+2026-03-06 09:34:40,107 - INFO - [10_80_109_250_cisco_asr9910] 'show watchdog memory-state location all' collected=True (418 chars)
+2026-03-06 09:34:40,108 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show redundancy'
+[10_80_109_250_cisco_asr9910] 'show redundancy' — 1110 chars received
+2026-03-06 09:34:40,496 - INFO - [10_80_109_250_cisco_asr9910] 'show redundancy' collected=True (1108 chars)
+2026-03-06 09:34:40,496 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show interfaces description'
+[10_80_109_250_cisco_asr9910] 'show interfaces description' — 15599 chars received
+2026-03-06 09:34:41,252 - INFO - [10_80_109_250_cisco_asr9910] 'show interfaces description' collected=True (15597 chars)
+2026-03-06 09:34:41,252 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show filesystem'
+[10_80_109_250_cisco_asr9910] 'show filesystem' — 573 chars received
+2026-03-06 09:34:41,974 - INFO - [10_80_109_250_cisco_asr9910] 'show filesystem' collected=True (572 chars)
+2026-03-06 09:34:41,974 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show interfaces Bundle-Ether'
+[10_80_109_250_cisco_asr9910] 'show interfaces Bundle-Ether' — 22 chars received
+2026-03-06 09:34:42,097 - INFO - [10_80_109_250_cisco_asr9910] 'show interfaces Bundle-Ether' collected=True (21 chars)
+2026-03-06 09:34:42,098 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show msdp peer'
+[10_80_109_250_cisco_asr9910] 'show msdp peer' — 6294 chars received
+2026-03-06 09:34:42,840 - INFO - [10_80_109_250_cisco_asr9910] 'show msdp peer' collected=True (6293 chars)
+2026-03-06 09:34:42,840 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show l2vpn xconnect brief'
+[10_80_109_250_cisco_asr9910] 'show l2vpn xconnect brief' — 376 chars received
+2026-03-06 09:34:44,028 - INFO - [10_80_109_250_cisco_asr9910] 'show l2vpn xconnect brief' collected=True (375 chars)
+2026-03-06 09:34:44,028 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show hw-module fpd'
+[10_80_109_250_cisco_asr9910] 'show hw-module fpd' — 4561 chars received
+2026-03-06 09:34:44,436 - INFO - [10_80_109_250_cisco_asr9910] 'show hw-module fpd' collected=True (4556 chars)
+2026-03-06 09:34:44,436 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show platform'
+[10_80_109_250_cisco_asr9910] 'show platform' — 571 chars received
+2026-03-06 09:34:45,065 - INFO - [10_80_109_250_cisco_asr9910] 'show platform' collected=True (570 chars)
+2026-03-06 09:34:45,066 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show media location 0/RSP1/CPU0'
+[10_80_109_250_cisco_asr9910] 'show media location 0/RSP1/CPU0' — 731 chars received
+2026-03-06 09:34:45,645 - INFO - [10_80_109_250_cisco_asr9910] 'show media location 0/RSP1/CPU0' collected=True (730 chars)
+2026-03-06 09:34:45,645 - INFO - [10_80_109_250_cisco_asr9910] Sending: 'show version'
+[10_80_109_250_cisco_asr9910] 'show version' — 426 chars received
+2026-03-06 09:34:46,103 - INFO - [10_80_109_250_cisco_asr9910] 'show version' collected=True (424 chars)
+2026-03-06 09:34:46,103 - INFO - [10_80_109_250_cisco_asr9910] collect_outputs done — 22 entries stored
+2026-03-06 09:34:46,114 - INFO - [merge] device_key='10_80_109_250_cisco_asr9910' merged into device_results
+2026-03-06 09:34:46,114 - INFO - [THREAD-126371730740928] [10_80_109_250_cisco_asr9910] All pre-checks passed
+2026-03-06 09:34:46,125 - INFO - Logout successful from 10.80.109.250
+2026-03-06 09:34:46,125 - INFO - [10_80_109_250_cisco_asr9910] Disconnected from 10.80.109.250
+2026-03-06 09:34:46,125 - INFO - [THREAD-126371730740928] [10_80_109_250_cisco_asr9910] Prechecks completed at 2026-03-06 09:34:46.125500
+2026-03-06 09:34:46,125 - INFO - [MAIN] 10_80_109_250_cisco_asr9910 -> passed
+[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation2/precheck_jsons/all_devices_summary_2026-03-06_09-38-46.json
+Traceback (most recent call last):
+  File "/home/colt/Documents/MS1Automation2/main.py", line 149, in <module>
+    main()
+  File "/home/colt/Documents/MS1Automation2/main.py", line 142, in main
+    export_device_summary(device_key)
+  File "/home/colt/Documents/MS1Automation2/lib/utilities.py", line 387, in export_device_summary
+    report_path = generate_upgrade_report(all_devices_summary, output_dir=report_dir)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/colt/Documents/MS1Automation2/workflow_report_generator.py", line 236, in generate_upgrade_report
+    device_panels    = '\n'.join(_build_device_panel(dk, workflow_data[dk], i == 0) for i, dk in enumerate(device_keys))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/colt/Documents/MS1Automation2/workflow_report_generator.py", line 236, in <genexpr>
+    device_panels    = '\n'.join(_build_device_panel(dk, workflow_data[dk], i == 0) for i, dk in enumerate(device_keys))
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/colt/Documents/MS1Automation2/workflow_report_generator.py", line 127, in _build_device_panel
+    pre_ok    = sum(1 for c in pre_cmds  if not (c.get('exception') or ''))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/colt/Documents/MS1Automation2/workflow_report_generator.py", line 127, in <genexpr>
+    pre_ok    = sum(1 for c in pre_cmds  if not (c.get('exception') or ''))
+                                                 ^^^^^
+AttributeError: 'str' object has no attribute 'get'
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$
