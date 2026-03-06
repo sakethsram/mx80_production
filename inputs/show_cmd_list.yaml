@@ -15,7 +15,7 @@ juniper_mx204:
   # - show system processes extensive | match rpd | no-more
   # - show interface terse | no-more
   # - show oam ethernet connectivity-fault-management interfaces extensive | no-more
-  - show vrrp summary | no-more
+ # - show vrrp summary | no-more
   # - show bfd session | no-more
   # - show rsvp neighbor | no-more
   # - show rsvp session | no-more
