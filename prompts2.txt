@@ -1,23 +1,25 @@
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ p main.py
-2026-03-09 18:07:08,264 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
-2026-03-09 18:07:08,264 - INFO - [MAIN] Spawning threads for 1 device(s)
-2026-03-09 18:07:08,265 - INFO - [THREAD-129416822712000] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-09 18:07:08.265329
-2026-03-09 18:07:08,266 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
-2026-03-09 18:07:08,266 - INFO - Connecting to 10.80.71.55 using Netmiko...
-2026-03-09 18:07:08,311 - INFO - Connected (version 2.0, client OpenSSH_9.7)
-2026-03-09 18:07:08,551 - INFO - Authentication (password) successful!
-2026-03-09 18:07:08,811 - INFO - Login successful to 10.80.71.55
-2026-03-09 18:07:08,811 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
-2026-03-09 18:07:08,812 - INFO - Taking device backup for vendor: juniper
-2026-03-09 18:07:13,264 - INFO - 10.80.71.55: Config saved, copying to remote server
-2026-03-09 18:07:13,265 - INFO - Copying files to remote server
-2026-03-09 18:07:35,074 - INFO - 10.80.71.55: File copied successfully
-2026-03-09 18:07:55,477 - ERROR - [10_80_71_55_juniper_mx204] STEP 6 BACKUP CONFIG failed — Config or log backup incomplete
-2026-03-09 18:08:05,485 - INFO - Logout successful from 10.80.71.55
-2026-03-09 18:08:05,485 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
-2026-03-09 18:08:05,485 - INFO - [THREAD-129416822712000] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-09 18:08:05.485710
-2026-03-09 18:08:05,486 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> FAILED
-[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/all_devices_summary_2026-03-09_18-08-05.json
-2026-03-09 18:08:05,488 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
+2026-03-09 18:11:47,455 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
+2026-03-09 18:11:47,455 - INFO - [MAIN] Spawning threads for 1 device(s)
+2026-03-09 18:11:47,456 - INFO - [THREAD-125176184751808] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-09 18:11:47.456233
+2026-03-09 18:11:47,456 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
+2026-03-09 18:11:47,457 - INFO - Connecting to 10.80.71.55 using Netmiko...
+2026-03-09 18:11:47,502 - INFO - Connected (version 2.0, client OpenSSH_9.7)
+2026-03-09 18:11:47,747 - INFO - Authentication (password) successful!
+2026-03-09 18:11:48,007 - INFO - Login successful to 10.80.71.55
+2026-03-09 18:11:48,007 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
+2026-03-09 18:11:48,007 - INFO - Taking device backup for vendor: juniper
+2026-03-09 18:11:52,435 - INFO - 10.80.71.55: Config saved, copying to remote server
+2026-03-09 18:11:52,436 - INFO - Copying files to remote server
+2026-03-09 18:12:14,245 - INFO - 10.80.71.55: File copied successfully
+2026-03-09 18:12:34,648 - INFO - 10.80.71.55: Logs archived, copying to remote server
+2026-03-09 18:12:34,648 - INFO - Copying files to remote server
+2026-03-09 18:12:52,257 - INFO - 10.80.71.55: File copied successfully
+2026-03-09 18:12:52,257 - INFO - [merge] device_key='10_80_71_55_juniper_mx204' merged into device_results
+2026-03-09 18:12:52,257 - INFO - [THREAD-125176184751808] [10_80_71_55_juniper_mx204] All pre-checks passed
+2026-03-09 18:13:02,264 - INFO - Logout successful from 10.80.71.55
+2026-03-09 18:13:02,265 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
+2026-03-09 18:13:02,265 - INFO - [THREAD-125176184751808] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-09 18:13:02.265259
+2026-03-09 18:13:02,266 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> passed
+[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/all_devices_summary_2026-03-09_18-13-02.json
+2026-03-09 18:13:02,267 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
-
