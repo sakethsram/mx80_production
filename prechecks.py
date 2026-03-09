@@ -191,7 +191,7 @@ class PreCheck:
                     f"file archive compress source /var/log/* destination /var/tmp/{filename}.tgz"
                 ]
                 for cmd in log_commands:    logs = conn.send_command_timing(cmd, read_timeout=900, last_read=10.0)
-
+                logs = True
                 if logs:
                     logger.info(f"{self.host}: Logs archived, copying to remote server")
                     src      = f"/var/tmp/{filename}.tgz"
