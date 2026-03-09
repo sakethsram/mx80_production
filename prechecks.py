@@ -250,7 +250,7 @@ class PreCheck:
                 "exit",
                 "\n"
             ]
-            saving_file = conn.send_multiline_timing(cmd, read_timeout=60)
+            saving_file = conn.send_multiline_timing(cmd, read_timeout=1800)
             logger.debug(f"{self.host}: SCP output:\n{saving_file}")
 
             if "No such file or directory" in saving_file:
