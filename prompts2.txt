@@ -1,23 +1,17 @@
-  File "/usr/lib/python3.12/threading.py", line 1010, in run
-    self._target(*self._args, **self._kwargs)
-  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 92, in _worker
-    work_item.run()
-  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
-    result = self.fn(*self.args, **self.kwargs)
-  File "/home/colt/Documents/MS1Automation/main.py", line 145, in run_prechecks
-    checksum = t.verifyChecksum(conn, target_image, expected_checksum)
-  File "/home/colt/Documents/MS1Automation/prechecks.py", line 339, in verifyChecksum
-    logger.info("output of the md5 checksum ====>>",output)
-Message: 'output of the md5 checksum ====>>'
-Arguments: ("Wrote 266326 lines of output to '/var/log/juniper_mx204_2026-03-09_20-46-44.txt'\n\nlab@EFFPER01> file archive compress source /var/log/* destination /var/tmp/juniper_mx204_2026-03-09_20-46-44.tgz \n",)
-2026-03-09 20:48:14,194 - ERROR - [10_80_71_55_juniper_mx204] STEP 8 CHECKSUM failed — Could not parse checksum from output
-2026-03-09 20:48:24,201 - INFO - Logout successful from 10.80.71.55
-2026-03-09 20:48:24,202 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
-2026-03-09 20:48:24,202 - INFO - [THREAD-129013059086016] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-09 20:48:24.202241
-2026-03-09 20:48:24,203 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> FAILED
-[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/juniper_mx204_2026-03-09_20-48-24.json
-[REPORT] /home/colt/Documents/MS1Automation/reports/juniper_mx204_2026-03-09_20-48-24.html
-[REPORT] juniper_mx204_2026-03-09_20-48-24.html
-2026-03-09 20:48:24,236 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ ^C
+9 21:03:03,983 - INFO - 10.80.71.55: Image junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz transferred to /var/tmp/
+2026-03-09 21:03:03,984 - INFO - Verifying MD5 checksum for junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz on vendor: juniper
+2026-03-09 21:03:03,984 - INFO - 10.80.71.55: Executing 'file checksum md5 /var/tmp/junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz'
+2026-03-09 21:04:00,451 - INFO - 10.80.71.55: output of the md5 checksum ====>> Wrote 273847 lines of output to '/var/log/juniper_mx204_2026-03-09_21-01-44.txt'
+
+lab@EFFPER01> file archive compress source /var/log/* destination /var/tmp/juniper_mx204_2026-03-09_21-01-44.tgz
+
+2026-03-09 21:04:00,451 - ERROR - [10_80_71_55_juniper_mx204] STEP 8 CHECKSUM failed — Could not parse checksum from output
+2026-03-09 21:04:10,454 - INFO - Logout successful from 10.80.71.55
+2026-03-09 21:04:10,455 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
+2026-03-09 21:04:10,455 - INFO - [THREAD-123812617053888] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-09 21:04:10.455350
+2026-03-09 21:04:10,457 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> FAILED
+[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/juniper_mx204_2026-03-09_21-04-10.json
+[REPORT] /home/colt/Documents/MS1Automation/reports/juniper_mx204_2026-03-09_21-04-10.html
+[REPORT] juniper_mx204_2026-03-09_21-04-10.html
+2026-03-09 21:04:10,490 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
