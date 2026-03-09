@@ -5,19 +5,7 @@ import os
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from lib.utilities import (
-    load_yaml,
-    setup_logger,
-    init_device_results,
-    device_results,
-    connect,
-    disconnect,
-    export_device_summary,
-    merge_thread_result,
-    collect_outputs,
-    parse_outputs,
-    load_commands,
-)
+from lib.utilities import *
 from prechecks import PreCheck
 
 MAX_THREADS    = 5
@@ -66,16 +54,16 @@ def run_prechecks(dev: dict, device_key: str, logger):
             return False
 
         # ── STEP 2: Execute show commands ─────────────────────────────────────
-        # try:
-        #     exec_ok = execute_show_commands(
-        #         device_key, vendor_lc, model_lc, conn, "pre", logger
-        #     )
-        #     if not exec_ok:
-        #         raise RuntimeError("execute_show_commands returned False")
-        # except Exception as e:
-        #     logger.error(f"[{device_key}] STEP 2 EXECUTE failed — {e}")
-        #     device_results[device_key]["pre"]["execute_show_commands"]["exception"] = str(e)
-        #     return False
+        try:
+            exec_ok = execute_show_commands(
+                device_key, vendor_lc, model_lc, conn, "pre", logger
+            )
+            if not exec_ok:
+                raise RuntimeError("execute_show_commands returned False")
+        except Exception as e:
+            logger.error(f"[{device_key}] STEP 2 EXECUTE failed — {e}")
+            device_results[device_key]["pre"]["execute_show_commands"]["exception"] = str(e)
+            return False
 
         # ── STEP 3: Show version ──────────────────────────────────────────────
         # TODO: Run `show version` (or equivalent) on the device via conn.
@@ -85,53 +73,53 @@ def run_prechecks(dev: dict, device_key: str, logger):
         #       If version is incompatible or parse fails, log and return False.
 
         # ── STEP 4: Check storage ─────────────────────────────────────────────
-        # try:
-        #     precheck    = PreCheck(dev)
-        #     min_disk_gb = dev.get("min_disk_gb")
+        try:
+            precheck    = PreCheck(dev)
+            min_disk_gb = dev.get("min_disk_gb")
 
-        #     storage = precheck.checkStorage(conn, min_disk_gb)
+            storage = precheck.checkStorage(conn, min_disk_gb)
 
-        #     # Store the returned dict verbatim
-        #     device_results[device_key]["pre"]["check_storage"] = storage
+            # Store the returned dict verbatim
+            device_results[device_key]["pre"]["check_storage"] = storage
 
-        #     if not storage.get("sufficient", False):
-        #         raise RuntimeError(
-        #             storage.get("exception", "Storage insufficient — see check_storage for details")
-        #         )
+            if not storage.get("sufficient", False):
+                raise RuntimeError(
+                    storage.get("exception", "Storage insufficient — see check_storage for details")
+                )
 
-        # except Exception as e:
-        #     logger.error(f"[{device_key}] STEP 4 STORAGE failed — {e}")
-        #     device_results[device_key]["pre"]["check_storage"]["exception"] = str(e)
-        #     return False
-        # try:
-        #     t = PreCheck(dev)
-        #     backup_disk = t.preBackupDisk(conn)
-        #     device_results[device_key]["pre"]["backup_active_filesystem"] = backup_disk
+        except Exception as e:
+            logger.error(f"[{device_key}] STEP 4 STORAGE failed — {e}")
+            device_results[device_key]["pre"]["check_storage"]["exception"] = str(e)
+            return False
+        try:
+            t = PreCheck(dev)
+            backup_disk = t.preBackupDisk(conn)
+            device_results[device_key]["pre"]["backup_active_filesystem"] = backup_disk
 
-        #     if backup_disk.get("status") == "failed":
-        #         raise RuntimeError(backup_disk.get("exception", "Disk backup failed"))
+            if backup_disk.get("status") == "failed":
+                raise RuntimeError(backup_disk.get("exception", "Disk backup failed"))
 
-        # except Exception as e:
-        #     logger.error(f"[{device_key}] STEP 5 BACKUP DISK failed — {e}")
-        #     device_results[device_key]["pre"]["backup_active_filesystem"]["exception"] = str(e)
-        #     return False
+        except Exception as e:
+            logger.error(f"[{device_key}] STEP 5 BACKUP DISK failed — {e}")
+            device_results[device_key]["pre"]["backup_active_filesystem"]["exception"] = str(e)
+            return False
 
 
         # ── STEP 6: Backup running config (device → NMS) ─────────────────────
-        # try:
-        #     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        #     filename  = f"{vendor_lc}_{model_lc}_{timestamp}"
-        #     t         = PreCheck(dev)
-        #     backup    = t.preBackup(conn, filename)
-        #     device_results[device_key]["pre"]["backup_running_config"] = backup
+        try:
+            timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+            filename  = f"{vendor_lc}_{model_lc}_{timestamp}"
+            t         = PreCheck(dev)
+            backup    = t.preBackup(conn, filename)
+            device_results[device_key]["pre"]["backup_running_config"] = backup
 
-        #     if backup.get("status") == "failed":
-        #         raise RuntimeError(backup.get("exception", "Config backup failed"))
+            if backup.get("status") == "failed":
+                raise RuntimeError(backup.get("exception", "Config backup failed"))
 
-        # except Exception as e:
-        #     logger.error(f"[{device_key}] STEP 6 BACKUP CONFIG failed — {e}")
-        #     device_results[device_key]["pre"]["backup_running_config"]["exception"] = str(e)
-        #     return False
+        except Exception as e:
+            logger.error(f"[{device_key}] STEP 6 BACKUP CONFIG failed — {e}")
+            device_results[device_key]["pre"]["backup_running_config"]["exception"] = str(e)
+            return False
 
            # ── STEP 7: Transfer upgrade image (NMS → device) ────────────────────
         try:
