@@ -416,7 +416,10 @@ def export_device_summary(device_key: str):
     output_dir = os.path.join(os.getcwd(), "precheck_jsons")
     os.makedirs(output_dir, exist_ok=True)
     timestamp    = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    summary_file = os.path.join(output_dir, f"all_devices_summary_{timestamp}.json")
+    device_info = slot.get("device_info", {})
+    vendor      = device_info.get("vendor", "unknown")
+    model       = device_info.get("model",  "unknown")
+    summary_file = os.path.join(output_dir, f"{vendor}_{model}_{timestamp}.json")
     with open(summary_file, "w") as f:
         json.dump(all_devices_summary, f, indent=2, default=str)
     print(f"[EXPORT] Summary JSON saved -> {summary_file}")
