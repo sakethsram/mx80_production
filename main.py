@@ -70,13 +70,25 @@ def run_prechecks(dev, device_key, logger):
         #           device_results[device_key]["pre"]["show_version"]
         #       If version is incompatible or parse fails, log and return False.
 
-        # ── STEP 4: Storage check ─────────────────────────────────────
-        # TODO: Run storage/filesystem check command (e.g. `show filesystem` / `show system storage`).
-        #       Parse available vs required space for the upgrade image.
-        #       Determine if sufficient space exists on the target disk/partition.
-        #       Store result into:
-        #           device_results[device_key]["pre"]["check_storage"]
-        #       If insufficient space, log a clear error and return False.
+   
+        try:
+            precheck = PreCheck(dev)
+            min_disk_gb=dev.get("min_disk_gb")
+            storage = precheck.checkStorage(conn, min_disk_gb)
+            # always store the returned dict
+            device_results[device_key]["pre"]["check_storage"] = storage
+
+            # if insufficient → fail this step
+            if not storage.get("sufficient", False):
+                raise RuntimeError(storage.get("exception", "Storage insufficient"))
+
+        except Exception as e:
+            logger.error(f"[{device_key}] STEP 4 STORAGE failed — {e}")
+            device_results[device_key]["pre"]["check_storage"]["exception"] = str(e)
+            precheck.disconnect(logger)
+            return False
+
+
 
         # ── STEP 5: Backup active running filesystem ──────────────────
         # TODO: Identify the active boot disk/partition on the device.
