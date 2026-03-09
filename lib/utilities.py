@@ -14,6 +14,7 @@ from parsers.juniper.juniper_mx204 import *
 from parsers.cisco.cisco_asr9910 import *
 from datetime import datetime
 import threading
+import traceback as tb
 
 MIN_OUTPUT_CHARS = 5
 
@@ -328,9 +329,11 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
             entry["json"]      = result
             entry["exception"] = ""
         except Exception:
+            entry["json"]      = {}                               # always written to JSON
             entry["exception"] = f"parser failed for '{cmd}'"
+            log.error(f"[{device_key}] parser failed for '{cmd}':\n{tb.format_exc()}")  # log it
             all_ok = False
-            continue
+            continue   
 
     status = "completed" if all_ok else "completed_with_errors"
     device_results[device_key]["pre"]["execute_show_commands"]["status"]    = status
