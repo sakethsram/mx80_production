@@ -153,6 +153,10 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
                 "computed":  "",
                 "match":     False,
             },
+            "disable_re_protect_filter": {
+            "status":    "not_started",
+            "exception": "",
+            },
         },
         "post":    [],
         "upgrade": {},

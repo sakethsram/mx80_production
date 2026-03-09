@@ -335,7 +335,8 @@ class PreCheck:
                 command = f"file checksum md5 /var/tmp/{target_image}"
                 logger.info(f"{self.host}: Executing '{command}'")
                 output   = conn.send_command(command, expect_string=r".*>", read_timeout=60)
-                match    = re.search(r'\.tgz\)\s*=\s*(.*)', output)
+                match = re.search(r'MD5\s*\(.*?\)\s*=\s*(\S+)', output)
+
                 if not match:
                     return {
                         "status":    "failed",
@@ -378,3 +379,44 @@ class PreCheck:
                 "computed":  "",
                 "match":     False,
             }
+        
+    def disableReProtectFilter(self, conn, logger):
+        """
+        Removes RE protection firewall filter from loopback interface (lo0).
+        show configuration | display set | match lo0.0
+        set interfaces lo0 unit 0 family inet filter input PROTECT-RE-FILTER
+        """
+        try:
+            if not conn:
+                msg = "Not connected to device"
+                logger.error(msg)
+                raise RuntimeError("Not connected to device")
+
+            if self.vendor not in self.accepted_vendor:
+                msg = f"Unsupported vendor: {self.vendor}"
+                logger.error(msg)
+                raise ValueError(msg)
+
+            filter_commands = [
+                "delete interfaces lo0.0 family inet filter",
+                "commit"
+            ]
+
+            print(filter_commands)
+
+            for cmd in filter_commands:
+                logger.info(f"{self.host}: Executing '{cmd}'")
+                print(f"Executing '{cmd}'")
+                output = conn.send_config_set(cmd, cmd_verify=False) + "\n"
+
+            if not output:
+                msg = f"{self.host}: Didn't get any output from the re-protect filter. please check the disableReProtectFilter()"
+                logger.error(msg)
+                print(msg)
+                return False
+
+            return True
+
+        except Exception:
+            logger.exception(f"{self.host}: Disable RE protect filter failed")
+            return False
