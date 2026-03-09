@@ -1,1 +1,4 @@
-there's no single  target image  anymore, it's now inside the  image detials list  So which one is the target? Is it always the last one in the list?
+Last one in image details will always be a target
+ 
+Above ones are intermediate images
+ 
