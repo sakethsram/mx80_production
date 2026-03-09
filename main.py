@@ -25,11 +25,8 @@ def execute_show_commands(device_key, vendor, model, conn, check_type, logger):
     if not entries:
         logger.warning(f"[{device_key}] execute_show_commands — collect_outputs returned nothing")
 
-    parse_ok = parse_outputs(device_key, vendor, check_type, logger)
-    if not parse_ok:
-        logger.warning(f"[{device_key}] execute_show_commands — one or more parsers failed")
-
-    return parse_ok
+    parse_outputs(device_key, vendor, check_type, logger)
+    return True
 
 
 # ─────────────────────────────────────────────────────────────────────────────
