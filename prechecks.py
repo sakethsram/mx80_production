@@ -332,11 +332,23 @@ class PreCheck:
             if self.vendor == "juniper":
                 command = f"file checksum md5 /var/tmp/{target_image}"
                 logger.info(f"{self.host}: Executing '{command}'")
-                output   = conn.send_command(command, expect_string=r".*>", read_timeout=60)
-                logger.info("output of the md5 checksum ====>>",output)
-                
+
+                # Flush any stale output left in the buffer from previous commands
+                try:
+                    conn.send_command("", expect_string=r">\s*$", read_timeout=10)
+                except Exception:
+                    pass
+
+                output = conn.send_command(
+                    command,
+                    read_timeout=5000,
+                    strip_prompt=True,
+                    strip_command=True,
+                )
+                logger.info(f"{self.host}: output of the md5 checksum ====>> {output}")
+
                 match = re.search(r'MD5\s*\(.*?\)\s*=\s*(\S+)', output)
-                logger.info("output of the md5 checksum ====>>",output)
+
                 if not match:
                     return {
                         "status":    "failed",
@@ -347,8 +359,8 @@ class PreCheck:
                     }
 
                 computed = match.group(1).strip()
-                logger.info(f"{self.host}: Expected checksum:  {expected_checksum}")
-                logger.info(f"{self.host}: Computed checksum:  {computed}")
+                logger.info(f"{self.host}: Expected checksum: {expected_checksum}")
+                logger.info(f"{self.host}: Computed checksum: {computed}")
 
                 if computed == expected_checksum:
                     logger.info(f"{self.host}: Checksum PASSED")
@@ -379,7 +391,6 @@ class PreCheck:
                 "computed":  "",
                 "match":     False,
             }
-        
     # def disableReProtectFilter(self, conn, logger):
     #     """
     #     Removes RE protection firewall filter from loopback interface (lo0).
