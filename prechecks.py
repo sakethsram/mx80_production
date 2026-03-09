@@ -314,8 +314,6 @@ class PreCheck:
                 "image":       "",
                 "destination": "",
             }
-
-
     def verifyChecksum(self, conn, target_image, expected_checksum):
         try:
             msg = f"Verifying MD5 checksum for {target_image} on vendor: {self.vendor}"
@@ -335,8 +333,10 @@ class PreCheck:
                 command = f"file checksum md5 /var/tmp/{target_image}"
                 logger.info(f"{self.host}: Executing '{command}'")
                 output   = conn.send_command(command, expect_string=r".*>", read_timeout=60)
+                logger.info("output of the md5 checksum ====>>",output)
+                
                 match = re.search(r'MD5\s*\(.*?\)\s*=\s*(\S+)', output)
-
+                logger.info("output of the md5 checksum ====>>",output)
                 if not match:
                     return {
                         "status":    "failed",
