@@ -446,3 +446,25 @@ class PreCheck:
     #         if (self.vendor not in  self.accepted_vendors):
     #             msg = f"Unsupported vendor: {self.vendor}"
     #             logger.error(msg)
+
+
+
+1. Log File Naming
+From utilities.py → setup_logger():
+{vendor}_{model}_{YYYY-MM-DD_HH-MM-SS}.log
+Stored in: ./logging/
+Example: juniper_mx204_2025-01-15_10-30-45.log
+From prechecks.py → connect() (session logs):
+{vendor}_{model}_{YYYY-MM-DD_HH-MM-SS}.log
+Stored in: ./outputs/
+
+2. JSON File Naming
+From utilities.py → write_json():
+{vendor}_{model}_{pre_check_timestamp}.json
+Stored in: ./precheck_jsons/ (passed as json_file_path param)
+Example: juniper_mx204_2025-01-15_10-30-45.json
+
+3. Key Standards to Reuse
+ThingPatternTimestamp formatdatetime.now().strftime('%Y-%m-%d_%H-%M-%S')Device name keyf"{vendor}_{model}" e.g. juniper_mx204Cleaned command keyspaces/pipes → underscores, lowercased e.g. show_versionLog directory./logging/Session log directory./outputs/JSON directory./precheck_jsons/
+
+The core formula is always: {vendor}_{model}_{timestamp} with timestamp as YYYY-MM-DD_HH-MM-SS. Same pattern used across logs, session logs, and JSONs — only the directory and extension differ.
