@@ -12,7 +12,7 @@ from netmiko.exceptions import (
 from paramiko.ssh_exception import SSHException
 from parsers.juniper.juniper_mx204 import *
 from parsers.cisco.cisco_asr9910 import *
-from datetime import datetime, timedelta
+from datetime import datetime
 import threading
 
 MIN_OUTPUT_CHARS = 5
@@ -24,87 +24,66 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────
-# Single source of truth — all live device state lives here.
-# Keyed by device_key (e.g. "10_0_0_1_juniper_mx204").
-# Shape per key:
-#   {
-#     "status":      "passed | failed | aborted | ",
-#     "device_info": { host, vendor, model, hostname, version },
-#     "conn":        <netmiko connection | None>,
-#     "yaml":        <raw device yaml dict>,
-#     "pre": {
-#         "connect": {
-#             "status":    True/False,
-#             "exception": "",
-#         },
-#         "execute_show_commands": {
-#             "status":      "not_started",
-#             "started_at":  "1970-01-01T00:00:00",
-#             "finished_at": "1970-01-01T00:00:00",
-#             "duration_ms": 0,
-#             "exception":   "",
-#             "commands":    [],
-#         },
-#         "show_version": {
-#             "status":      "not_started",
-#             "started_at":  "1970-01-01T00:00:00",
-#             "finished_at": "1970-01-01T00:00:00",
-#             "duration_ms": 0,
-#             "exception":   "",
-#             "version":     "",
-#             "platform":    "",
-#         },
-#         "check_storage": {
-#             "status":       "not_started",
-#             "started_at":   "1970-01-01T00:00:00",
-#             "finished_at":  "1970-01-01T00:00:00",
-#             "duration_ms":  0,
-#             "exception":    "",
-#             "available_mb": 0,
-#             "required_mb":  0,
-#             "sufficient":   False,
-#         },
-#         "backup_active_filesystem": {
-#             "status":        "not_started",
-#             "started_at":    "1970-01-01T00:00:00",
-#             "finished_at":   "1970-01-01T00:00:00",
-#             "duration_ms":   0,
-#             "exception":     "",
-#             "snapshot_slot": "",
-#             "verified":      False,
-#         },
-#         "backup_running_config": {
-#             "status":      "not_started",
-#             "started_at":  "1970-01-01T00:00:00",
-#             "finished_at": "1970-01-01T00:00:00",
-#             "duration_ms": 0,
-#             "exception":   "",
-#             "destination": "",
-#             "md5_ok":      False,
-#         },
-#         "transfer_image": {
-#             "status":      "not_started",
-#             "started_at":  "1970-01-01T00:00:00",
-#             "finished_at": "1970-01-01T00:00:00",
-#             "duration_ms": 0,
-#             "exception":   "",
-#             "image":       "",
-#             "destination": "",
-#         },
-#         "validate_md5": {
-#             "status":      "not_started",
-#             "started_at":  "1970-01-01T00:00:00",
-#             "finished_at": "1970-01-01T00:00:00",
-#             "duration_ms": 0,
-#             "exception":   "",
-#             "expected":    "",
-#             "computed":    "",
-#             "match":       False,
-#         },
-#     },
-#     "post":    [],
-#     "upgrade": {},
-#   }
+# device_results — single source of truth for all device state
+#
+# Shape per device_key:
+# {
+#   "status":      "",
+#   "device_info": { host, vendor, model, hostname, version },
+#   "conn":        <netmiko connection | None>,
+#   "yaml":        <raw device yaml dict>,
+#   "pre": {
+#       "connect": {
+#           "ping":      "up" | "down",
+#           "status":    True | False,
+#           "exception": "",
+#       },
+#       "execute_show_commands": {
+#           "status":    "not_started" | "in_progress" | "completed" | "completed_with_errors",
+#           "exception": "",
+#           "commands":  [],
+#       },
+#       "show_version": {
+#           "status":    "not_started",
+#           "exception": "",
+#           "version":   "",
+#           "platform":  "",
+#       },
+#       "check_storage": {
+#           "status":        "not_started",
+#           "deleted_files": [],
+#           "exception":     "",
+#           "sufficient":    False,
+#       },
+#       "backup_active_filesystem": {
+#           "status":        "not_started",
+#           "exception":     "",
+#           "snapshot_slot": "",
+#           "verified":      False,
+#       },
+#       "backup_running_config": {
+#           "status":      "not_started",
+#           "exception":   "",
+#           "destination": "",
+#           "md5_ok":      False,
+#       },
+#       "transfer_image": {
+#           "status":      "not_started",
+#           "exception":   "",
+#           "image":       "",
+#           "destination": "",
+#       },
+#       "validate_md5": {
+#           "status":    "not_started",
+#           "exception": "",
+#           "expected":  "",
+#           "computed":  "",
+#           "match":     False,
+#       },
+#   },
+#   "post":    [],
+#   "upgrade": {},
+# }
 # ─────────────────────────────────────────────────────────────
 device_results: dict = {}
 
@@ -123,76 +102,55 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
             "hostname": "",
             "version":  "",
         },
-        "conn":    None,
-        "yaml":    device_yaml,
+        "conn": None,
+        "yaml": device_yaml,
         "pre": {
             "connect": {
+                "ping":      "up",      # TODO: replace with real ICMP ping
                 "status":    False,
                 "exception": "",
             },
             "execute_show_commands": {
-                "status":      "not_started",
-                "started_at":  "1970-01-01T00:00:00",
-                "finished_at": "1970-01-01T00:00:00",
-                "duration_ms": 0,
-                "exception":   "",
-                "commands":    [],
+                "status":    "not_started",
+                "exception": "",
+                "commands":  [],
             },
             "show_version": {
-                "status":      "not_started",
-                "started_at":  "1970-01-01T00:00:00",
-                "finished_at": "1970-01-01T00:00:00",
-                "duration_ms": 0,
-                "exception":   "",
-                "version":     "",
-                "platform":    "",
+                "status":    "not_started",
+                "exception": "",
+                "version":   "",
+                "platform":  "",
             },
             "check_storage": {
-                "status":       "not_started",
-                "started_at":   "1970-01-01T00:00:00",
-                "finished_at":  "1970-01-01T00:00:00",
-                "duration_ms":  0,
-                "exception":    "",
-                "available_mb": 0,
-                "required_mb":  0,
-                "sufficient":   False,
+                "status":        "not_started",
+                "deleted_files": [],
+                "exception":     "",
+                "sufficient":    False,
             },
             "backup_active_filesystem": {
                 "status":        "not_started",
-                "started_at":    "1970-01-01T00:00:00",
-                "finished_at":   "1970-01-01T00:00:00",
-                "duration_ms":   0,
                 "exception":     "",
                 "snapshot_slot": "",
                 "verified":      False,
             },
             "backup_running_config": {
                 "status":      "not_started",
-                "started_at":  "1970-01-01T00:00:00",
-                "finished_at": "1970-01-01T00:00:00",
-                "duration_ms": 0,
                 "exception":   "",
                 "destination": "",
                 "md5_ok":      False,
             },
             "transfer_image": {
                 "status":      "not_started",
-                "started_at":  "1970-01-01T00:00:00",
-                "finished_at": "1970-01-01T00:00:00",
-                "duration_ms": 0,
                 "exception":   "",
                 "image":       "",
                 "destination": "",
             },
             "validate_md5": {
-                "status":      "not_started",
-                "started_at":  "1970-01-01T00:00:00",
-                "finished_at": "1970-01-01T00:00:00",
-                "duration_ms": 0,
-                "exception":   "",
-                "expected":    "",
-                "computed":    "",
-                "match":       False,
+                "status":    "not_started",
+                "exception": "",
+                "expected":  "",
+                "computed":  "",
+                "match":     False,
             },
         },
         "post":    [],
@@ -294,9 +252,7 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
 
     log.info(f"[{device_key}] collect_outputs — {len(commands)} command(s), check_type={check_type}")
 
-    started_at = datetime.now()
-    device_results[device_key]["pre"]["execute_show_commands"]["status"]     = "in_progress"
-    device_results[device_key]["pre"]["execute_show_commands"]["started_at"] = started_at.strftime("%Y-%m-%dT%H:%M:%S")
+    device_results[device_key]["pre"]["execute_show_commands"]["status"] = "in_progress"
 
     entries = []
     for cmd in commands:
@@ -322,13 +278,7 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
         entries.append(entry)
         log.info(f"[{device_key}] '{cmd}' collected={collected} ({len(stripped)} chars)")
 
-    finished_at = datetime.now()
-    duration_ms = int((finished_at - started_at).total_seconds() * 1000)
-
-    device_results[device_key]["pre"]["execute_show_commands"]["commands"]    = entries
-    device_results[device_key]["pre"]["execute_show_commands"]["finished_at"] = finished_at.strftime("%Y-%m-%dT%H:%M:%S")
-    device_results[device_key]["pre"]["execute_show_commands"]["duration_ms"] = duration_ms
-
+    device_results[device_key]["pre"]["execute_show_commands"]["commands"] = entries
     log.info(f"[{device_key}] collect_outputs done — {len(entries)} entries stored")
     return entries
 
@@ -340,7 +290,13 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
         log.error(f"[{device_key}] No registry for vendor='{vendor}'")
         return False
 
-    entries = device_results.get(device_key, {}).get("pre", {}).get("execute_show_commands", {}).get("commands", [])
+    entries = (
+        device_results
+        .get(device_key, {})
+        .get("pre", {})
+        .get("execute_show_commands", {})
+        .get("commands", [])
+    )
     if not entries:
         log.warning(f"[{device_key}] Nothing in execute_show_commands.commands to parse")
         return False
@@ -378,7 +334,9 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
 
     status = "completed" if all_ok else "completed_with_errors"
     device_results[device_key]["pre"]["execute_show_commands"]["status"]    = status
-    device_results[device_key]["pre"]["execute_show_commands"]["exception"] = "" if all_ok else "one or more parsers failed"
+    device_results[device_key]["pre"]["execute_show_commands"]["exception"] = (
+        "" if all_ok else "one or more parsers failed"
+    )
 
     return all_ok
 
@@ -396,47 +354,13 @@ def setup_logger(name: str, vendor: str = "", model: str = ""):
     file_logger.setLevel(logging.DEBUG)
     file_logger.propagate = True
     handler   = logging.FileHandler(log_path)
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s",
-                                  datefmt="%Y-%m-%d_%H:%M:%S")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d_%H:%M:%S"
+    )
     handler.setFormatter(formatter)
     file_logger.addHandler(handler)
     return file_logger
-
-
-def write_json(command_name, vendor, model, json_data, timestamp: str = ""):
-    if not all([command_name, vendor, model]):
-        logger.error("Command name, vendor, and model cannot be empty")
-        raise ValueError("Invalid Parameters")
-
-    timestamp = timestamp or datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-
-    try:
-        logger.info("Writing to pre_checks JSON file ...")
-        curr_dir   = os.getcwd()
-        output_dir = os.path.join(curr_dir, "pre_checks")
-        os.makedirs(output_dir, exist_ok=True)
-        filename  = f"{vendor}_{model}_{timestamp}.json"
-        file_path = os.path.join(output_dir, filename)
-        if os.path.exists(file_path):
-            with open(file_path, "r") as f:
-                data = json.load(f)
-        else:
-            data = {
-                "metadata": {
-                    "timestamp": timestamp,
-                    "vendor":    vendor,
-                    "model":     model,
-                },
-                "commands": {}
-            }
-        data["commands"][command_name] = json_data
-        with open(file_path, "w") as f:
-            json.dump(data, f, indent=2)
-        logger.info(f"JSON file written successfully: {file_path}")
-        return data
-    except Exception as e:
-        logger.error(f"Unexpected error while writing JSON: {e}")
-        raise
 
 
 def login_device(host, username, password, device_type, session_log_path, logger):
@@ -449,12 +373,12 @@ def login_device(host, username, password, device_type, session_log_path, logger
             "password":    password,
             "session_log": session_log_path,
         })
-        logger.info(f"Login Successful to {host}")
+        logger.info(f"Login successful to {host}")
         return conn
     except NetmikoTimeoutException:
-        logger.error(f"{host}: Connection Timed out"); raise
+        logger.error(f"{host}: Connection timed out"); raise
     except NetmikoAuthenticationException:
-        logger.error(f"{host}: Authentication Failed"); raise
+        logger.error(f"{host}: Authentication failed"); raise
     except SSHException as e:
         logger.error(f"{host}: SSH error: {e}"); raise
     except Exception as e:
@@ -483,7 +407,7 @@ def load_yaml(filename):
 
 
 def export_device_summary(device_key: str):
-    slot = device_results.get(device_key, {})
+    slot     = device_results.get(device_key, {})
     printable = {k: v for k, v in slot.items() if k != "conn"}
 
     with results_lock:
@@ -491,7 +415,7 @@ def export_device_summary(device_key: str):
 
     output_dir = os.path.join(os.getcwd(), "precheck_jsons")
     os.makedirs(output_dir, exist_ok=True)
-    timestamp    = (datetime.now() + timedelta(minutes=4)).strftime('%Y-%m-%d_%H-%M-%S')
+    timestamp    = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     summary_file = os.path.join(output_dir, f"all_devices_summary_{timestamp}.json")
     with open(summary_file, "w") as f:
         json.dump(all_devices_summary, f, indent=2, default=str)
@@ -514,14 +438,16 @@ def merge_thread_result(device_key: str, result: dict):
 
 
 def connect(device_key: str, dev: dict, logger):
-    host   = dev["host"]
-    vendor = dev["vendor"].lower()
-    model  = str(dev["model"]).lower().replace("-", "")
+    host    = dev["host"]
+    vendor  = dev["vendor"].lower()
+    model   = str(dev["model"]).lower().replace("-", "")
 
     session_log_dir = os.path.join(os.getcwd(), "outputs")
     os.makedirs(session_log_dir, exist_ok=True)
-    session_log_file = f"{vendor}_{model}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-    session_log_path = os.path.join(session_log_dir, session_log_file)
+    session_log_path = os.path.join(
+        session_log_dir,
+        f"{vendor}_{model}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+    )
 
     logger.info(f"[{device_key}] Connecting to {host}")
 
@@ -534,9 +460,9 @@ def connect(device_key: str, dev: dict, logger):
             session_log_path = session_log_path,
             logger           = logger,
         )
-        device_results[device_key]["conn"] = conn
-        device_results[device_key]["pre"]["connect"]["status"]    = True
-        device_results[device_key]["pre"]["connect"]["exception"] = ""
+        device_results[device_key]["conn"]                              = conn
+        device_results[device_key]["pre"]["connect"]["status"]          = True
+        device_results[device_key]["pre"]["connect"]["exception"]       = ""
         logger.info(f"[{device_key}] Connected successfully to {host}")
         return conn
 
@@ -553,7 +479,7 @@ def disconnect(device_key: str, logger):
     host = slot.get("device_info", {}).get("host", device_key)
 
     if conn is None:
-        logger.error(f"[{device_key}] disconnect called but conn is None")
+        logger.warning(f"[{device_key}] disconnect called but conn is None")
         return
 
     logout_device(conn, host, logger)
