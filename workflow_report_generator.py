@@ -2,26 +2,30 @@
 """
 workflow_report_generator.py
 =============================
-Generates a dark-themed HTML report from the per-device workflow_tracker.
+Generates a dark-themed HTML report from device_results.
 
-Tracker structure:
+Actual device_results structure (per device_key):
 {
-  "juniper_mx204": {
-    "device_info": {"host","vendor","model","hostname","version","timestamp"},
-    "pre-checks":  {"tasks": {task_name: {status,error,title,logs}}, "commands": [{cmd,output,json,exception}]},
-    "upgrade":     {"tasks": {...}},
-    "post-checks": {"tasks": {...}, "commands": [...]}
-  }
+  "status":      "",
+  "device_info": {"host", "vendor", "model", "hostname", "version"},
+  "conn":        <netmiko connection | None>,
+  "yaml":        <raw device yaml dict>,
+  "pre": {
+      "connect":                   {"ping", "status": True|False, "exception": ""},
+      "execute_show_commands":     {"status": str, "exception": "", "commands": [{cmd,output,json,exception}]},
+      "show_version":              {"status": str, "exception": "", "version": "", "platform": ""},
+      "check_storage":             {"status": str, "deleted_files": [], "exception": "", "sufficient": False},
+      "backup_active_filesystem":  {"status": str, "exception": "", "snapshot_slot": "", "verified": False},
+      "backup_running_config":     {"status": str, "exception": "", "destination": "", "md5_ok": False},
+      "transfer_image":            {"status": str, "exception": "", "image": "", "destination": ""},
+      "validate_md5":              {"status": str, "exception": "", "expected": "", "computed": "", "match": False},
+      "disable_re_protect_filter": {"status": str, "exception": ""},
+      # ... any additional tasks follow the same shape
+  },
+  "post":    [],   # list of dicts: each {"task_name": ..., "status": True|False|str, "exception": ...}
+                   # OR dict keyed by task_name — handled gracefully
+  "upgrade": {},   # dict keyed by task_name: {"status": True|False|str, "exception": ...}
 }
-
-Changes in this version (as requested):
-  1) Under each device, remove separate Success/Failed/Total cards; keep only "Passed: success/total" (with progress bar).
-  2) Show commands ONLY under Pre-Checks and specifically under a collapsible "Collect Outputs" group.
-  3) For each command:
-     - If exception present → mark red and show "Why?" button that reveals the exception.
-     - If no exception → mark green.
-     - Minimal UI by default; raw/json/exception are only revealed when user clicks the tiny buttons.
-  4) Keep the original data hierarchy; user chooses whether to see commands by expanding the section.
 """
 
 from datetime import datetime
@@ -29,36 +33,96 @@ import json
 import os
 
 
-PHASE_META = {
-    'pre-checks':  {'label': 'Pre-Checks',  'color': '#2563eb'},
-    'upgrade':     {'label': 'Upgrade',     'color': '#7c3aed'},
-    'post-checks': {'label': 'Post-Checks', 'color': '#059669'},
+# ── pretty display names for known pre tasks ──────────────────────────────────
+PRE_TASK_TITLES = {
+    "connect":                   "Connect to Device",
+    "execute_show_commands":     "Collect Outputs",
+    "show_version":              "Show Version",
+    "check_storage":             "Check Storage",
+    "backup_active_filesystem":  "Backup Active Filesystem",
+    "backup_running_config":     "Backup Running Config",
+    "transfer_image":            "Transfer Image",
+    "validate_md5":              "Validate MD5",
+    "disable_re_protect_filter": "Disable RE Protect Filter",
 }
-PHASES = ['pre-checks', 'upgrade', 'post-checks']
+
+PHASE_META = {
+    "pre":     {"label": "Pre-Checks",  "color": "#2563eb"},
+    "upgrade": {"label": "Upgrade",     "color": "#7c3aed"},
+    "post":    {"label": "Post-Checks", "color": "#059669"},
+}
+PHASES = ["pre", "upgrade", "post"]
 
 
 def _esc(s):
-    """HTML-escape for user-supplied/device data only."""
     return (str(s)
-            .replace('&', '&amp;')
-            .replace('<', '&lt;')
-            .replace('>', '&gt;')
-            .replace('"', '&quot;'))
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;"))
 
 
-# ─────────────────────────────────────────────────────────────
+# ── normalise a task's status to "Success" | "Failed" | "not_started" | "" ───
+def _norm_status(raw) -> str:
+    if raw is True:
+        return "Success"
+    if raw is False:
+        return "Failed"
+    if isinstance(raw, str):
+        s = raw.strip().lower()
+        if s in ("success", "true", "completed", "ok", "passed"):
+            return "Success"
+        if s in ("failed", "false", "error"):
+            return "Failed"
+        if s == "not_started":
+            return "not_started"
+        if s in ("in_progress", "completed_with_errors"):
+            return s
+        if s == "":
+            return ""
+        return raw   # keep original capitalisation for unknown strings
+    return str(raw) if raw is not None else ""
+
+
+# ── extract tasks dict from a phase block ─────────────────────────────────────
+# pre   → dict of task_name: task_dict  (already keyed)
+# post  → list[dict] each with a "task_name" key  OR  already a dict
+# upgrade → dict  (same as pre)
+def _phase_tasks(phase_block, phase_key: str) -> dict:
+    if phase_key == "post":
+        if isinstance(phase_block, list):
+            out = {}
+            for item in phase_block:
+                if isinstance(item, dict):
+                    name = item.get("task_name") or item.get("name") or f"task_{len(out)}"
+                    out[name] = item
+            return out
+        if isinstance(phase_block, dict):
+            return phase_block.get("tasks", phase_block)
+    # pre / upgrade
+    if isinstance(phase_block, dict):
+        return phase_block.get("tasks", phase_block)
+    return {}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Build task table tbody for ONE device
-# ─────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 def build_tbody(device_data: dict, device_key: str) -> tuple:
     """Returns (tbody_html, total, success, failed)"""
     rows   = []
     total  = success = failed = 0
     row_id = 0
-    prefix = device_key.replace('-', '_')
+    prefix = device_key.replace("-", "_")
 
     for phase_key in PHASES:
-        phase_block = device_data.get(phase_key, {})
-        tasks = phase_block.get('tasks', phase_block)
+        raw_block  = device_data.get(phase_key, {} if phase_key != "post" else [])
+        tasks      = _phase_tasks(raw_block, phase_key)
+
+        # for "pre": skip execute_show_commands — it has its own commands section
+        if phase_key == "pre":
+            tasks = {k: v for k, v in tasks.items() if k != "execute_show_commands"}
+
         if not tasks:
             continue
 
@@ -66,21 +130,33 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
         task_count = len(tasks)
 
         for idx, (task_name, td) in enumerate(tasks.items()):
-            status   = td.get('status', '')
-            is_ok    = status == 'Success'
-            is_blank = not status
+            if not isinstance(td, dict):
+                continue
+
+            raw_st   = td.get("status", "")
+            status   = _norm_status(raw_st)
+            is_ok    = status == "Success"
+            is_blank = status in ("", "not_started")
 
             total += 1
             if is_ok:
                 success += 1
-            else:
+            elif not is_blank:
                 failed += 1
 
-            display_name = td.get('title', task_name)
-            remark       = td.get('message', '') or td.get('error', '')
-            # logs is now a plain string
-            logs         = td.get('logs', '') or ''
-            lid          = f'log-{prefix}-{row_id}'
+            display_name = PRE_TASK_TITLES.get(task_name, task_name.replace("_", " ").title())
+            remark       = td.get("exception", "") or td.get("message", "") or td.get("error", "")
+            # build a short logs string from any extra fields worth showing
+            extra_fields = {
+                k: v for k, v in td.items()
+                if k not in ("status", "exception", "message", "error")
+                   and v not in (None, "", [], {}, False)
+            }
+            logs = td.get("logs", "")
+            if not logs and extra_fields:
+                logs = json.dumps(extra_fields, indent=2, default=str)
+
+            lid = f"log-{prefix}-{row_id}"
 
             if idx == 0:
                 phase_cell = (
@@ -90,15 +166,14 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
                     f'{meta["label"]}</span></td>'
                 )
             else:
-                phase_cell = ''
+                phase_cell = ""
 
             if remark:
-                rc = 'remark-ok' if is_ok else 'remark-err'
-                remark_html = f'<span class="{rc}">{_esc(remark)}</span>'
+                rc           = "remark-ok" if is_ok else "remark-err"
+                remark_html  = f'<span class="{rc}">{_esc(remark)}</span>'
             else:
-                remark_html = '<span class="remark-na">—</span>'
+                remark_html  = '<span class="remark-na">—</span>'
 
-            # Only show "View Logs" button on FAILED tasks that have a log string
             if not is_ok and not is_blank and logs:
                 log_block = (
                     f'<button class="log-btn" onclick="toggleLog(\'{lid}\')" '
@@ -108,58 +183,62 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
                     f'</div>'
                 )
             else:
-                log_block = ''
+                log_block = ""
 
             if is_blank:
                 badge_html = '<span class="badge badge-blank">—</span>'
             else:
-                status_cls = 'success' if is_ok else 'failed'
+                status_cls = "success" if is_ok else "failed"
                 badge_html = f'<span class="badge badge-{status_cls}">{_esc(status)}</span>'
 
-            row_cls = ' failed-row' if (not is_ok and not is_blank) else ''
+            row_cls = " failed-row" if (not is_ok and not is_blank) else ""
             rows.append(
                 f'<tr class="task-row{row_cls}">'
-                f'{phase_cell}'
+                f"{phase_cell}"
                 f'<td class="subtask-cell">{_esc(display_name)}{log_block}</td>'
                 f'<td class="status-cell">{badge_html}</td>'
                 f'<td class="remark-cell">{remark_html}</td>'
-                f'</tr>'
+                f"</tr>"
             )
             row_id += 1
 
         rows.append('<tr class="phase-sep"><td colspan="4"></td></tr>')
 
-    return '\n'.join(rows), total, success, failed
+    return "\n".join(rows), total, success, failed
 
 
-# ─────────────────────────────────────────────────────────────
-# Build command output section for ONE device (Pre-Checks only)
-# ─────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# Build command output section — Pre only, from pre["execute_show_commands"]["commands"]
+# ─────────────────────────────────────────────────────────────────────────────
 def build_commands_section(device_data: dict, device_key: str) -> str:
-    prefix   = device_key.replace('-', '_')
+    prefix = device_key.replace("-", "_")
 
-    # Only pre-checks → collect outputs
-    cmds = device_data.get('pre-checks', {}).get('commands', [])
+    cmds = (
+        device_data
+        .get("pre", {})
+        .get("execute_show_commands", {})
+        .get("commands", [])
+    )
     if not cmds:
-        return ''
+        return ""
 
-    meta = PHASE_META['pre-checks']
-
+    meta  = PHASE_META["pre"]
     items = []
+
     for i, entry in enumerate(cmds):
-        cmd_label = _esc(entry.get('cmd', ''))
-        raw_out   = _esc(entry.get('output', '') or '(empty)')
-        json_out  = entry.get('json', {})
-        json_str  = _esc(json.dumps(json_out, indent=2)) if json_out else '(not parsed)'
-        exc_str   = _esc(entry.get('exception', '') or '')
-        ok        = (exc_str == '')
+        cmd_label = _esc(entry.get("cmd", ""))
+        raw_out   = _esc(entry.get("output", "") or "(empty)")
+        json_out  = entry.get("json", {})
+        json_str  = _esc(json.dumps(json_out, indent=2)) if json_out else "(not parsed)"
+        exc_str   = _esc(entry.get("exception", "") or "")
+        ok        = (exc_str == "")
 
-        raw_id  = f'raw-{prefix}-pre-{i}'
-        json_id = f'jsn-{prefix}-pre-{i}'
-        exc_id  = f'exc-{prefix}-pre-{i}'
+        raw_id  = f"raw-{prefix}-pre-{i}"
+        json_id = f"jsn-{prefix}-pre-{i}"
+        exc_id  = f"exc-{prefix}-pre-{i}"
 
-        status_dot_cls = 'dot-ok' if ok else 'dot-fail'
-        row_cls        = 'cmd-mini-row ok' if ok else 'cmd-mini-row fail'
+        status_dot_cls = "dot-ok" if ok else "dot-fail"
+        row_cls        = "cmd-mini-row ok" if ok else "cmd-mini-row fail"
 
         items.append(f"""
 <div class="{row_cls}">
@@ -172,7 +251,6 @@ def build_commands_section(device_data: dict, device_key: str) -> str:
     <button class="mini-btn" onclick="toggleLog('{json_id}')">JSON</button>
     {'' if ok else f'<button class="mini-btn mini-err" onclick="toggleLog(\'{exc_id}\')">Why?</button>'}
   </div>
-
   <div id="{raw_id}" class="log-drawer" hidden>
     <div class="log-line">{raw_out}</div>
   </div>
@@ -182,7 +260,6 @@ def build_commands_section(device_data: dict, device_key: str) -> str:
   {'' if ok else f'<div id="{exc_id}" class="log-drawer" hidden><div class="log-line">{exc_str}</div></div>'}
 </div>""")
 
-    # Entire command group is collapsible so user chooses to see commands or not.
     return f"""
 <details class="cmd-phase-block">
   <summary class="cmd-phase-title" style="color:{meta['color']};">
@@ -194,38 +271,38 @@ def build_commands_section(device_data: dict, device_key: str) -> str:
 </details>"""
 
 
-# ─────────────────────────────────────────────────────────────
-# Build per-device stats block (injected into HTML as JSON for JS)
-# ─────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# Build device info JSON blob for JS
+# ─────────────────────────────────────────────────────────────────────────────
 def build_device_info_json(workflow_data: dict) -> str:
-    """Returns a JS-safe JSON string of device_info per device_key."""
     info_map = {}
     for dk, device_data in workflow_data.items():
-        info = device_data.get('device_info', {})
+        info = device_data.get("device_info", {})
         info_map[dk] = {
-            'host':     info.get('host',     '—') or '—',
-            'vendor':   (info.get('vendor',  '—') or '—').upper(),
-            'model':    (info.get('model',   '—') or '—').upper(),
-            'hostname': info.get('hostname', '—') or '—',
-            'version':  info.get('version',  '—') or '—',
-            'timestamp':info.get('timestamp','—') or '—',
+            "host":      info.get("host",     "—") or "—",
+            "vendor":    (info.get("vendor",  "—") or "—").upper(),
+            "model":     (info.get("model",   "—") or "—").upper(),
+            "hostname":  info.get("hostname", "—") or "—",
+            "version":   info.get("version",  "—") or "—",
+            # timestamp is not in device_info; shows — unless caller adds it
+            "timestamp": info.get("timestamp", "—") or "—",
         }
     return json.dumps(info_map)
 
 
-# ─────────────────────────────────────────────────────────────
-# Build one full device panel (no device card — moved to JS)
-# ─────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# Build one full device panel
+# ─────────────────────────────────────────────────────────────────────────────
 def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> str:
     tbody, total, success, failed = build_tbody(device_data, device_key)
-    # Only Pre-Checks — Collect Outputs commands shown
     cmd_section = build_commands_section(device_data, device_key)
 
     pct      = round(success / total * 100) if total else 0
-    pill_cls = 'ok' if (failed == 0 and total > 0) else ('fail' if (success == 0 and total > 0) else 'partial')
-    pill_txt = 'ALL PASSED' if (failed == 0 and total > 0) else (f'{failed} FAILED' if total > 0 else 'NO TASKS')
+    pill_cls = "ok" if (failed == 0 and total > 0) else ("fail" if (success == 0 and total > 0) else "partial")
+    pill_txt = ("ALL PASSED" if (failed == 0 and total > 0)
+                else (f"{failed} FAILED" if total > 0 else "NO TASKS"))
 
-    display = 'block' if is_first else 'none'
+    display = "block" if is_first else "none"
 
     return f"""
 <div class="device-panel" id="panel-{_esc(device_key)}" style="display:{display};">
@@ -238,13 +315,12 @@ def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> st
     <div class="meta-ts" id="ts-{_esc(device_key)}"></div>
   </div>
 
-  <!-- Keep only Success/Total -->
   <div class="stats">
-      <div class="sc ok">
-        <span class="n">{success}/{total}</span>
-        <span class="l">Passed</span>
-        <div class="prog"><div class="progbar" style="width:{pct}%"></div></div>
-      </div>
+    <div class="sc ok">
+      <span class="n">{success}/{total}</span>
+      <span class="l">Passed</span>
+      <div class="prog"><div class="progbar" style="width:{pct}%"></div></div>
+    </div>
   </div>
 
   <div class="tw">
@@ -266,51 +342,61 @@ def _overall_stats(workflow_data: dict) -> tuple:
     total = success = failed = 0
     for device_data in workflow_data.values():
         for phase_key in PHASES:
-            phase_block = device_data.get(phase_key, {})
-            tasks = phase_block.get('tasks', phase_block)
+            raw_block = device_data.get(phase_key, {} if phase_key != "post" else [])
+            tasks     = _phase_tasks(raw_block, phase_key)
+            if phase_key == "pre":
+                tasks = {k: v for k, v in tasks.items() if k != "execute_show_commands"}
             for td in tasks.values():
-                st = td.get('status', '')
-                if st:
-                    total += 1
-                    if st == 'Success':
-                        success += 1
-                    else:
-                        failed += 1
+                if not isinstance(td, dict):
+                    continue
+                st = _norm_status(td.get("status", ""))
+                if st in ("", "not_started"):
+                    continue
+                total += 1
+                if st == "Success":
+                    success += 1
+                else:
+                    failed += 1
     return total, success, failed
 
 
-# ─────────────────────────────────────────────────────────────
-# Main generator — writes a NEW timestamped file every call
-# ─────────────────────────────────────────────────────────────
-def generate_html_report(workflow_data: dict, output_dir: str = '.') -> str:
+# ─────────────────────────────────────────────────────────────────────────────
+# Main entry point — called from export_device_summary
+# ─────────────────────────────────────────────────────────────────────────────
+def generate_html_report(workflow_data: dict, output_dir: str = ".") -> str:
     """
-    Writes a timestamped HTML report each time it is called.
-    Returns the full path of the written file.
+    Accepts the raw device_results dict (one or many devices).
+    Strips non-serialisable keys (conn, yaml) before embedding as JSON.
+    Returns the full path of the written HTML file.
     """
-    device_keys = list(workflow_data.keys())
-    now         = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    ts_file     = datetime.now().strftime('%d_%m_%y_%H_%M_%S')
+    # strip conn / yaml so we can safely JSON-dump
+    safe_data = {}
+    for dk, slot in workflow_data.items():
+        safe_data[dk] = {k: v for k, v in slot.items() if k not in ("conn", "yaml")}
 
-    total_all, success_all, failed_all = _overall_stats(workflow_data)
-    pill_cls = 'ok' if failed_all == 0 else ('fail' if success_all == 0 else 'partial')
-    pill_txt = (f'ALL {total_all} TASKS PASSED' if failed_all == 0 else f'{failed_all} TASK(S) FAILED')
+    device_keys = list(safe_data.keys())
+    now         = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ts_file     = datetime.now().strftime("%d_%m_%y_%H_%M_%S")
 
-    dropdown_options = '\n'.join(
-      f'<option value="{_esc(dk)}"{" selected" if i == 0 else ""}>'
-      f'{_esc(dk)} — {_esc(workflow_data[dk].get("device_info", {}).get("host", "—"))}'
-      f'</option>'
-      for i, dk in enumerate(device_keys)
+    total_all, success_all, failed_all = _overall_stats(safe_data)
+    pill_cls = "ok" if failed_all == 0 else ("fail" if success_all == 0 else "partial")
+    pill_txt = (f"ALL {total_all} TASKS PASSED" if failed_all == 0
+                else f"{failed_all} TASK(S) FAILED")
+
+    dropdown_options = "\n".join(
+        f'<option value="{_esc(dk)}"{" selected" if i == 0 else ""}>'
+        f'{_esc(dk)} — {_esc(safe_data[dk].get("device_info", {}).get("host", "—"))}'
+        f"</option>"
+        for i, dk in enumerate(device_keys)
     )
-    device_panels = '\n'.join(
-        build_device_panel(dk, workflow_data[dk], i == 0)
+    device_panels = "\n".join(
+        build_device_panel(dk, safe_data[dk], i == 0)
         for i, dk in enumerate(device_keys)
     )
 
-    device_info_json = build_device_info_json(workflow_data)
-    json_html        = _esc(json.dumps(workflow_data, indent=2))
-
-    # first device key for initial JS render
-    first_key = device_keys[0] if device_keys else ''
+    device_info_json = build_device_info_json(safe_data)
+    json_html        = _esc(json.dumps(safe_data, indent=2, default=str))
+    first_key        = device_keys[0] if device_keys else ""
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -348,7 +434,6 @@ body{{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:
 .device-select:focus{{border-color:var(--accent)}}
 .device-select option{{background:var(--surf2);color:var(--text)}}
 .device-count{{font-family:var(--mono);font-size:.68rem;color:var(--muted)}}
-/* Device info card — rendered by JS below the dropdown */
 .dev-card{{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem 1.5rem;display:flex;flex-wrap:wrap;gap:2.5rem;margin-bottom:1.5rem}}
 .df{{display:flex;flex-direction:column;gap:.25rem}}
 .df .lbl{{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}}
@@ -384,8 +469,6 @@ thead th{{padding:.75rem 1.25rem;font-size:.65rem;text-transform:uppercase;lette
 .remark-ok{{color:#86efac}} .remark-err{{color:#fca5a5}} .remark-na{{color:var(--border)}}
 .log-btn{{display:inline-block;margin-top:.4rem;margin-right:.3rem;padding:.14rem .5rem;background:rgba(244,63,94,.06);border:1px solid rgba(244,63,94,.22);border-radius:3px;font-family:var(--mono);font-size:.62rem;font-weight:600;color:var(--err);cursor:pointer;user-select:none;transition:background .12s;letter-spacing:.04em;}}
 .log-btn:hover{{background:rgba(244,63,94,.14);border-color:rgba(244,63,94,.4)}}
-
-/* Minimal command list styles */
 .cmd-phase-block{{margin-bottom:2rem}}
 .cmd-phase-title{{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin:.25rem 0 .75rem;font-family:var(--mono);cursor:pointer;user-select:none}}
 .cmd-mini-list{{display:flex;flex-direction:column;gap:.5rem}}
@@ -402,13 +485,10 @@ thead th{{padding:.75rem 1.25rem;font-size:.65rem;text-transform:uppercase;lette
 .mini-btn:hover{{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.38)}}
 .mini-btn.mini-err{{background:rgba(244,63,94,.06);border:1px solid rgba(244,63,94,.22);color:var(--err)}}
 .mini-btn.mini-err:hover{{background:rgba(244,63,94,.14);border-color:rgba(244,63,94,.4)}}
-
 .log-drawer{{margin-top:.42rem;background:#08090e;border:1px solid var(--border2);border-radius:4px;padding:.5rem .8rem;overflow-x:auto;}}
 .log-line{{font-family:var(--mono);font-size:.69rem;line-height:1.9;color:#fca5a5;white-space:pre-wrap;word-break:break-all;}}
-/* Keep blue tint for normal raw/JSON output lines */
 .cmd-mini-row .log-line{{color:#7dd3fc;border-bottom:1px solid rgba(255,255,255,.03);}}
 .cmd-mini-row .log-line:last-child{{border-bottom:none}}
-
 .json-sec{{margin-top:1.5rem}}
 .json-sec summary{{cursor:pointer;user-select:none;list-style:none;display:inline-flex;align-items:center;gap:.5rem;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);padding:.5rem 0;transition:color .12s;font-family:var(--mono);}}
 .json-sec summary::-webkit-details-marker{{display:none}}
@@ -430,7 +510,6 @@ pre.jb{{margin-top:.7rem;background:var(--surf);border:1px solid var(--border);b
   <div><span class="pill {pill_cls}">{_esc(pill_txt)}</span></div>
 </header>
 
-<!-- Dropdown selector -->
 <div class="selector-bar">
   <label for="device-select">Device</label>
   <select id="device-select" class="device-select" onchange="selectDevice(this.value)">
@@ -439,7 +518,6 @@ pre.jb{{margin-top:.7rem;background:var(--surf);border:1px solid var(--border);b
   <span class="device-count">{len(device_keys)} device(s) in this report</span>
 </div>
 
-<!-- Device info card — populated by JS, sits between dropdown and panels -->
 <div class="dev-card" id="dev-info-card">
   <div class="df"><span class="lbl">Host / IP</span><span class="val" id="di-host">—</span></div>
   <div class="df"><span class="lbl">Vendor</span><span class="val" id="di-vendor">—</span></div>
@@ -493,13 +571,12 @@ function toggleLog(id) {{
     var oc = btn.getAttribute('onclick') || '';
     if (oc.indexOf(id) !== -1) {{
       btn.textContent = el.hidden
-        ? btn.textContent.replace('Hide', 'Show').replace('Why?', 'Why?')  // leave label unless Hide/Show present
+        ? btn.textContent.replace('Hide', 'Show')
         : btn.textContent.replace('Show', 'Hide');
     }}
   }});
 }}
 
-// Ensure initial card populates after DOM is ready
 document.addEventListener('DOMContentLoaded', function () {{
   updateInfoCard('{_esc(first_key)}');
 }});
@@ -510,6 +587,6 @@ document.addEventListener('DOMContentLoaded', function () {{
     os.makedirs(output_dir, exist_ok=True)
     filename  = f"workflow_report_{ts_file}.html"
     file_path = os.path.join(output_dir, filename)
-    with open(file_path, 'w', encoding='utf-8') as f:
+    with open(file_path, "w", encoding="utf-8") as f:
         f.write(html)
     return file_path

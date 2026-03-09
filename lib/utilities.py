@@ -15,7 +15,7 @@ from parsers.cisco.cisco_asr9910 import *
 from datetime import datetime
 import threading
 import traceback as tb
-
+from workflow_report_generator import *
 MIN_OUTPUT_CHARS = 5
 
 logging.basicConfig(
@@ -411,10 +411,8 @@ def load_yaml(filename):
     except Exception as e:
         logger.error(f"Failed to load YAML {filename}: {e}")
         raise
-
-
 def export_device_summary(device_key: str):
-    slot     = device_results.get(device_key, {})
+    slot      = device_results.get(device_key, {})
     printable = {k: v for k, v in slot.items() if k != "conn"}
 
     with results_lock:
@@ -423,14 +421,22 @@ def export_device_summary(device_key: str):
     output_dir = os.path.join(os.getcwd(), "precheck_jsons")
     os.makedirs(output_dir, exist_ok=True)
     timestamp    = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    device_info = slot.get("device_info", {})
-    vendor      = device_info.get("vendor", "unknown")
-    model       = device_info.get("model",  "unknown")
+    device_info  = slot.get("device_info", {})
+    vendor       = device_info.get("vendor", "unknown")
+    model        = device_info.get("model",  "unknown")
     summary_file = os.path.join(output_dir, f"{vendor}_{model}_{timestamp}.json")
     with open(summary_file, "w") as f:
         json.dump(all_devices_summary, f, indent=2, default=str)
     print(f"[EXPORT] Summary JSON saved -> {summary_file}")
 
+    # ── HTML report ───────────────────────────────────────────────────────────
+    reports_dir = os.path.join(os.getcwd(), "reports")
+    os.makedirs(reports_dir, exist_ok=True)
+    html_path   = generate_html_report(all_devices_summary, output_dir=reports_dir)
+    html_name   = f"{vendor}_{model}_{timestamp}.html"
+    os.rename(html_path, os.path.join(reports_dir, html_name))
+    print(f"[REPORT] {os.path.join(reports_dir, html_name)}")
+    print(f"[REPORT] {html_name}")
 
 def merge_thread_result(device_key: str, result: dict):
     with results_lock:
