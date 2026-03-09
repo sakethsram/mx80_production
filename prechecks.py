@@ -270,3 +270,111 @@ class PreCheck:
             msg = f"{self.host}: SCP failed for {self.vendor}: {e}"
             logger.error(msg)
             return False
+    def transferImage(self, conn, image_path, target_image):
+        try:
+            msg = f"Transferring image {target_image} to device for vendor: {self.vendor}"
+            logger.info(msg)
+
+            if not conn:
+                msg = "Not connected to device"
+                logger.error(msg)
+                raise RuntimeError("Not connected to device")
+
+            if self.vendor not in self.accepted_vendor:
+                msg = f"Unsupported vendor: {self.vendor}"
+                logger.error(msg)
+                raise ValueError(msg)
+
+            if self.vendor == "juniper":
+                src      = f"{self.remote_server}:{image_path}/{target_image}"
+                dest     = "/var/tmp/"
+                transfer = self.scpFile(conn, src, dest)
+                if not transfer:
+                    return {
+                        "status":      "failed",
+                        "exception":   f"SCP transfer failed for {target_image}",
+                        "image":       target_image,
+                        "destination": dest,
+                    }
+
+            logger.info(f"{self.host}: Image {target_image} transferred to {dest}")
+            return {
+                "status":      "ok",
+                "exception":   "",
+                "image":       target_image,
+                "destination": dest,
+            }
+
+        except Exception as e:
+            msg = f"{self.host}: Image transfer failed for vendor: {self.vendor}: {e}"
+            logger.error(msg)
+            return {
+                "status":      "failed",
+                "exception":   str(e),
+                "image":       "",
+                "destination": "",
+            }
+
+
+    def verifyChecksum(self, conn, target_image, expected_checksum):
+        try:
+            msg = f"Verifying MD5 checksum for {target_image} on vendor: {self.vendor}"
+            logger.info(msg)
+
+            if not conn:
+                msg = "Not connected to device"
+                logger.error(msg)
+                raise RuntimeError("Not connected to device")
+
+            if self.vendor not in self.accepted_vendor:
+                msg = f"Unsupported vendor: {self.vendor}"
+                logger.error(msg)
+                raise ValueError(msg)
+
+            if self.vendor == "juniper":
+                command = f"file checksum md5 /var/tmp/{target_image}"
+                logger.info(f"{self.host}: Executing '{command}'")
+                output   = conn.send_command(command, expect_string=r".*>", read_timeout=60)
+                match    = re.search(r'\.tgz\)\s*=\s*(.*)', output)
+                if not match:
+                    return {
+                        "status":    "failed",
+                        "exception": "Could not parse checksum from output",
+                        "expected":  expected_checksum,
+                        "computed":  "",
+                        "match":     False,
+                    }
+
+                computed = match.group(1).strip()
+                logger.info(f"{self.host}: Expected checksum:  {expected_checksum}")
+                logger.info(f"{self.host}: Computed checksum:  {computed}")
+
+                if computed == expected_checksum:
+                    logger.info(f"{self.host}: Checksum PASSED")
+                    return {
+                        "status":    "ok",
+                        "exception": "",
+                        "expected":  expected_checksum,
+                        "computed":  computed,
+                        "match":     True,
+                    }
+                else:
+                    logger.warning(f"{self.host}: Checksum FAILED")
+                    return {
+                        "status":    "failed",
+                        "exception": "Checksum mismatch",
+                        "expected":  expected_checksum,
+                        "computed":  computed,
+                        "match":     False,
+                    }
+
+        except Exception as e:
+            msg = f"{self.host}: Checksum verification failed for vendor: {self.vendor}: {e}"
+            logger.error(msg)
+            return {
+                "status":    "failed",
+                "exception": str(e),
+                "expected":  "",
+                "computed":  "",
+                "match":     False,
+            }
