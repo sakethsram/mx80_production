@@ -1,163 +1,35 @@
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ ll
-total 160
-drwxrwxr-x 15 colt colt  4096 Mar  6 10:41 ./
-drwxr-xr-x  4 colt colt  4096 Mar  4 09:55 ../
--rw-rw-r--  1 colt colt    18 Mar  4 09:55 .gitignore
-drwxrwxr-x  2 colt colt  4096 Mar  6 10:44 inputs/
-drwxrwxr-x  3 colt colt  4096 Mar  6 10:41 lib/
-drwxrwxr-x  2 colt colt 16384 Mar  6 10:01 logging/
--rw-------  1 colt colt 12288 Mar  6 10:41 .main.py.swp
-drwxrwxr-x  4 colt colt  4096 Mar  4 09:55 models/
-drwxrwxr-x  2 colt colt 16384 Mar  6 10:01 outputs/
-drwxrwxr-x  5 colt colt  4096 Mar  4 09:55 parsers/
--rw-rw-r--  1 colt colt  8014 Mar  4 09:55 postchecks.py
-drwxrwxr-x  2 colt colt  4096 Mar  6 10:02 precheck_jsons/
--rw-rw-r--  1 colt colt 13996 Mar  4 11:16 prechecks.py
-drwxrwxr-x  2 colt colt  4096 Mar  4 17:03 __pycache__/
--rw-rw-r--  1 colt colt    72 Mar  4 09:55 README.md
-drwxrwxr-x  2 colt colt  4096 Mar  5 18:30 reports/
-drwxrwxr-x  2 colt colt  4096 Mar  4 09:55 testing/
--rw-rw-r--  1 colt colt  8193 Mar  4 09:55 upgrade.py
-drwxrwxr-x  5 colt colt  4096 Mar  4 09:55 .venv/
-drwxrwxr-x  5 colt colt  4096 Mar  4 09:55 venv/
-drwxrwxr-x  2 colt colt  4096 Mar  4 09:55 .vscode/
--rw-rw-r--  1 colt colt 20437 Mar  4 17:03 workflow_report_generator.py
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ rm main
-rm: cannot remove 'main': No such file or directory
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ vi main.py
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ vi lib/utilities.py
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ p main.py
-2026-03-06 10:45:11,667 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
-2026-03-06 10:45:11,667 - INFO - [MAIN] Spawning threads for 1 device(s)
-2026-03-06 10:45:11,668 - INFO - [THREAD-128512661661376] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-06 10:45:11.668212
-2026-03-06 10:45:11,668 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
-2026-03-06 10:45:11,669 - INFO - Connecting to 10.80.71.55 using Netmiko...
-2026-03-06 10:45:21,682 - ERROR - 10.80.71.55: Connection Timed out
-2026-03-06 10:45:21,682 - ERROR - [10_80_71_55_juniper_mx204] Connection failed: TCP connection to device failed.
-
-Common causes of this problem are:
-1. Incorrect hostname or IP address.
-2. Wrong TCP port.
-3. Intermediate firewall blocking access.
-
-Device settings: juniper 10.80.71.55:22
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ rm main.py && vi main.py
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ rm lib/utilities.py && vi lib/utilities.py
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ rm prechecks.py && vi prechecks.py
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ rm main.py && vi main.py
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ rm prechecks.py && vi prechecks.py
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ rm lib/utilities.py && vi lib/utilities.py
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ p main.py
+2026-03-09 16:34:13,588 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
+2026-03-09 16:34:13,588 - INFO - [MAIN] Spawning threads for 1 device(s)
+2026-03-09 16:34:13,589 - INFO - [THREAD-127845019174592] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-09 16:34:13.589456
+2026-03-09 16:34:13,590 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
+2026-03-09 16:34:13,590 - INFO - Connecting to 10.80.71.55 using Netmiko...
+2026-03-09 16:34:13,629 - INFO - Connected (version 2.0, client OpenSSH_7.5)
+2026-03-09 16:34:13,881 - INFO - Authentication (password) successful!
+2026-03-09 16:34:14,322 - INFO - Login Successful to 10.80.71.55
+2026-03-09 16:34:14,322 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
+2026-03-09 16:34:14,325 - INFO - [load_commands] Loaded 1 commands for 'juniper_mx204'
+2026-03-09 16:34:14,325 - INFO - [10_80_71_55_juniper_mx204] collect_outputs — 1 command(s), check_type=pre
+2026-03-09 16:34:14,325 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show arp no-resolve | no-more'
+[10_80_71_55_juniper_mx204] 'show arp no-resolve | no-more' — 1811 chars received
+2026-03-09 16:34:14,459 - INFO - [10_80_71_55_juniper_mx204] 'show arp no-resolve | no-more' collected=True (1810 chars)
+2026-03-09 16:34:14,460 - INFO - [10_80_71_55_juniper_mx204] collect_outputs done — 1 entries stored
+2026-03-09 16:34:14,460 - ERROR - [10_80_71_55_juniper_mx204] STEP 4 STORAGE failed — name 'PreCheck' is not defined
+2026-03-09 16:34:14,460 - ERROR - [THREAD-127845019174592] [10_80_71_55_juniper_mx204] Unhandled exception: cannot access local variable 't' where it is not associated with a value
+2026-03-09 16:34:14,471 - INFO - Logout successful from 10.80.71.55
+2026-03-09 16:34:14,471 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
+2026-03-09 16:34:14,471 - INFO - [THREAD-127845019174592] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-09 16:34:14.471819
+2026-03-09 16:34:14,472 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> failed
+[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/all_devices_summary_2026-03-09_16-38-14.json
+2026-03-09 16:34:14,475 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
 
 
-2026-03-06 10:45:21,682 - ERROR - [10_80_71_55_juniper_mx204] STEP 1 CONNECT failed — connect() returned None
-2026-03-06 10:45:21,682 - ERROR - [10_80_71_55_juniper_mx204] disconnect called but conn is None
-2026-03-06 10:45:21,683 - INFO - [THREAD-128512661661376] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-06 10:45:21.683078
-2026-03-06 10:45:21,683 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> failed
-[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation2/precheck_jsons/all_devices_summary_2026-03-06_10-49-21.json
-2026-03-06 10:45:21,685 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation2/precheck_jsons
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2$ cd inputs/
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/inputs$ ll
-total 16
-drwxrwxr-x  2 colt colt 4096 Mar  6 10:44 ./
-drwxrwxr-x 15 colt colt 4096 Mar  6 10:44 ../
--rw-rw-r--  1 colt colt 1336 Mar  6 09:41 deviceDetails.yaml
--rw-rw-r--  1 colt colt 2068 Mar  6 10:44 show_cmd_list.yaml
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/inputs$ cat deviceDetails.yaml
-devices:
-  - host: "10.80.71.55"
-    vendor: "juniper"
-    model: mx204
-    device_type: "juniper"
-    current_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
-    expected_os: 23.4R2-S5.6
-    intermediate_os: False
-    min_disk_gb: 5
-    username: "lab"
-    password: "lab123"
-    target_image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
-    remote_backup_server: sftp://backup@10.10.20.20/backups/
-    cleanup_files:
-      - list of files
-    intermediate_image: junos-os-21.2R2-S5.bin
-    rollback: False
-    md5checksum_file: "dec5349a0d238dad686dc01f468a0bbe"
 
-  # - host: "10.80.109.250"
-  #   vendor: "cisco"
-  #   model: asr9910
-  #   device_type: "cisco_xr"
-  #   current_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
-  #   expected_os: 23.4R2-S5.1
-  #   intermediate_os: False
-  #   min_disk_gb: 6
-  #   username: "admin"
-  #   password: "Colt@123"
-  #   target_image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
-  #   image_path: "/home/automation2/software/juniper/junos/MX204"
-  #   remote_backup_sarerver: "automation2@10.80.109.134"
-  #   remote_password: "kTRq8amH888r"
-  #   cleanup_files:
-  #     - juniper_mx204_2026-*
-  #     - /var/tmp/juniper_mx204_2026-*
-  #   intermediate_image: junos-os-21.2R2-S5.bin
-  #   md5checksum_file: "3e97c983380ac3a1b28e143219c8960a"
-  #   local_image_path: ""
 
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/inputs$
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/inputs$ cat show_cmd_list.yaml
-juniper_mx204:
-  - show arp no-resolve | no-more
-  # - show lldp neighbors | no-more
-  # - show chassis routing-engine | no-more
-  # - show system uptime | no-more
-  # - show ntp associations no-resolve | no-more
-  # - show vmhost version | no-more
-  # - show vmhost snapshot | no-more
-  # - show chassis hardware | no-more
-  # - show chassis fpc detail | no-more
-  # - show chassis alarms | no-more
-  # - show system alarms | no-more
-  # - show chassis environment | no-more
-  # - show system resource-monitor fpc | no-more
-  # - show system processes extensive | match rpd | no-more
-  # - show interface terse | no-more
-  # - show oam ethernet connectivity-fault-management interfaces extensive | no-more
- # - show vrrp summary | no-more
-  # - show bfd session | no-more
-  # - show rsvp neighbor | no-more
-  # - show rsvp session | no-more
-  # - show route table inet.0 | no-more
-  # - show route table inet.3 | no-more
-  # - show route table mpls.0 | no-more
-  # - show mpls interface | no-more
-  # - show mpls lsp | no-more
-  # - show mpls lsp p2mp | no-more
-  # - show bgp summary | no-more
-  # - show bgp neighbor | no-more
-  # - show isis adjacency extensive | no-more
-  # - show route summary | no-more
-  # - show rsvp session | match DN | no-more
-  # - show mpls lsp unidirectional | match Dn | no-more
-  # - show ldp neighbor | no-more
-  # - show connections | no-more
-  # - show log messages | last 200 | no-more
-
-# cisco_asr9910:
-#   - show install active summary
-#   - show isis adjacency
-#   - show bfd session
-#   - show route summary
-#   - show bgp all summary
-#   - show bgp vrf all summary
-#   - show ipv4 vrf all interface brief
-#   - show mpls ldp neighbor
-#   - show pim neighbor
-#   - show pfm location all
-#   - show processes cpu
-#   - show watchdog memory-state location all
-#   - show redundancy
-#   - show interfaces description
-#   - show filesystem
-#   - show interfaces Bundle-Ether
-#   - show msdp peer
-#   - show l2vpn xconnect brief
-#   - show hw-module fpd
-#   - show platform
-#   - show media location 0/RSP1/CPU0
-#   - show version
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/inputs$ ^C
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation2/inputs$
