@@ -297,4 +297,6 @@ File name: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
 
 MD5 : 3e97c983380ac3a1b28e143219c8960a 
 
- 
+ example of the md5 ans - 
+lab@EFFPER01> file checksum md5 /var/tmp/junos-vmhost-install-mx-x86-64-22.4R3.25.tgz
+MD5 (/var/tmp/junos-vmhost-install-mx-x86-64-22.4R3.25.tgz) = d866fae12b23e414469da93c0845008c
