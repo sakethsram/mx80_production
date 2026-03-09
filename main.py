@@ -168,8 +168,12 @@ def run_prechecks(dev: dict, device_key: str, logger):
 # main
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
-    devices  = load_yaml("deviceDetails.yaml")
-    all_devs = devices["devices"]
+    devices          = load_yaml("deviceDetails.yaml")
+    all_devs         = devices["devices"]
+    accepted_vendors = devices.get("accepted_vendors")
+
+    for dev in all_devs:
+        dev["accepted_vendors"] = accepted_vendors
 
     first_vendor = all_devs[0]["vendor"].lower()
     first_model  = all_devs[0]["model"]
@@ -225,7 +229,6 @@ def main():
         f"[MAIN] JSON files location -> {os.path.join(os.getcwd(), 'precheck_jsons')}"
     )
     sys.exit(0)
-
 
 if __name__ == "__main__":
     main()
