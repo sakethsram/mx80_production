@@ -1,68 +1,41 @@
-2026-03-09 16:46:32,181 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
-2026-03-09 16:46:32,182 - INFO - [MAIN] Spawning threads for 1 device(s)
-2026-03-09 16:46:32,182 - INFO - [THREAD-138373621892800] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-09 16:46:32.182803
-2026-03-09 16:46:32,183 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
-2026-03-09 16:46:32,183 - INFO - Connecting to 10.80.71.55 using Netmiko...
-2026-03-09 16:46:32,224 - INFO - Connected (version 2.0, client OpenSSH_7.5)
-2026-03-09 16:46:32,471 - INFO - Authentication (password) successful!
-2026-03-09 16:46:32,936 - INFO - Login successful to 10.80.71.55
-2026-03-09 16:46:32,936 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
-2026-03-09 16:46:32,940 - INFO - [load_commands] Loaded 1 commands for 'juniper_mx204'
-2026-03-09 16:46:32,940 - INFO - [10_80_71_55_juniper_mx204] collect_outputs — 1 command(s), check_type=pre
-2026-03-09 16:46:32,940 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show arp no-resolve | no-more'
-[10_80_71_55_juniper_mx204] 'show arp no-resolve | no-more' — 1811 chars received
-2026-03-09 16:46:33,099 - INFO - [10_80_71_55_juniper_mx204] 'show arp no-resolve | no-more' collected=True (1810 chars)
-2026-03-09 16:46:33,099 - INFO - [10_80_71_55_juniper_mx204] collect_outputs done — 1 entries stored
-2026-03-09 16:46:33,101 - INFO - 10.80.71.55: Checking system storage for vendor: juniper
-2026-03-09 16:46:33,138 - INFO - 10.80.71.55:  3 GB available for juniper
-2026-03-09 16:46:33,138 - WARNING - 10.80.71.55: Low space! Running system cleanup
-2026-03-09 16:46:33,138 - INFO - 10.80.71.55: Deleting list of files
-2026-03-09 16:46:43,186 - ERROR - 10.80.71.55: Storage cleanup failed for vendor: juniper
-Traceback (most recent call last):
-  File "/home/colt/Documents/MS1Automation/prechecks.py", line 84, in checkStorage
-    conn.send_command(f"file delete {file}")
-  File "/home/colt/Documents/MS1Automation/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 111, in wrapper_decorator
-    return_val = func(self, *args, **kwargs)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/colt/Documents/MS1Automation/venv/lib/python3.12/site-packages/netmiko/utilities.py", line 667, in wrapper_decorator
-    return func(self, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/colt/Documents/MS1Automation/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 1791, in send_command
-    new_data = self.command_echo_read(cmd=cmd, read_timeout=10)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/colt/Documents/MS1Automation/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 1494, in command_echo_read
-    new_data = self.read_until_pattern(
-               ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/colt/Documents/MS1Automation/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 755, in read_until_pattern
-    raise ReadTimeout(msg)
-netmiko.exceptions.ReadTimeout:
-
-Pattern not detected: 'file\\ delete\\ list\\ of\\ files' in output.
+2026-03-09 17:17:13,589 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
+2026-03-09 17:17:13,589 - INFO - [MAIN] Spawning threads for 1 device(s)
+2026-03-09 17:17:13,590 - INFO - [THREAD-125447405577920] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-09 17:17:13.590520
+2026-03-09 17:17:13,591 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
+2026-03-09 17:17:13,591 - INFO - Connecting to 10.80.71.55 using Netmiko...
+2026-03-09 17:17:13,637 - INFO - Connected (version 2.0, client OpenSSH_9.7)
+2026-03-09 17:17:13,879 - INFO - Authentication (password) successful!
+2026-03-09 17:17:14,138 - INFO - Login successful to 10.80.71.55
+2026-03-09 17:17:14,138 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
+2026-03-09 17:17:14,139 - INFO - Backing up the whole primary disk1 config to disk2 for rollback for vendor: juniper
+2026-03-09 17:17:14,139 - INFO - Check number of disks on a juniper device
+2026-03-09 17:17:24,001 - INFO - There are 2 disks in a device for vendor: juniper
+ will take a backup of primary disk to backup disk
+2026-03-09 17:17:24,001 - INFO - 10.80.71.55: executing the 'request vmhost snapshot' for vendor: juniper
+2026-03-09 17:22:26,224 - ERROR - 10.80.71.55: Disk backup failed for juniper:
+Pattern not detected: '.*>' in output.
 
 Things you might try to fix this:
-1. Adjust the regex pattern to better identify the terminating string. Note, in
-many situations the pattern is automatically based on the network device's prompt.
+1. Explicitly set your pattern using the expect_string argument.
 2. Increase the read_timeout to a larger value.
 
 You can also look at the Netmiko session_log or debug log for more information.
 
 
-2026-03-09 16:46:43,190 - ERROR - [10_80_71_55_juniper_mx204] STEP 4 STORAGE failed —
-
-Pattern not detected: 'file\\ delete\\ list\\ of\\ files' in output.
+2026-03-09 17:22:26,225 - ERROR - [10_80_71_55_juniper_mx204] STEP 5 BACKUP DISK failed —
+Pattern not detected: '.*>' in output.
 
 Things you might try to fix this:
-1. Adjust the regex pattern to better identify the terminating string. Note, in
-many situations the pattern is automatically based on the network device's prompt.
+1. Explicitly set your pattern using the expect_string argument.
 2. Increase the read_timeout to a larger value.
 
 You can also look at the Netmiko session_log or debug log for more information.
 
 
-2026-03-09 16:46:43,201 - INFO - Logout successful from 10.80.71.55
-2026-03-09 16:46:43,201 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
-2026-03-09 16:46:43,201 - INFO - [THREAD-138373621892800] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-09 16:46:43.201383
-2026-03-09 16:46:43,201 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> FAILED
-[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/all_devices_summary_2026-03-09_16-46-43.json
-2026-03-09 16:46:43,204 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
+2026-03-09 17:22:26,225 - INFO - Logout successful from 10.80.71.55
+2026-03-09 17:22:26,226 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
+2026-03-09 17:22:26,226 - INFO - [THREAD-125447405577920] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-09 17:22:26.226218
+2026-03-09 17:22:26,226 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> FAILED
+[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/all_devices_summary_2026-03-09_17-22-26.json
+2026-03-09 17:22:26,229 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
