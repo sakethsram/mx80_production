@@ -278,3 +278,6 @@
 2026-03-09 19:47:59,954 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ ^C
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
+
+
+file checksum md5 /var/tmp/junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
