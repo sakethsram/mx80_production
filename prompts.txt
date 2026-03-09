@@ -1,3 +1,28 @@
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ ll
+total 208
+drwxrwxr-x 15 colt colt  4096 Mar  9 17:42 ./
+drwxr-xr-x  3 colt colt  4096 Mar  6 16:08 ../
+-rw-rw-r--  1 colt colt 21209 Mar  9 17:26 :
+-rw-rw-r--  1 colt colt    18 Mar  4 09:55 .gitignore
+drwxrwxr-x  2 colt colt  4096 Mar  9 16:55 inputs/
+drwxrwxr-x  3 colt colt  4096 Mar  9 17:16 lib/
+drwxrwxr-x  2 colt colt 20480 Mar  9 17:27 logging/
+-rw-rw-r--  1 colt colt 11926 Mar  9 17:42 main.py
+drwxrwxr-x  4 colt colt  4096 Mar  4 09:55 models/
+drwxrwxr-x  2 colt colt 20480 Mar  9 17:27 outputs/
+drwxrwxr-x  5 colt colt  4096 Mar  4 09:55 parsers/
+-rw-rw-r--  1 colt colt  8014 Mar  4 09:55 postchecks.py
+drwxrwxr-x  2 colt colt 12288 Mar  9 17:29 precheck_jsons/
+drwxrwxr-x  2 colt colt  4096 Mar  9 17:27 __pycache__/
+-rw-rw-r--  1 colt colt    72 Mar  4 09:55 README.md
+drwxrwxr-x  2 colt colt  4096 Mar  9 11:11 reports/
+drwxrwxr-x  2 colt colt  4096 Mar  4 09:55 testing/
+-rw-rw-r--  1 colt colt  8193 Mar  4 09:55 upgrade.py
+drwxrwxr-x  5 colt colt  4096 Mar  4 09:55 .venv/
+drwxrwxr-x  5 colt colt  4096 Mar  4 09:55 venv/
+drwxrwxr-x  2 colt colt  4096 Mar  4 09:55 .vscode/
+-rw-rw-r--  1 colt colt 32958 Mar  6 16:40 workflow_report_generator.py
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ vi prechecks.py
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ p main.py
 2026-03-09 17:43:45,636 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
 2026-03-09 17:43:45,636 - INFO - [MAIN] Spawning threads for 1 device(s)
@@ -12,8 +37,41 @@
 2026-03-09 17:43:50,799 - INFO - 10.80.71.55: Config saved, copying to remote server
 2026-03-09 17:43:50,799 - INFO - Copying files to remote server
 2026-03-09 17:44:10,609 - INFO - 10.80.71.55: File copied successfully
+^C2026-03-09 17:49:10,625 - ERROR - 10.80.71.55: Device backup failed for vendor: juniper:
+Pattern not detected: '.*>' in output.
+
+Things you might try to fix this:
+1. Explicitly set your pattern using the expect_string argument.
+2. Increase the read_timeout to a larger value.
+
+You can also look at the Netmiko session_log or debug log for more information.
 
 
+2026-03-09 17:49:10,626 - ERROR - [10_80_71_55_juniper_mx204] STEP 6 BACKUP CONFIG failed —
+Pattern not detected: '.*>' in output.
+
+Things you might try to fix this:
+1. Explicitly set your pattern using the expect_string argument.
+2. Increase the read_timeout to a larger value.
+
+You can also look at the Netmiko session_log or debug log for more information.
 
 
+2026-03-09 17:49:10,626 - INFO - Logout successful from 10.80.71.55
+2026-03-09 17:49:10,627 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
+2026-03-09 17:49:10,627 - INFO - [THREAD-134928607233728] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-09 17:49:10.627204
+Traceback (most recent call last):
+  File "/home/colt/Documents/MS1Automation/main.py", line 245, in <module>
+    main()
+  File "/home/colt/Documents/MS1Automation/main.py", line 221, in main
+    for future in as_completed(future_to_key):
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 243, in as_completed
+    waiter.event.wait(wait_timeout)
+  File "/usr/lib/python3.12/threading.py", line 655, in wait
+    signaled = self._cond.wait(timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/threading.py", line 355, in wait
+    waiter.acquire()
+KeyboardInterrupt
 
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
