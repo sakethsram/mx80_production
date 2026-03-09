@@ -281,3 +281,20 @@
 
 
 file checksum md5 /var/tmp/junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
+
+
+compare with MD5 checksum values to validate Junos files based on below. 
+
+ 
+
+File name: junos-vmhost-install-mx-x86-64-23.2R2-S4.5.tgz 
+
+MD5 : 4abfaccbaca495b699a2cad1bdf5b35a 
+
+ 
+
+File name: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz 
+
+MD5 : 3e97c983380ac3a1b28e143219c8960a 
+
+ 
