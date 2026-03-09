@@ -118,38 +118,55 @@ def run_prechecks(dev: dict, device_key: str, logger):
 
 
         # ── STEP 6: Backup running config (device → NMS) ─────────────────────
-        try:
-            timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-            filename  = f"{vendor_lc}_{model_lc}_{timestamp}"
-            t         = PreCheck(dev)
-            backup    = t.preBackup(conn, filename)
-            device_results[device_key]["pre"]["backup_running_config"] = backup
+        # try:
+        #     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        #     filename  = f"{vendor_lc}_{model_lc}_{timestamp}"
+        #     t         = PreCheck(dev)
+        #     backup    = t.preBackup(conn, filename)
+        #     device_results[device_key]["pre"]["backup_running_config"] = backup
 
-            if backup.get("status") == "failed":
-                raise RuntimeError(backup.get("exception", "Config backup failed"))
+        #     if backup.get("status") == "failed":
+        #         raise RuntimeError(backup.get("exception", "Config backup failed"))
+
+        # except Exception as e:
+        #     logger.error(f"[{device_key}] STEP 6 BACKUP CONFIG failed — {e}")
+        #     device_results[device_key]["pre"]["backup_running_config"]["exception"] = str(e)
+        #     return False
+
+           # ── STEP 7: Transfer upgrade image (NMS → device) ────────────────────
+        try:
+            image_details = dev.get("imageDetails", [])
+            target        = image_details[-1]
+            target_image  = target.get("image")
+            image_path    = dev.get("image_path")
+
+            t        = PreCheck(dev)
+            transfer = t.transferImage(conn, image_path, target_image)
+            device_results[device_key]["pre"]["transfer_image"] = transfer
+
+            if transfer.get("status") == "failed":
+                raise RuntimeError(transfer.get("exception", "Image transfer failed"))
 
         except Exception as e:
-            logger.error(f"[{device_key}] STEP 6 BACKUP CONFIG failed — {e}")
-            device_results[device_key]["pre"]["backup_running_config"]["exception"] = str(e)
+            logger.error(f"[{device_key}] STEP 7 TRANSFER IMAGE failed — {e}")
+            device_results[device_key]["pre"]["transfer_image"]["exception"] = str(e)
             return False
 
-        # ── STEP 7: Transfer upgrade image (NMS → device) ────────────────────
-        # TODO: Initiate SCP / TFTP transfer of the upgrade image from NMS to device.
-        #       Monitor transfer progress where possible; enforce a timeout.
-        #       Confirm the file is present on the device after transfer.
-        #       Store result into:
-        #           device_results[device_key]["pre"]["transfer_image"]
-        #       If transfer fails or times out, log and return False.
-
         # ── STEP 8: Validate MD5 checksum ────────────────────────────────────
-        # TODO: Run checksum command on device for the transferred image
-        #       (e.g. `file checksum md5 <path>`).
-        #       Compare the computed MD5 against the known-good reference value
-        #       (sourced from NMS / manifest / config).
-        #       Store result into:
-        #           device_results[device_key]["pre"]["validate_md5"]
-        #       If checksum mismatch, log a critical error and return False.
+        try:
+            expected_checksum = target.get("checksum")
 
+            t        = PreCheck(dev)
+            checksum = t.verifyChecksum(conn, target_image, expected_checksum)
+            device_results[device_key]["pre"]["validate_md5"] = checksum
+
+            if not checksum.get("match", False):
+                raise RuntimeError(checksum.get("exception", "Checksum mismatch"))
+
+        except Exception as e:
+            logger.error(f"[{device_key}] STEP 8 CHECKSUM failed — {e}")
+            device_results[device_key]["pre"]["validate_md5"]["exception"] = str(e)
+            return False
         # ── STEP 9: Merge results ─────────────────────────────────────────────
         try:
             thread_result = {
