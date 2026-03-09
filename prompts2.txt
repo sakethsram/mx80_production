@@ -1,28 +1,24 @@
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ rm prechecks.py && vi prechecks.py
-rm: cannot remove 'prechecks.py': No such file or directory
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ vi prechecks.py
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ p main.py
-2026-03-09 17:27:09,167 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
-2026-03-09 17:27:09,167 - INFO - [MAIN] Spawning threads for 1 device(s)
-2026-03-09 17:27:09,168 - INFO - [THREAD-128341026727616] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-09 17:27:09.167877
-2026-03-09 17:27:09,168 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
-2026-03-09 17:27:09,168 - INFO - Connecting to 10.80.71.55 using Netmiko...
-2026-03-09 17:27:09,256 - INFO - Connected (version 2.0, client OpenSSH_7.5)
-2026-03-09 17:27:09,449 - INFO - Authentication (password) successful!
-2026-03-09 17:27:09,920 - INFO - Login successful to 10.80.71.55
-2026-03-09 17:27:09,920 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
-2026-03-09 17:27:09,920 - INFO - Backing up the whole primary disk1 config to disk2 for rollback for vendor: juniper
-2026-03-09 17:27:09,920 - INFO - Check number of disks on a juniper device
-2026-03-09 17:27:11,844 - INFO - There are 2 disks in a device for vendor: juniper
- will take a backup of primary disk to backup disk
-2026-03-09 17:27:11,844 - INFO - 10.80.71.55: executing the 'request vmhost snapshot' for vendor: juniper
-2026-03-09 17:29:59,316 - INFO - 10.80.71.55: Disk1 backup is done for juniper
-2026-03-09 17:29:59,317 - INFO - [merge] device_key='10_80_71_55_juniper_mx204' merged into device_results
-2026-03-09 17:29:59,317 - INFO - [THREAD-128341026727616] [10_80_71_55_juniper_mx204] All pre-checks passed
-2026-03-09 17:29:59,328 - INFO - Logout successful from 10.80.71.55
-2026-03-09 17:29:59,328 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
-2026-03-09 17:29:59,328 - INFO - [THREAD-128341026727616] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-09 17:29:59.328877
-2026-03-09 17:29:59,329 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> passed
-[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/all_devices_summary_2026-03-09_17-29-59.json
-2026-03-09 17:29:59,331 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
+2026-03-09 17:59:42,372 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
+2026-03-09 17:59:42,372 - INFO - [MAIN] Spawning threads for 1 device(s)
+2026-03-09 17:59:42,373 - INFO - [THREAD-136375671989952] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-09 17:59:42.373699
+2026-03-09 17:59:42,374 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
+2026-03-09 17:59:42,374 - INFO - Connecting to 10.80.71.55 using Netmiko...
+2026-03-09 17:59:42,421 - INFO - Connected (version 2.0, client OpenSSH_9.7)
+2026-03-09 17:59:42,662 - INFO - Authentication (password) successful!
+2026-03-09 17:59:42,921 - INFO - Login successful to 10.80.71.55
+2026-03-09 17:59:42,921 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
+2026-03-09 17:59:42,921 - INFO - Taking device backup for vendor: juniper
+2026-03-09 17:59:47,375 - INFO - 10.80.71.55: Config saved, copying to remote server
+2026-03-09 17:59:47,375 - INFO - Copying files to remote server
+2026-03-09 18:00:09,185 - INFO - 10.80.71.55: File copied successfully
+2026-03-09 18:00:29,588 - ERROR - [10_80_71_55_juniper_mx204] STEP 6 BACKUP CONFIG failed — Config or log backup incomplete
+2026-03-09 18:00:39,596 - INFO - Logout successful from 10.80.71.55
+2026-03-09 18:00:39,596 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
+2026-03-09 18:00:39,596 - INFO - [THREAD-136375671989952] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-09 18:00:39.596449
+2026-03-09 18:00:39,597 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> FAILED
+[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/all_devices_summary_2026-03-09_18-00-39.json
+2026-03-09 18:00:39,599 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
+
+
