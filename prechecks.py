@@ -380,43 +380,43 @@ class PreCheck:
                 "match":     False,
             }
         
-    def disableReProtectFilter(self, conn, logger):
-        """
-        Removes RE protection firewall filter from loopback interface (lo0).
-        show configuration | display set | match lo0.0
-        set interfaces lo0 unit 0 family inet filter input PROTECT-RE-FILTER
-        """
-        try:
-            if not conn:
-                msg = "Not connected to device"
-                logger.error(msg)
-                raise RuntimeError("Not connected to device")
+    # def disableReProtectFilter(self, conn, logger):
+    #     """
+    #     Removes RE protection firewall filter from loopback interface (lo0).
+    #     show configuration | display set | match lo0.0
+    #     set interfaces lo0 unit 0 family inet filter input PROTECT-RE-FILTER
+    #     """
+    #     try:
+    #         if not conn:
+    #             msg = "Not connected to device"
+    #             logger.error(msg)
+    #             raise RuntimeError("Not connected to device")
 
-            if self.vendor not in self.accepted_vendor:
-                msg = f"Unsupported vendor: {self.vendor}"
-                logger.error(msg)
-                raise ValueError(msg)
+    #         if self.vendor not in self.accepted_vendor:
+    #             msg = f"Unsupported vendor: {self.vendor}"
+    #             logger.error(msg)
+    #             raise ValueError(msg)
 
-            filter_commands = [
-                "delete interfaces lo0.0 family inet filter",
-                "commit"
-            ]
+    #         filter_commands = [
+    #             "delete interfaces lo0.0 family inet filter",
+    #             "commit"
+    #         ]
 
-            print(filter_commands)
+    #         print(filter_commands)
 
-            for cmd in filter_commands:
-                logger.info(f"{self.host}: Executing '{cmd}'")
-                print(f"Executing '{cmd}'")
-                output = conn.send_config_set(cmd, cmd_verify=False) + "\n"
+    #         for cmd in filter_commands:
+    #             logger.info(f"{self.host}: Executing '{cmd}'")
+    #             print(f"Executing '{cmd}'")
+    #             output = conn.send_config_set(cmd, cmd_verify=False) + "\n"
 
-            if not output:
-                msg = f"{self.host}: Didn't get any output from the re-protect filter. please check the disableReProtectFilter()"
-                logger.error(msg)
-                print(msg)
-                return False
+    #         if not output:
+    #             msg = f"{self.host}: Didn't get any output from the re-protect filter. please check the disableReProtectFilter()"
+    #             logger.error(msg)
+    #             print(msg)
+    #             return False
 
-            return True
+    #         return True
 
-        except Exception:
-            logger.exception(f"{self.host}: Disable RE protect filter failed")
-            return False
+    #     except Exception:
+    #         logger.exception(f"{self.host}: Disable RE protect filter failed")
+    #         return False

@@ -153,20 +153,20 @@ def run_prechecks(dev: dict, device_key: str, logger):
             device_results[device_key]["pre"]["validate_md5"]["exception"] = str(e)
             return False
         # ── STEP 9: Disable RE protect filter ────────────────────────────────
-        try:
-            t      = PreCheck(dev)
-            result = t.disableReProtectFilter(conn, logger)
-            device_results[device_key]["pre"]["disable_re_protect_filter"] = {
-                "status":    "ok" if result else "failed",
-                "exception": "" if result else "disableReProtectFilter returned False",
-            }
-            if not result:
-                raise RuntimeError("disableReProtectFilter returned False")
+        # try:
+        #     t      = PreCheck(dev)
+        #     result = t.disableReProtectFilter(conn, logger)
+        #     device_results[device_key]["pre"]["disable_re_protect_filter"] = {
+        #         "status":    "ok" if result else "failed",
+        #         "exception": "" if result else "disableReProtectFilter returned False",
+        #     }
+        #     if not result:
+        #         raise RuntimeError("disableReProtectFilter returned False")
 
-        except Exception as e:
-            logger.error(f"[{device_key}] STEP 9 DISABLE RE PROTECT FILTER failed — {e}")
-            device_results[device_key]["pre"]["disable_re_protect_filter"]["exception"] = str(e)
-            return False
+        # except Exception as e:
+        #     logger.error(f"[{device_key}] STEP 9 DISABLE RE PROTECT FILTER failed — {e}")
+        #     device_results[device_key]["pre"]["disable_re_protect_filter"]["exception"] = str(e)
+        #     return False
         # ── STEP 10: Merge results ─────────────────────────────────────────────
         try:
             thread_result = {
