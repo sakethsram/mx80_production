@@ -72,9 +72,9 @@ def run_prechecks(dev, device_key, logger):
 
    
         try:
-            precheck = PreCheck(dev)
+            t = PreCheck(dev)
             min_disk_gb=dev.get("min_disk_gb")
-            storage = precheck.checkStorage(conn, min_disk_gb)
+            storage = t.checkStorage(conn, min_disk_gb)
             # always store the returned dict
             device_results[device_key]["pre"]["check_storage"] = storage
 
@@ -85,7 +85,7 @@ def run_prechecks(dev, device_key, logger):
         except Exception as e:
             logger.error(f"[{device_key}] STEP 4 STORAGE failed — {e}")
             device_results[device_key]["pre"]["check_storage"]["exception"] = str(e)
-            precheck.disconnect(logger)
+            t.disconnect(logger)
             return False
 
 
