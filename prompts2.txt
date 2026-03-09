@@ -1,38 +1,27 @@
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ rm prechecks.py && vi prechecks.py
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ rm main.py && vi main.py
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ p main.py
-2026-03-09 18:25:31,471 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
-2026-03-09 18:25:31,472 - INFO - [MAIN] Spawning threads for 1 device(s)
-2026-03-09 18:25:31,472 - INFO - [THREAD-136570187032256] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-09 18:25:31.472812
-2026-03-09 18:25:31,473 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
-2026-03-09 18:25:31,473 - INFO - Connecting to 10.80.71.55 using Netmiko...
-2026-03-09 18:25:31,518 - INFO - Connected (version 2.0, client OpenSSH_9.7)
-2026-03-09 18:25:31,760 - INFO - Authentication (password) successful!
-2026-03-09 18:25:32,021 - INFO - Login successful to 10.80.71.55
-2026-03-09 18:25:32,021 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
-2026-03-09 18:25:32,021 - INFO - Transferring image junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz to device for vendor: juniper
-2026-03-09 18:25:32,021 - INFO - Copying files to remote server
-2026-03-09 18:26:44,241 - ERROR - 10.80.71.55: SCP failed for juniper:
-
-read_channel_timing's absolute timer expired.
-
-The network device was continually outputting data for longer than 60
-seconds.
-
-If this is expected i.e. the command you are executing is continually emitting
-data for a long period of time, then you can set 'read_timeout=x' seconds. If
-you want Netmiko to keep reading indefinitely (i.e. to only stop when there is
-no new data), then you can set 'read_timeout=0'.
-
-You can look at the Netmiko session_log or debug log for more information.
-
-
-2026-03-09 18:26:44,241 - ERROR - [10_80_71_55_juniper_mx204] STEP 7 TRANSFER IMAGE failed — SCP transfer failed for junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
-2026-03-09 18:26:54,246 - INFO - Logout successful from 10.80.71.55
-2026-03-09 18:26:54,246 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
-2026-03-09 18:26:54,246 - INFO - [THREAD-136570187032256] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-09 18:26:54.246739
-2026-03-09 18:26:54,247 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> FAILED
-[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/all_devices_summary_2026-03-09_18-26-54.json
-2026-03-09 18:26:54,249 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
+2026-03-09 18:33:22,458 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
+2026-03-09 18:33:22,459 - INFO - [MAIN] Spawning threads for 1 device(s)
+2026-03-09 18:33:22,459 - INFO - [THREAD-125845216437952] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-09 18:33:22.459791
+2026-03-09 18:33:22,460 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
+2026-03-09 18:33:22,460 - INFO - Connecting to 10.80.71.55 using Netmiko...
+2026-03-09 18:33:22,552 - INFO - Connected (version 2.0, client OpenSSH_7.5)
+2026-03-09 18:33:22,747 - INFO - Authentication (password) successful!
+2026-03-09 18:33:23,215 - INFO - Login successful to 10.80.71.55
+2026-03-09 18:33:23,216 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
+2026-03-09 18:33:23,216 - INFO - Transferring image junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz to device for vendor: juniper
+2026-03-09 18:33:23,216 - INFO - Copying files to remote server
+2026-03-09 18:39:41,714 - INFO - 10.80.71.55: File copied successfully
+2026-03-09 18:39:41,715 - INFO - 10.80.71.55: Image junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz transferred to /var/tmp/
+2026-03-09 18:39:41,715 - INFO - Verifying MD5 checksum for junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz on vendor: juniper
+2026-03-09 18:39:41,715 - INFO - 10.80.71.55: Executing 'file checksum md5 /var/tmp/junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz'
+2026-03-09 18:40:10,658 - INFO - 10.80.71.55: Expected checksum:  dec5349a0d238dad686dc01f468a0bbe
+2026-03-09 18:40:10,658 - INFO - 10.80.71.55: Computed checksum:  dec5349a0d238dad686dc01f468a0bbe
+2026-03-09 18:40:10,658 - INFO - 10.80.71.55: Checksum PASSED
+2026-03-09 18:40:10,658 - INFO - [merge] device_key='10_80_71_55_juniper_mx204' merged into device_results
+2026-03-09 18:40:10,658 - INFO - [THREAD-125845216437952] [10_80_71_55_juniper_mx204] All pre-checks passed
+2026-03-09 18:40:10,669 - INFO - Logout successful from 10.80.71.55
+2026-03-09 18:40:10,670 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
+2026-03-09 18:40:10,670 - INFO - [THREAD-125845216437952] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-09 18:40:10.670088
+2026-03-09 18:40:10,670 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> passed
+[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/all_devices_summary_2026-03-09_18-40-10.json
+2026-03-09 18:40:10,673 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
-
