@@ -66,16 +66,16 @@ def run_prechecks(dev: dict, device_key: str, logger):
             return False
 
         # ── STEP 2: Execute show commands ─────────────────────────────────────
-        try:
-            exec_ok = execute_show_commands(
-                device_key, vendor_lc, model_lc, conn, "pre", logger
-            )
-            if not exec_ok:
-                raise RuntimeError("execute_show_commands returned False")
-        except Exception as e:
-            logger.error(f"[{device_key}] STEP 2 EXECUTE failed — {e}")
-            device_results[device_key]["pre"]["execute_show_commands"]["exception"] = str(e)
-            return False
+        # try:
+        #     exec_ok = execute_show_commands(
+        #         device_key, vendor_lc, model_lc, conn, "pre", logger
+        #     )
+        #     if not exec_ok:
+        #         raise RuntimeError("execute_show_commands returned False")
+        # except Exception as e:
+        #     logger.error(f"[{device_key}] STEP 2 EXECUTE failed — {e}")
+        #     device_results[device_key]["pre"]["execute_show_commands"]["exception"] = str(e)
+        #     return False
 
         # ── STEP 3: Show version ──────────────────────────────────────────────
         # TODO: Run `show version` (or equivalent) on the device via conn.
@@ -85,33 +85,37 @@ def run_prechecks(dev: dict, device_key: str, logger):
         #       If version is incompatible or parse fails, log and return False.
 
         # ── STEP 4: Check storage ─────────────────────────────────────────────
+        # try:
+        #     precheck    = PreCheck(dev)
+        #     min_disk_gb = dev.get("min_disk_gb")
+
+        #     storage = precheck.checkStorage(conn, min_disk_gb)
+
+        #     # Store the returned dict verbatim
+        #     device_results[device_key]["pre"]["check_storage"] = storage
+
+        #     if not storage.get("sufficient", False):
+        #         raise RuntimeError(
+        #             storage.get("exception", "Storage insufficient — see check_storage for details")
+        #         )
+
+        # except Exception as e:
+        #     logger.error(f"[{device_key}] STEP 4 STORAGE failed — {e}")
+        #     device_results[device_key]["pre"]["check_storage"]["exception"] = str(e)
+        #     return False
         try:
-            precheck    = PreCheck(dev)
-            min_disk_gb = dev.get("min_disk_gb")
+            t = PreCheck(dev)
+            backup_disk = t.preBackupDisk(conn)
+            device_results[device_key]["pre"]["backup_active_filesystem"] = backup_disk
 
-            storage = precheck.checkStorage(conn, min_disk_gb)
-
-            # Store the returned dict verbatim
-            device_results[device_key]["pre"]["check_storage"] = storage
-
-            if not storage.get("sufficient", False):
-                raise RuntimeError(
-                    storage.get("exception", "Storage insufficient — see check_storage for details")
-                )
+            if backup_disk.get("status") == "failed":
+                raise RuntimeError(backup_disk.get("exception", "Disk backup failed"))
 
         except Exception as e:
-            logger.error(f"[{device_key}] STEP 4 STORAGE failed — {e}")
-            device_results[device_key]["pre"]["check_storage"]["exception"] = str(e)
+            logger.error(f"[{device_key}] STEP 5 BACKUP DISK failed — {e}")
+            device_results[device_key]["pre"]["backup_active_filesystem"]["exception"] = str(e)
             return False
 
-        # ── STEP 5: Backup active running filesystem ──────────────────────────
-        # TODO: Identify the active boot disk/partition on the device.
-        #       Check for available snapshot or backup slots across relevant disks.
-        #       Trigger a snapshot/backup of the active running filesystem on-device.
-        #       Verify the backup completed successfully (status, size, integrity).
-        #       Store result into:
-        #           device_results[device_key]["pre"]["backup_active_filesystem"]
-        #       If backup fails or no valid slot found, log and return False.
 
         # ── STEP 6: Backup running config (device → NMS) ─────────────────────
         # TODO: Fetch the running configuration from the device via conn

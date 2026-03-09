@@ -97,57 +97,55 @@ class PreCheck:
             msg = f"{self.host}: Storage cleanup failed for vendor: {self.vendor}"
             logger.exception(msg)
             raise   
-    # # -------------------------------
-    # # Connection Handling
-    # # -------------------------------
-    # def connect(self, logger):
-    #     try:
-    #         msg = f"Connecting to {self.host}"
-    #         logger.info(msg)
-    #         session_log_dir = os.path.join(os.getcwd(), "outputs")
-    #         os.makedirs(session_log_dir, exist_ok=True)
 
-    #         session_logs_file = f"{self.vendor}_{self.model}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-    #         session_logs_path = os.path.join(session_log_dir, session_logs_file)
-    #         if not self.conn:
-    #             self.conn = login_device(
-    #                 device_type = self.device.get('device_type'),
-    #                 host = self.device.get("host"),
-    #                 username = self.device.get("username"),
-    #                 password = self.device.get("password"),
-    #                 session_log_path= session_logs_path,
-    #                 logger = logger
-    #             )
+    def preBackupDisk(self, conn):
+        try:
+            logger.info(f"Backing up the whole primary disk1 config to disk2 for rollback for vendor: {self.vendor}")
 
-    #         msg = f"{self.host}: Connected successfully"
-    #         logger.info(msg)
-    #         return self.conn
+            if not conn:
+                msg = f"Not connected to device for vendor: {self.vendor}"
+                logger.error(msg)
+                raise RuntimeError("Not connected to device")
 
-    #     except Exception as e:
-    #         msg = f"{self.host}: Not able to connect the device for vendor: {self.vendor}"
-    #         logger.error(msg)
-    #         exit
+            if self.vendor not in self.accepted_vendor:
+                msg = f"Unsupported vendor: {self.vendor}"
+                logger.error(msg)
+                raise ValueError(msg)
 
-    # def disconnect(self, logger):
-    #     try:
-    #         print("--------------------connection getting disconnected-------------------" ,self.conn)
-    #         if self.conn:
-    #             msg = "Logging out from device"
-    #             logging.info(msg)
-    #             logout_device(self.conn, self.host, logger)
-    #             self.conn = None
-    #         else:
-    #             msg = "Device is not connected already"
-    #             logger.info(msg)
-    #             exit
-    #     except Exception as e:
-    #         msg = "Not able to logout from device for vendor: {self.vendor}"
-    #         logger.error(msg)
-    #         exit
+            if self.vendor == "juniper":
+                logger.info(f"Check number of disks on a juniper device")
+                output = conn.send_command("show vmhost version", read_timeout=300)
 
+                if "set b" in output and "set p" in output:
+                    logger.info(f"There are 2 disks in a device for vendor: {self.vendor}\n will take a backup of primary disk to backup disk")
+                    cmd = "request vmhost snapshot"
+                    logger.info(f"{self.host}: executing the '{cmd}' for vendor: {self.vendor}")
+                    output = conn.send_command_timing(cmd)
+                    if cmd in output or "yes,no" in output.lower():
+                        output += conn.send_command("yes", expect_string=r".*>", max_loops=3, read_timeout=300)
+                    logger.info(f"{self.host}: Disk1 backup is done for {self.vendor}")
+                    return {
+                        "status":     "ok",
+                        "exception":  "",
+                        "disk_count": "dual",
+                    }
+                else:
+                    logger.info(f"There is only 1 disk in a device for {self.vendor}\n No need to take a disk backup")
+                    return {
+                        "status":     "skipped",
+                        "exception":  "",
+                        "disk_count": "single",
+                    }
 
+        except Exception as e:
+            msg = f"{self.host}: Disk backup failed for {self.vendor}: {e}"
+            logger.error(msg)
+            return {
+                "status":     "failed",
+                "exception":  str(e),
+                "disk_count": "",
+            }
 
-    # #
     # def validateFPDs(self, conn, logger, device_name):
     #     """
     #     Verify and upgrade Cisco FPDs using stored command output.
@@ -389,57 +387,7 @@ class PreCheck:
     #         self.disconnect(logger)
     #         return False
 
-    # def preBackupDisk(self, conn,logger):
-    #     """
-    #     Check number of disks on a device
-    #     Backing up the whole primary disk1 config to disk2 for rollback
-    #     """
-    #     try:
-    #         msg = "Backing up the whole primary disk1 config to disk2 for rollback"
-    #         logger.info(f"Backing up the whole primary disk1 config to disk2 for rollback for vendor: {self.vendor}")
-
-    #         if not conn:
-    #             msg = f"Not connected to device for vendor: {self.vendor}"
-    #             logger.error(msg)
-    #             raise RuntimeError("Not connected to device")
-
-    #         if (
-    #             self.vendor not in  self.accepted_vendors
-    #         ):
-    #             msg = f"Unsupported vendor: {self.vendor}"
-    #             logger.error(msg)
-    #             self.disconnect(logger)
-    #             raise ValueError(msg)
-
-    #         if self.vendor == "juniper":
-    #             msg = f"Check number of disks on a juniper device "
-    #             logger.info(msg)
-    #             output = conn.send_command("show vmhost version", read_timeout=300)
-    #             print(f"output: {output}")
-
-
-    #             if "set b" in output and "set p" in output:
-    #                 msg = f"There are 2 disks in a device for vendor: {self.vendor}\n will take a backup of primary disk to backup disk"
-    #                 logger.info(msg)
-    #                 cmd = "request vmhost snapshot"
-    #                 msg = f"{self.host}: executing the '{cmd}' for vendor: {self.vendor}"
-    #                 logger.info(msg)
-    #                 output = conn.send_command_timing(cmd)
-    #                 if cmd in output or "yes,no" in output.lower():
-    #                   output += conn.send_command("yes", expect_string=r".*>",  max_loops = 3, read_timeout=300)
-    #                 print(f"snapshot output: {output}")
-    #                 logger.info(f"{self.host}: Disk1 backup is done for {self.vendor}")
-    #             else:
-    #                 msg = f"There is only 1 disk in  a device for {self.vendor}\n No need to take a disk backup"
-    #                 logger.info(msg)
-
-    #             return True
-    #     except Exception as e:
-    #         msg = f"{self.host}: Disk backup failed for {self.vendor}: {e}"
-    #         logger.error(msg)
-    #         self.disconnect(logger)
-    #         return False
-
+   
     #---------------------
     # check storage space
     #---------------------
