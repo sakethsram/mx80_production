@@ -144,7 +144,133 @@ class PreCheck:
                 "exception":  str(e),
                 "disk_count": "",
             }
+    def preBackup(self, conn, filename):
+        try:
+            msg = f"Taking device backup for vendor: {self.vendor}"
+            logger.info(msg)
 
+            if not conn:
+                msg = f"Not connected to device for vendor: {self.vendor}"
+                logger.error(msg)
+                raise RuntimeError("Not connected to device")
+
+            if self.vendor not in self.accepted_vendor:
+                msg = f"Unsupported vendor: {self.vendor}"
+                logger.error(msg)
+                raise ValueError(msg)
+
+            if self.vendor == "juniper":
+                preBackupConfig = False
+                preDeviceLog    = False
+
+                # Step 1: Backup running config
+                config_commands = [
+                    f"save {filename}",
+                    "run file list"
+                ]
+                configBackup = conn.send_config_set(config_commands, cmd_verify=False, strip_command=True)
+                if configBackup:
+                    logger.info(f"{self.host}: Config saved, copying to remote server")
+                    src      = f"/var/home/lab/{filename}"
+                    dest     = f"{self.remote_server}:/var/tmp/{filename}"
+                    saveFile = self.scpFile(conn, src, dest)
+                    if saveFile:
+                        preBackupConfig = True
+                    else:
+                        return {
+                            "status":      "failed",
+                            "exception":   "SCP of config file failed",
+                            "config_file": filename,
+                            "log_file":    "",
+                            "destination": dest,
+                        }
+
+                # Step 2: Backup device log
+                log_commands = [
+                    f"request support information | save /var/log/{filename}.txt",
+                    f"file archive compress source /var/log/* destination /var/tmp/{filename}.tgz"
+                ]
+                for cmd in log_commands:
+                    logs = conn.send_command(cmd, cmd_verify=False, expect_string=r".*>", read_timeout=300)
+
+                if logs:
+                    logger.info(f"{self.host}: Logs archived, copying to remote server")
+                    src      = f"/var/tmp/{filename}.tgz"
+                    dest     = f"{self.remote_server}:/var/tmp/{filename}.tgz"
+                    saveFile = self.scpFile(conn, src, dest)
+                    if saveFile:
+                        preDeviceLog = True
+                    else:
+                        return {
+                            "status":      "failed",
+                            "exception":   "SCP of log file failed",
+                            "config_file": filename,
+                            "log_file":    f"{filename}.tgz",
+                            "destination": dest,
+                        }
+
+                if not preBackupConfig or not preDeviceLog:
+                    return {
+                        "status":      "failed",
+                        "exception":   "Config or log backup incomplete",
+                        "config_file": filename,
+                        "log_file":    f"{filename}.tgz",
+                        "destination": self.remote_server,
+                    }
+
+                return {
+                    "status":      "ok",
+                    "exception":   "",
+                    "config_file": filename,
+                    "log_file":    f"{filename}.tgz",
+                    "destination": self.remote_server,
+                }
+
+        except Exception as e:
+            msg = f"{self.host}: Device backup failed for vendor: {self.vendor}: {e}"
+            logger.error(msg)
+            return {
+                "status":      "failed",
+                "exception":   str(e),
+                "config_file": "",
+                "log_file":    "",
+                "destination": "",
+            }
+    def scpFile(self, conn, src, dest):
+        try:
+            msg = f"Copying files to remote server"
+            logger.info(msg)
+
+            cmd = [
+                "start shell",
+                "\n",
+                f"scp -C {src} {dest}",
+                "\n",
+                self.remote_password,
+                "\n",
+                "exit",
+                "\n"
+            ]
+            saving_file = conn.send_multiline_timing(cmd, read_timeout=60)
+            logger.debug(f"{self.host}: SCP output:\n{saving_file}")
+
+            if "No such file or directory" in saving_file:
+                msg = f"{self.host}: No such file or directory: {src}"
+                logger.error(msg)
+                return False
+
+            if not saving_file:
+                msg = f"{self.host}: SCP returned no output"
+                logger.error(msg)
+                return False
+
+            logger.info(f"{self.host}: File copied successfully")
+            return True
+
+        except Exception as e:
+            msg = f"{self.host}: SCP failed for {self.vendor}: {e}"
+            logger.error(msg)
+            return False
     # def validateFPDs(self, conn, logger, device_name):
     #     """
     #     Verify and upgrade Cisco FPDs using stored command output.

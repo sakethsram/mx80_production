@@ -103,28 +103,35 @@ def run_prechecks(dev: dict, device_key: str, logger):
         #     logger.error(f"[{device_key}] STEP 4 STORAGE failed — {e}")
         #     device_results[device_key]["pre"]["check_storage"]["exception"] = str(e)
         #     return False
-        try:
-            t = PreCheck(dev)
-            backup_disk = t.preBackupDisk(conn)
-            device_results[device_key]["pre"]["backup_active_filesystem"] = backup_disk
+        # try:
+        #     t = PreCheck(dev)
+        #     backup_disk = t.preBackupDisk(conn)
+        #     device_results[device_key]["pre"]["backup_active_filesystem"] = backup_disk
 
-            if backup_disk.get("status") == "failed":
-                raise RuntimeError(backup_disk.get("exception", "Disk backup failed"))
+        #     if backup_disk.get("status") == "failed":
+        #         raise RuntimeError(backup_disk.get("exception", "Disk backup failed"))
 
-        except Exception as e:
-            logger.error(f"[{device_key}] STEP 5 BACKUP DISK failed — {e}")
-            device_results[device_key]["pre"]["backup_active_filesystem"]["exception"] = str(e)
-            return False
+        # except Exception as e:
+        #     logger.error(f"[{device_key}] STEP 5 BACKUP DISK failed — {e}")
+        #     device_results[device_key]["pre"]["backup_active_filesystem"]["exception"] = str(e)
+        #     return False
 
 
         # ── STEP 6: Backup running config (device → NMS) ─────────────────────
-        # TODO: Fetch the running configuration from the device via conn
-        #       (e.g. `show configuration | no-more` for Juniper).
-        #       Write / push the config to the NMS (file server, TFTP, SCP, etc.).
-        #       Confirm the file arrived on the NMS side (size / md5 sanity check).
-        #       Store result into:
-        #           device_results[device_key]["pre"]["backup_running_config"]
-        #       If transfer fails, log and return False.
+        try:
+            timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+            filename  = f"{vendor_lc}_{model_lc}_{timestamp}"
+            t         = PreCheck(dev)
+            backup    = t.preBackup(conn, filename)
+            device_results[device_key]["pre"]["backup_running_config"] = backup
+
+            if backup.get("status") == "failed":
+                raise RuntimeError(backup.get("exception", "Config backup failed"))
+
+        except Exception as e:
+            logger.error(f"[{device_key}] STEP 6 BACKUP CONFIG failed — {e}")
+            device_results[device_key]["pre"]["backup_running_config"]["exception"] = str(e)
+            return False
 
         # ── STEP 7: Transfer upgrade image (NMS → device) ────────────────────
         # TODO: Initiate SCP / TFTP transfer of the upgrade image from NMS to device.
