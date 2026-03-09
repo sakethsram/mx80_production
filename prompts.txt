@@ -1,77 +1,448 @@
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ ll
-total 208
-drwxrwxr-x 15 colt colt  4096 Mar  9 17:42 ./
-drwxr-xr-x  3 colt colt  4096 Mar  6 16:08 ../
--rw-rw-r--  1 colt colt 21209 Mar  9 17:26 :
--rw-rw-r--  1 colt colt    18 Mar  4 09:55 .gitignore
-drwxrwxr-x  2 colt colt  4096 Mar  9 16:55 inputs/
-drwxrwxr-x  3 colt colt  4096 Mar  9 17:16 lib/
-drwxrwxr-x  2 colt colt 20480 Mar  9 17:27 logging/
--rw-rw-r--  1 colt colt 11926 Mar  9 17:42 main.py
-drwxrwxr-x  4 colt colt  4096 Mar  4 09:55 models/
-drwxrwxr-x  2 colt colt 20480 Mar  9 17:27 outputs/
-drwxrwxr-x  5 colt colt  4096 Mar  4 09:55 parsers/
--rw-rw-r--  1 colt colt  8014 Mar  4 09:55 postchecks.py
-drwxrwxr-x  2 colt colt 12288 Mar  9 17:29 precheck_jsons/
-drwxrwxr-x  2 colt colt  4096 Mar  9 17:27 __pycache__/
--rw-rw-r--  1 colt colt    72 Mar  4 09:55 README.md
-drwxrwxr-x  2 colt colt  4096 Mar  9 11:11 reports/
-drwxrwxr-x  2 colt colt  4096 Mar  4 09:55 testing/
--rw-rw-r--  1 colt colt  8193 Mar  4 09:55 upgrade.py
-drwxrwxr-x  5 colt colt  4096 Mar  4 09:55 .venv/
-drwxrwxr-x  5 colt colt  4096 Mar  4 09:55 venv/
-drwxrwxr-x  2 colt colt  4096 Mar  4 09:55 .vscode/
--rw-rw-r--  1 colt colt 32958 Mar  6 16:40 workflow_report_generator.py
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ vi prechecks.py
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ p main.py
-2026-03-09 17:43:45,636 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
-2026-03-09 17:43:45,636 - INFO - [MAIN] Spawning threads for 1 device(s)
-2026-03-09 17:43:45,637 - INFO - [THREAD-134928607233728] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-09 17:43:45.637230
-2026-03-09 17:43:45,637 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
-2026-03-09 17:43:45,638 - INFO - Connecting to 10.80.71.55 using Netmiko...
-2026-03-09 17:43:45,677 - INFO - Connected (version 2.0, client OpenSSH_7.5)
-2026-03-09 17:43:45,927 - INFO - Authentication (password) successful!
-2026-03-09 17:43:46,370 - INFO - Login successful to 10.80.71.55
-2026-03-09 17:43:46,370 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
-2026-03-09 17:43:46,370 - INFO - Taking device backup for vendor: juniper
-2026-03-09 17:43:50,799 - INFO - 10.80.71.55: Config saved, copying to remote server
-2026-03-09 17:43:50,799 - INFO - Copying files to remote server
-2026-03-09 17:44:10,609 - INFO - 10.80.71.55: File copied successfully
-^C2026-03-09 17:49:10,625 - ERROR - 10.80.71.55: Device backup failed for vendor: juniper:
-Pattern not detected: '.*>' in output.
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ cat prechecks.py
+import logging
+import re
+from lib.utilities import *
 
-Things you might try to fix this:
-1. Explicitly set your pattern using the expect_string argument.
-2. Increase the read_timeout to a larger value.
+logger = logging.getLogger(__name__)
 
-You can also look at the Netmiko session_log or debug log for more information.
+#----------------------------------------------------#
+# PreCheck class
+#----------------------------------------------------#
+class PreCheck:
+
+    """
+    Handles configuration and log backups from devices.
+    Currently support JUNOS devices
+    """
+
+    def __init__(self, device):
+        self.device          = device
+        self.conn            = None
+        self.host            = device.get("host")
+        self.device_type     = device.get('device_type')
+        self.vendor          = device.get('vendor')
+        self.model           = device.get('model')
+        self.username        = device.get('username')
+        self.remote_server   = device.get('remote_backup_server')
+        self.remote_password = device.get('remote_password')
+        self.min_disk_gb     = device.get('min_disk_gb')
+        self.accepted_vendor = ["juniper", "cisco"]
+
+    def checkStorage(self, conn, min_disk_gb):
+        try:
+            msg = f"{self.host}: Checking system storage for vendor: {self.vendor} "
+            logger.info(msg)
+
+            if not conn:
+                msg = "Not connected to device"
+                logger.error(msg)
+                raise RuntimeError("Not connected to device")
+
+            storage_output = conn.send_command("show system storage", expect_string=r'.*>')
+
+            avail_space = re.search(r"^/dev/gpt/var\s+\S+\s+\S+\s+(\S+)*", storage_output, re.M).group(1)
+            avail_space = avail_space[:-1]
+            avail_space = int(float(avail_space))
+
+            if avail_space == None:
+                msg = f"{self.host} Unable to parse storage output for vendor: {self.vendor}"
+                logger.error(msg)
+                raise ValueError(msg)
+
+            msg = f"{self.host}:  {avail_space} GB available for {self.vendor}"
+            logger.info(msg)
+
+            # Enough space
+            if avail_space > min_disk_gb:
+                result = {
+                    "status":        "ok",
+                    "deleted_files": [],
+                    "exception":     "",
+                    "sufficient":    True,
+                }
+                logger.info(result)
+                return result
+
+            # ---------------------------------------------------
+            # LOW STORAGE → START CLEANUP
+            # ---------------------------------------------------
+            logger.warning(f"{self.host}: Low space! Running system cleanup")
+
+            files_to_delete = self.device.get("cleanup_files")
+
+            if len(files_to_delete) == 0:
+                logger.error(f"{self.host}: cleanup_files EMPTY -> No files are available to delete")
+                return {
+                    "status":        "failed",
+                    "deleted_files": [],
+                    "exception":     "cleanup_files empty",
+                    "sufficient":    False,
+                }
+
+            deleted_files = []
+            for file in files_to_delete:
+                logger.info(f"{self.host}: Deleting {file}")
+                conn.send_command(f"file delete {file}")
+                deleted_files.append(file)
+
+            result = {
+                "status":        "low_space_cleaned",
+                "deleted_files": deleted_files,
+                "exception":     "",
+                "sufficient":    False,
+            }
+            logger.info(result)
+            return result
+
+        except Exception:
+            msg = f"{self.host}: Storage cleanup failed for vendor: {self.vendor}"
+            logger.exception(msg)
+            raise
+
+    def preBackupDisk(self, conn):
+        try:
+            logger.info(f"Backing up the whole primary disk1 config to disk2 for rollback for vendor: {self.vendor}")
+
+            if not conn:
+                msg = f"Not connected to device for vendor: {self.vendor}"
+                logger.error(msg)
+                raise RuntimeError("Not connected to device")
+
+            if self.vendor not in self.accepted_vendor:
+                msg = f"Unsupported vendor: {self.vendor}"
+                logger.error(msg)
+                raise ValueError(msg)
+
+            if self.vendor == "juniper":
+                logger.info(f"Check number of disks on a juniper device")
+                output = conn.send_command("show vmhost version", read_timeout=300)
+
+                if "set b" in output and "set p" in output:
+                    logger.info(f"There are 2 disks in a device for vendor: {self.vendor}\n will take a backup of primary disk to backup disk")
+                    cmd = "request vmhost snapshot"
+                    logger.info(f"{self.host}: executing the '{cmd}' for vendor: {self.vendor}")
+                    output = conn.send_command_timing(cmd)
+                    if cmd in output or "yes,no" in output.lower():output += conn.send_command("yes", expect_string=r".*>", max_loops=3, read_timeout=900)
+                    logger.info(f"{self.host}: Disk1 backup is done for {self.vendor}")
+                    return {
+                        "status":     "ok",
+                        "exception":  "",
+                        "disk_count": "dual",
+                    }
+                else:
+                    logger.info(f"There is only 1 disk in a device for {self.vendor}\n No need to take a disk backup")
+                    return {
+                        "status":     "skipped",
+                        "exception":  "",
+                        "disk_count": "single",
+                    }
+
+        except Exception as e:
+            msg = f"{self.host}: Disk backup failed for {self.vendor}: {e}"
+            logger.error(msg)
+            return {
+                "status":     "failed",
+                "exception":  str(e),
+                "disk_count": "",
+            }
+    def preBackup(self, conn, filename):
+        try:
+            msg = f"Taking device backup for vendor: {self.vendor}"
+            logger.info(msg)
+
+            if not conn:
+                msg = f"Not connected to device for vendor: {self.vendor}"
+                logger.error(msg)
+                raise RuntimeError("Not connected to device")
+
+            if self.vendor not in self.accepted_vendor:
+                msg = f"Unsupported vendor: {self.vendor}"
+                logger.error(msg)
+                raise ValueError(msg)
+
+            if self.vendor == "juniper":
+                preBackupConfig = False
+                preDeviceLog    = False
+
+                # Step 1: Backup running config
+                config_commands = [
+                    f"save {filename}",
+                    "run file list"
+                ]
+                configBackup = conn.send_config_set(config_commands, cmd_verify=False, strip_command=True)
+                if configBackup:
+                    logger.info(f"{self.host}: Config saved, copying to remote server")
+                    src      = f"/var/home/lab/{filename}"
+                    dest     = f"{self.remote_server}:/var/tmp/{filename}"
+                    saveFile = self.scpFile(conn, src, dest)
+                    if saveFile:
+                        preBackupConfig = True
+                    else:
+                        return {
+                            "status":      "failed",
+                            "exception":   "SCP of config file failed",
+                            "config_file": filename,
+                            "log_file":    "",
+                            "destination": dest,
+                        }
+
+                # Step 2: Backup device log
+                log_commands = [
+                    f"request support information | save /var/log/{filename}.txt",
+                    f"file archive compress source /var/log/* destination /var/tmp/{filename}.tgz"
+                ]
+                for cmd in log_commands:    logs = conn.send_command_timing(cmd, read_timeout=900, last_read=10.0)
+
+                if logs:
+                    logger.info(f"{self.host}: Logs archived, copying to remote server")
+                    src      = f"/var/tmp/{filename}.tgz"
+                    dest     = f"{self.remote_server}:/var/tmp/{filename}.tgz"
+                    saveFile = self.scpFile(conn, src, dest)
+                    if saveFile:
+                        preDeviceLog = True
+                    else:
+                        return {
+                            "status":      "failed",
+                            "exception":   "SCP of log file failed",
+                            "config_file": filename,
+                            "log_file":    f"{filename}.tgz",
+                            "destination": dest,
+                        }
+
+                if not preBackupConfig or not preDeviceLog:
+                    return {
+                        "status":      "failed",
+                        "exception":   "Config or log backup incomplete",
+                        "config_file": filename,
+                        "log_file":    f"{filename}.tgz",
+                        "destination": self.remote_server,
+                    }
+
+                return {
+                    "status":      "ok",
+                    "exception":   "",
+                    "config_file": filename,
+                    "log_file":    f"{filename}.tgz",
+                    "destination": self.remote_server,
+                }
+
+        except Exception as e:
+            msg = f"{self.host}: Device backup failed for vendor: {self.vendor}: {e}"
+            logger.error(msg)
+            return {
+                "status":      "failed",
+                "exception":   str(e),
+                "config_file": "",
+                "log_file":    "",
+                "destination": "",
+            }
+    def scpFile(self, conn, src, dest):
+        try:
+            msg = f"Copying files to remote server"
+            logger.info(msg)
+
+            cmd = [
+                "start shell",
+                "\n",
+                f"scp -C {src} {dest}",
+                "\n",
+                self.remote_password,
+                "\n",
+                "exit",
+                "\n"
+            ]
+            saving_file = conn.send_multiline_timing(cmd, read_timeout=60)
+            logger.debug(f"{self.host}: SCP output:\n{saving_file}")
+
+            if "No such file or directory" in saving_file:
+                msg = f"{self.host}: No such file or directory: {src}"
+                logger.error(msg)
+                return False
+
+            if not saving_file:
+                msg = f"{self.host}: SCP returned no output"
+                logger.error(msg)
+                return False
+
+            logger.info(f"{self.host}: File copied successfully")
+            return True
+
+        except Exception as e:
+            msg = f"{self.host}: SCP failed for {self.vendor}: {e}"
+            logger.error(msg)
+            return False
+    # def validateFPDs(self, conn, logger, device_name):
+    #     """
+    #     Verify and upgrade Cisco FPDs using stored command output.
+
+    #     Logic:
+    #     - Skip Juniper devices
+    #     - For Cisco, read 'show hw-module fpd' from device_results
+    #     - Compare running vs programmed versions
+    #     - Upgrade if versions differ
+    #     """
+
+    #     try:
+    #         if not conn:
+    #             msg = f"Not connected to device for vendor: {self.vendor}"
+    #             logger.error(msg)
+    #             raise RuntimeError("Not connected to device")
+
+    #         if (self.vendor not in  self.accepted_vendors):
+    #                 msg = f"Unsupported vendor: {self.vendor}"
+    #                 logger.error(msg)
+    #                 self.disconnect(logger)
+    #                 raise ValueError(msg)
+
+    #         logger.info("Starting Cisco FPD version verification...")
+
+    #         #  Get stored output from device_results
+    #         fpd_output = None
+
+    #         for device_entry in global_variable.device_results:
+    #             if device_name in device_entry:
+    #                 commands = device_entry[device_name].get("pre", [])
+    #                 for cmd in commands:
+    #                     if cmd.get("command") == "show_hw-module_fpd":
+    #                         fpd_output = cmd.get("output")
+    #                         break
+
+    #         if not fpd_output:
+    #             logger.error("show hw-module fpd output not found in device_results")
+    #             return False
+
+    #         # Parse output using existing parser
+    #         fpd_list = cisco_asr9910.show_hw_module_fpd(fpd_output)
+
+    #         if not fpd_list:
+    #             logger.warning("Parser returned no FPD data")
+    #             return True
+
+    #         upgrade_required = []
+
+    #         #  Compare versions
+    #         for fpd in fpd_list:
+    #             location = fpd.get("location")
+    #             fpd_name = fpd.get("fpd")
+    #             running = fpd.get("running_version")
+    #             programmed = fpd.get("programmed_version")
+
+    #             if not fpd:
+    #                 logger.warning(f"Skipping invalid entry: {fpd}")
+    #                 continue
+
+    #             # if not running or not programmed:
+    #             #     logger.warning(f"Skipping {location} {fpd_name}: version info missing")
+    #             #     continue
+
+    #             if running.strip() != programmed.strip():
+    #                 upgrade_required.append(fpd)
+    #                 logger.warning(
+    #                     f"Upgrade needed → {location} {fpd_name} \n"
+    #                     f"(Running: {running}, Programmed: {programmed})"
+    #                 )
+    #             else:
+    #                 logger.info(f"Up-to-date → {location} {fpd_name}")
+
+    #         #  No upgrades needed
+    #         if not upgrade_required:
+    #             logger.info("All FPDs are up-to-date")
+    #             return True
+
+    #         logger.warning(f"{len(upgrade_required)} FPD(s) require upgrade")
+
+    #         #  Perform upgrades
+    #         for fpd in upgrade_required:
+    #             location = fpd["location"]
+    #             fpd_name = fpd["fpd"]
+
+    #             cmd = f"upgrade hw-module location {location} fpd {fpd_name}"
+    #             logger.info(f"Executing: {cmd}")
+
+    #             conn.send_command(cmd, expect_string=r"#", read_timeout=600)
+
+    #             logger.info(f"Upgrade triggered for {location} {fpd_name}")
+
+    #         # ---- Reload device ----
+    #         logger.info("Reloading device...")
+    #         conn.send_command("reload", expect_string=r"Proceed with reload", read_timeout=10)
+    #         conn.send_command("yes", expect_string=r"#", read_timeout=10)
+
+    #         logger.info("Cisco FPD upgrade procedure completed")
+    #         self.prechecks.disconnect(logger)
+    #         return True
 
 
-2026-03-09 17:49:10,626 - ERROR - [10_80_71_55_juniper_mx204] STEP 6 BACKUP CONFIG failed —
-Pattern not detected: '.*>' in output.
-
-Things you might try to fix this:
-1. Explicitly set your pattern using the expect_string argument.
-2. Increase the read_timeout to a larger value.
-
-You can also look at the Netmiko session_log or debug log for more information.
+    #     except Exception as e:
+    #         logger.error(f"FPD verification/upgrade failed: {str(e)}")
+    #         self.prechecks.disconnect(logger)
+    #         return False
 
 
-2026-03-09 17:49:10,626 - INFO - Logout successful from 10.80.71.55
-2026-03-09 17:49:10,627 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
-2026-03-09 17:49:10,627 - INFO - [THREAD-134928607233728] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-09 17:49:10.627204
-Traceback (most recent call last):
-  File "/home/colt/Documents/MS1Automation/main.py", line 245, in <module>
-    main()
-  File "/home/colt/Documents/MS1Automation/main.py", line 221, in main
-    for future in as_completed(future_to_key):
-  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 243, in as_completed
-    waiter.event.wait(wait_timeout)
-  File "/usr/lib/python3.12/threading.py", line 655, in wait
-    signaled = self._cond.wait(timeout)
-               ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/threading.py", line 355, in wait
-    waiter.acquire()
-KeyboardInterrupt
+    # # -------------------------------
+    # # SCP function
+    # # -------------------------------
 
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
+    # def scpFile(self, conn, src, dest, logger):
+    #   """
+    #   Copying files to remote server
+    #   """
+
+    #   try:
+    #     msg = f"Copying files to remote server"
+    #     print(msg)
+    #     logger.info(msg)
+
+    #     cmd = [
+    #       "start shell",
+    #       "\n"
+    #       f"scp -C {src} {dest}",
+    #       "\n",
+    #       self.remote_password,
+    #       "\n",
+    #       "exit",
+    #       "\n"
+    #     ]
+    #     saving_file = conn.send_multiline_timing(cmd, read_timeout=0)
+    #     logger.debug(f"{self.host}: SCP output:\n{saving_file}")
+    #     if "No such file or directory" in saving_file:
+    #       msg = f"{self.host}: No such file or directory: {src}"
+    #       print(msg)
+    #       return  False
+    #     if not saving_file:
+    #       msg = f"{self.host}: Not able to save the file. Please look into to the SCPFile()"
+    #       logger.info(msg)
+    #       print(msg)
+    #       return False
+    #     print("file copied")
+    #     return True
+    #   except Exception as e:
+    #     msg = f"{self.host}: scp failed for {self.vendor} due to {e}"
+    #     logger.error(msg)
+    #     print(msg)
+    #     return False
+
+
+
+    # # -------------------------------
+    # # Pre Backup image
+    # # -------------------------------
+
+    # def preBackup(self,conn,filename, logger):
+    #     """
+    #     Backup the running configuration
+    #     """
+
+    #     try:
+    #         msg = f"Taking device backup vendor: {self.vendor}"
+    #         print(f"Taking device backup vendor: {self.vendor}")
+    #         logger.info(msg)
+
+    #         if not conn:
+    #             msg = f"Not connected to device for vendor: {self.vendor}"
+    #             logger.error(msg)
+    #             raise RuntimeError("Not connected to device")
+
+    #         if (self.vendor not in  self.accepted_vendors):
+    #             msg = f"Unsupported vendor: {self.vendor}"
+    #             logger.error(msg)
