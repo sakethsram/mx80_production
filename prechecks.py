@@ -121,8 +121,7 @@ class PreCheck:
                     cmd = "request vmhost snapshot"
                     logger.info(f"{self.host}: executing the '{cmd}' for vendor: {self.vendor}")
                     output = conn.send_command_timing(cmd)
-                    if cmd in output or "yes,no" in output.lower():
-                        output += conn.send_command("yes", expect_string=r".*>", max_loops=3, read_timeout=300)
+                    if cmd in output or "yes,no" in output.lower():output += conn.send_command("yes", expect_string=r".*>", max_loops=3, read_timeout=900)
                     logger.info(f"{self.host}: Disk1 backup is done for {self.vendor}")
                     return {
                         "status":     "ok",
