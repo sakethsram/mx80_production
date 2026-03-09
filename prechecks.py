@@ -333,15 +333,17 @@ class PreCheck:
                 command = f"file checksum md5 /var/tmp/{target_image}"
                 logger.info(f"{self.host}: Executing '{command}'")
 
-                # Flush any stale output left in the buffer from previous commands
-                try:
-                    conn.send_command("", expect_string=r">\s*$", read_timeout=10)
-                except Exception:
-                    pass
+                # Aggressively clear the buffer — read whatever is sitting there and discard it
+                import time
+                time.sleep(3)
+                conn.read_channel()   # discard stale output
+                time.sleep(1)
+                conn.read_channel()   # second pass to be sure
 
                 output = conn.send_command(
                     command,
-                    read_timeout=5000,
+                    expect_string=r"MD5\s*\(.*?\)\s*=\s*[a-f0-9]{32}",
+                    read_timeout=300,   # large image MD5 can take several minutes
                     strip_prompt=True,
                     strip_command=True,
                 )
