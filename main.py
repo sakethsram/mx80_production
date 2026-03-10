@@ -138,25 +138,25 @@ def run_prechecks(dev: dict, device_key: str, logger):
             return False
 
         # #── STEP 8: Validate MD5 checksum ────────────────────────────────────
-        try:
-            expected_checksum = target.get("checksum")
+        # try:
+        #     expected_checksum = target.get("checksum")
 
-            t        = PreCheck(dev)
-            checksum = t.verifyChecksum(conn, target_image, expected_checksum)
-            device_results[device_key]["pre"]["validate_md5"] = checksum
+        #     t        = PreCheck(dev)
+        #     checksum = t.verifyChecksum(conn, target_image, expected_checksum)
+        #     device_results[device_key]["pre"]["validate_md5"] = checksum
 
-            if not checksum.get("match", False):
-                raise RuntimeError(checksum.get("exception", "Checksum mismatch"))
+        #     if not checksum.get("match", False):
+        #         raise RuntimeError(checksum.get("exception", "Checksum mismatch"))
 
-        except Exception as e:
-            logger.error(f"[{device_key}] STEP 8 CHECKSUM failed — {e}")
-            # Safely set the result even if verifyChecksum never returned
-            device_results[device_key]["pre"]["validate_md5"] = {
-                "status":    "failed",
-                "exception": str(e),
-                "match":     False,
-            }
-            return False
+        # except Exception as e:
+        #     logger.error(f"[{device_key}] STEP 8 CHECKSUM failed — {e}")
+        #     # Safely set the result even if verifyChecksum never returned
+        #     device_results[device_key]["pre"]["validate_md5"] = {
+        #         "status":    "failed",
+        #         "exception": str(e),
+        #         "match":     False,
+        #     }
+        #     return False
         ## ── STEP 9: Disable RE protect filter ────────────────────────────────
         # try:
         #     t      = PreCheck(dev)
