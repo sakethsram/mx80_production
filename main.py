@@ -459,20 +459,6 @@ def run_upgrade(dev: dict, device_key: str, logger):
         logger.info(f"[THREAD-{tid}] [{device_key}] Upgrade thread finished at {datetime.now()}")
         print(f"[{device_key}] ===== UPGRADE THREAD FINISHED =====")
 
-def run_device(dev: dict, device_key: str, logger):
-    ok = run_prechecks(dev, device_key, logger)
-    if not ok:
-        logger.error(f"[{device_key}] Prechecks failed — skipping upgrade")
-        return False
-
-    if PRECHECKS_ONLY:
-        logger.info(f"[{device_key}] PRECHECKS_ONLY=True — skipping upgrade")
-        return True
-
-    return run_upgrade(dev, device_key, logger)
-# ─────────────────────────────────────────────────────────────────────────────
-# main
-# ─────────────────────────────────────────────────────────────────────────────
 def main():
     devices          = load_yaml("deviceDetails.yaml")
     all_devs         = devices["devices"]
@@ -499,7 +485,7 @@ def main():
 
     main_logger.info(f"[MAIN] Spawning threads for {len(all_devs)} device(s)")
 
-    # ── One thread per device — prechecks then upgrade ────────────────────────
+    # ── One thread per device — prechecks then upgrade in same thread ─────────
     with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
         future_to_key = {}
         for dev in all_devs:
@@ -508,7 +494,17 @@ def main():
             ip_clean   = dev["host"].replace(".", "_")
             device_key = f"{ip_clean}_{vendor_lc}_{model_lc}"
 
-            future = executor.submit(run_device, dev, device_key, loggers[device_key])
+            def device_thread(d=dev, dk=device_key, lg=loggers[device_key]):
+                ok = run_prechecks(d, dk, lg)
+                if not ok:
+                    lg.error(f"[{dk}] Prechecks failed — skipping upgrade")
+                    return False
+                if PRECHECKS_ONLY:
+                    lg.info(f"[{dk}] PRECHECKS_ONLY=True — skipping upgrade")
+                    return True
+                return run_upgrade(d, dk, lg)
+
+            future = executor.submit(device_thread)
             future_to_key[future] = device_key
 
         for future in as_completed(future_to_key):
@@ -529,3 +525,7 @@ def main():
 
     main_logger.info(f"[MAIN] JSON files location -> {os.path.join(os.getcwd(), 'precheck_jsons')}")
     sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
