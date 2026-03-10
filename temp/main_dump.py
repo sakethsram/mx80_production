@@ -426,7 +426,7 @@ def run_device_pipeline(device, accepted_vendors,commands):
         
 
     except Exception as e: 
-:        msg = f"Device Upgrade failed for {vendor}_{model}: {e}"
+        msg = f"Device Upgrade failed for {vendor}_{model}: {e}"
         logger.error(msg)
         print(msg)
 
