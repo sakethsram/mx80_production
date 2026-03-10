@@ -150,7 +150,12 @@ def run_prechecks(dev: dict, device_key: str, logger):
 
         except Exception as e:
             logger.error(f"[{device_key}] STEP 8 CHECKSUM failed — {e}")
-            device_results[device_key]["pre"]["validate_md5"]["exception"] = str(e)
+            # Safely set the result even if verifyChecksum never returned
+            device_results[device_key]["pre"]["validate_md5"] = {
+                "status":    "failed",
+                "exception": str(e),
+                "match":     False,
+            }
             return False
         ## ── STEP 9: Disable RE protect filter ────────────────────────────────
         # try:
