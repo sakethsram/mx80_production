@@ -81,11 +81,81 @@ logger = logging.getLogger(__name__)
 #           "computed":  "",
 #           "match":     False,
 #       },
+#       "disable_re_protect_filter": {
+#           "status":    "not_started",
+#           "exception": "",
+#       },
 #   },
-#   "post":    [],
-#   "upgrade": {},
+#   "upgrade": {
+#       "status":     "not_started" | "in_progress" | "completed" | "rolled_back" | "rollback_failed" | "failed",
+#       "initial_os": "",   # curr_os from yaml — OS on device before any upgrade
+#       "target_os":  "",   # expected_os of the last entry in imageDetails
+#       "exception":  "",
+#       "hops": [
+#           {
+#               "image":     "junos-vmhost-install-mx-x86-64-22.4R3.25.tgz",
+#               "status":    "not_started" | "ok" | "failed" | "rolled_back" | "rollback_failed",
+#               "exception": "",
+#               "md5_match": False,
+#           },
+#           {
+#               "image":     "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
+#               "status":    "not_started",
+#               "exception": "",
+#               "md5_match": False,
+#           },
+#       ],
+#   },
+#   "post": [],
+# }
+#
+# ── EXAMPLE — fully populated upgrade block after successful A→B→C ───────────
+#
+# "upgrade": {
+#     "status":     "completed",
+#     "initial_os": "23.4R2-S5.6",
+#     "target_os":  "23.4R2-S6.9",
+#     "exception":  "",
+#     "hops": [
+#         {
+#             "image":     "junos-vmhost-install-mx-x86-64-22.4R3.25.tgz",
+#             "status":    "ok",
+#             "exception": "",
+#             "md5_match": True,
+#         },
+#         {
+#             "image":     "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
+#             "status":    "ok",
+#             "exception": "",
+#             "md5_match": True,
+#         },
+#     ],
+# }
+#
+# ── EXAMPLE — B→C failed, rolled back to A ───────────────────────────────────
+#
+# "upgrade": {
+#     "status":     "rolled_back",
+#     "initial_os": "23.4R2-S5.6",
+#     "target_os":  "23.4R2-S6.9",
+#     "exception":  "imageUpgrade failed for junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
+#     "hops": [
+#         {
+#             "image":     "junos-vmhost-install-mx-x86-64-22.4R3.25.tgz",
+#             "status":    "rolled_back",
+#             "exception": "",
+#             "md5_match": True,
+#         },
+#         {
+#             "image":     "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
+#             "status":    "failed",
+#             "exception": "imageUpgrade failed",
+#             "md5_match": True,
+#         },
+#     ],
 # }
 # ─────────────────────────────────────────────────────────────
+
 device_results: dict = {}
 
 all_devices_summary: dict = {}
@@ -94,6 +164,10 @@ results_lock = threading.Lock()
 
 
 def init_device_results(device_key: str, host: str, vendor: str, model: str, device_yaml: dict):
+    image_details = device_yaml.get("imageDetails", [])
+    initial_os    = device_yaml.get("curr_os", "")
+    target_os     = image_details[-1].get("expected_os", "") if image_details else ""
+
     device_results[device_key] = {
         "status": "",
         "device_info": {
@@ -154,12 +228,26 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
                 "match":     False,
             },
             "disable_re_protect_filter": {
-            "status":    "not_started",
-            "exception": "",
+                "status":    "not_started",
+                "exception": "",
             },
         },
-        "post":    [],
-        "upgrade": {},
+        "post": [],
+        "upgrade": {
+            "status":     "not_started",
+            "initial_os": initial_os,
+            "target_os":  target_os,
+            "exception":  "",
+            "hops": [
+                {
+                    "image":     img.get("image", ""),
+                    "status":    "not_started",
+                    "exception": "",
+                    "md5_match": False,
+                }
+                for img in image_details
+            ],
+        },
     }
 
 
@@ -333,11 +421,11 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
             entry["json"]      = result
             entry["exception"] = ""
         except Exception:
-            entry["json"]      = {}                               # always written to JSON
+            entry["json"]      = {}
             entry["exception"] = f"parser failed for '{cmd}'"
-            log.error(f"[{device_key}] parser failed for '{cmd}':\n{tb.format_exc()}")  # log it
+            log.error(f"[{device_key}] parser failed for '{cmd}':\n{tb.format_exc()}")
             all_ok = False
-            continue   
+            continue
 
     status = "completed" if all_ok else "completed_with_errors"
     device_results[device_key]["pre"]["execute_show_commands"]["status"]    = status
@@ -411,6 +499,8 @@ def load_yaml(filename):
     except Exception as e:
         logger.error(f"Failed to load YAML {filename}: {e}")
         raise
+
+
 def export_device_summary(device_key: str):
     slot      = device_results.get(device_key, {})
     printable = {k: v for k, v in slot.items() if k != "conn"}
@@ -437,6 +527,7 @@ def export_device_summary(device_key: str):
     os.rename(html_path, os.path.join(reports_dir, html_name))
     print(f"[REPORT] {os.path.join(reports_dir, html_name)}")
     print(f"[REPORT] {html_name}")
+
 
 def merge_thread_result(device_key: str, result: dict):
     with results_lock:
@@ -476,9 +567,9 @@ def connect(device_key: str, dev: dict, logger):
             session_log_path = session_log_path,
             logger           = logger,
         )
-        device_results[device_key]["conn"]                              = conn
-        device_results[device_key]["pre"]["connect"]["status"]          = True
-        device_results[device_key]["pre"]["connect"]["exception"]       = ""
+        device_results[device_key]["conn"]                        = conn
+        device_results[device_key]["pre"]["connect"]["status"]    = True
+        device_results[device_key]["pre"]["connect"]["exception"] = ""
         logger.info(f"[{device_key}] Connected successfully to {host}")
         return conn
 
