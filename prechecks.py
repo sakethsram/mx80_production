@@ -314,77 +314,7 @@ class PreCheck:
                 "image":       "",
                 "destination": "",
             }
-    def verifyChecksum(self, conn, target_image, expected_checksum):
-        try:
-            msg = f"Verifying MD5 checksum for {target_image} on vendor: {self.vendor}"
-            logger.info(msg)
-
-            if not conn:
-                msg = "Not connected to device"
-                logger.error(msg)
-                raise RuntimeError("Not connected to device")
-
-            if self.vendor not in self.accepted_vendor:
-                msg = f"Unsupported vendor: {self.vendor}"
-                logger.error(msg)
-                raise ValueError(msg)
-
-            if self.vendor == "juniper":
-                command = f"file checksum md5 /var/tmp/{target_image}"
-                logger.info(f"{self.host}: Executing '{command}'")
-
-                output = conn.send_command(
-                    command,
-                    expect_string=r".*>",
-                    read_timeout=300,
-                    strip_prompt=True,
-                    strip_command=True,
-                )
-                logger.info(f"{self.host}: MD5 output ====>> {output}")
-                match = re.search(r'MD5\s*\(.*?\)\s*=\s*(\S+)', output)
-
-                if not match:
-                    return {
-                        "status":    "failed",
-                        "exception": "Could not parse checksum from output",
-                        "expected":  expected_checksum,
-                        "computed":  "",
-                        "match":     False,
-                    }
-
-                computed = match.group(1).strip()
-                logger.info(f"{self.host}: Expected checksum: {expected_checksum}")
-                logger.info(f"{self.host}: Computed checksum: {computed}")
-
-                if computed == expected_checksum:
-                    logger.info(f"{self.host}: Checksum PASSED")
-                    return {
-                        "status":    "ok",
-                        "exception": "",
-                        "expected":  expected_checksum,
-                        "computed":  computed,
-                        "match":     True,
-                    }
-                else:
-                    logger.warning(f"{self.host}: Checksum FAILED")
-                    return {
-                        "status":    "failed",
-                        "exception": "Checksum mismatch",
-                        "expected":  expected_checksum,
-                        "computed":  computed,
-                        "match":     False,
-                    }
-
-        except Exception as e:
-            msg = f"{self.host}: Checksum verification failed for vendor: {self.vendor}: {e}"
-            logger.error(msg)
-            return {
-                "status":    "failed",
-                "exception": str(e),
-                "expected":  "",
-                "computed":  "",
-                "match":     False,
-            }
+   
     # def disableReProtectFilter(self, conn, logger):
     #     """
     #     Removes RE protection firewall filter from loopback interface (lo0).
