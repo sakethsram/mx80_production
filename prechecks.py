@@ -271,128 +271,118 @@ class PreCheck:
             logger.error(msg)
             return False
     def transferImage(self, conn, image_path, target_image):
+        logger.info("==============================================================")
+        logger.info("ENTER transferImage()")
+        logger.info(f"Host            : {self.host}")
+        logger.info(f"Vendor          : {self.vendor}")
+        logger.info(f"Image Path      : {image_path}")
+        logger.info(f"Target Image    : {target_image}")
+        logger.info(f"Connection Obj  : {conn}")
+        logger.info("==============================================================")
+
         try:
+            logger.info("STEP 1 — Preparing transfer message")
             msg = f"Transferring image {target_image} to device for vendor: {self.vendor}"
             logger.info(msg)
 
+            logger.info("STEP 2 — Checking connection object")
             if not conn:
+                logger.error("Connection object is None or invalid")
                 msg = "Not connected to device"
                 logger.error(msg)
+                logger.error("Raising RuntimeError: Not connected to device")
                 raise RuntimeError("Not connected to device")
+
+            logger.info("Connection object validated")
+
+            logger.info("STEP 3 — Validating vendor support")
+            logger.info(f"Accepted vendors list: {self.accepted_vendor}")
 
             if self.vendor not in self.accepted_vendor:
                 msg = f"Unsupported vendor: {self.vendor}"
                 logger.error(msg)
+                logger.error("Raising ValueError due to unsupported vendor")
                 raise ValueError(msg)
 
+            logger.info(f"Vendor {self.vendor} is supported")
+
+            logger.info("STEP 4 — Checking vendor specific transfer logic")
+
             if self.vendor == "juniper":
-                src      = f"{self.remote_server}:{image_path}/{target_image}"
-                dest     = "/var/tmp/"
+                logger.info("Vendor identified as JUNIPER")
+
+                logger.info("STEP 4.1 — Constructing SCP source path")
+                src = f"{self.remote_server}:{image_path}/{target_image}"
+                logger.info(f"SCP Source Path: {src}")
+
+                logger.info("STEP 4.2 — Setting destination directory")
+                dest = "/var/tmp/"
+                logger.info(f"SCP Destination Path: {dest}")
+
+                logger.info("STEP 4.3 — Initiating SCP transfer")
+                logger.info(f"Calling scpFile(conn={conn}, src={src}, dest={dest})")
+
                 transfer = self.scpFile(conn, src, dest)
+
+                logger.info(f"SCP transfer result: {transfer}")
+
                 if not transfer:
-                    return {
+                    logger.error("SCP transfer returned False — transfer failed")
+
+                    failure_payload = {
                         "status":      "failed",
                         "exception":   f"SCP transfer failed for {target_image}",
                         "image":       target_image,
                         "destination": dest,
                     }
 
+                    logger.error(f"Returning failure payload: {failure_payload}")
+                    return failure_payload
+
+                logger.info("SCP transfer completed successfully")
+
+            logger.info("STEP 5 — Finalizing success response")
+
             logger.info(f"{self.host}: Image {target_image} transferred to {dest}")
-            return {
+
+            success_payload = {
                 "status":      "ok",
                 "exception":   "",
                 "image":       target_image,
                 "destination": dest,
             }
 
+            logger.info(f"Returning success payload: {success_payload}")
+            logger.info("EXIT transferImage() SUCCESS")
+            logger.info("==============================================================")
+
+            return success_payload
+
         except Exception as e:
+            logger.error("EXCEPTION OCCURRED in transferImage()")
+            logger.error(f"Host            : {self.host}")
+            logger.error(f"Vendor          : {self.vendor}")
+            logger.error(f"Image Path      : {image_path}")
+            logger.error(f"Target Image    : {target_image}")
+            logger.error(f"Exception Type  : {type(e).__name__}")
+            logger.error(f"Exception Value : {str(e)}")
+
             msg = f"{self.host}: Image transfer failed for vendor: {self.vendor}: {e}"
             logger.error(msg)
-            return {
+
+            failure_payload = {
                 "status":      "failed",
                 "exception":   str(e),
                 "image":       "",
                 "destination": "",
             }
-    def verifyChecksum(self, conn, target_image, expected_checksum):
-        try:
-            msg = f"Verifying MD5 checksum for {target_image} on vendor: {self.vendor}"
-            logger.info(msg)
 
-            if not conn:
-                msg = "Not connected to device"
-                logger.error(msg)
-                raise RuntimeError("Not connected to device")
+            logger.error(f"Returning exception payload: {failure_payload}")
+            logger.info("EXIT transferImage() FAILURE")
+            logger.info("==============================================================")
 
-            if self.vendor not in self.accepted_vendor:
-                msg = f"Unsupported vendor: {self.vendor}"
-                logger.error(msg)
-                raise ValueError(msg)
-
-            if self.vendor == "juniper":
-                command = f"file checksum md5 /var/tmp/{target_image}"
-                logger.info(f"{self.host}: Executing '{command}'")
-
-                # Aggressively clear the buffer — read whatever is sitting there and discard it
-                import time
-                time.sleep(3)
-                conn.read_channel()   # discard stale output
-                time.sleep(1)
-                conn.read_channel()   # second pass to be sure
-
-                output = conn.send_command(
-                    command,
-                    expect_string=r"MD5\s*\(.*?\)\s*=\s*[a-f0-9]{32}",
-                    read_timeout=300,   # large image MD5 can take several minutes
-                    strip_prompt=True,
-                    strip_command=True,
-                )
-                logger.info(f"{self.host}: output of the md5 checksum ====>> {output}")
-
-                match = re.search(r'MD5\s*\(.*?\)\s*=\s*(\S+)', output)
-
-                if not match:
-                    return {
-                        "status":    "failed",
-                        "exception": "Could not parse checksum from output",
-                        "expected":  expected_checksum,
-                        "computed":  "",
-                        "match":     False,
-                    }
-
-                computed = match.group(1).strip()
-                logger.info(f"{self.host}: Expected checksum: {expected_checksum}")
-                logger.info(f"{self.host}: Computed checksum: {computed}")
-
-                if computed == expected_checksum:
-                    logger.info(f"{self.host}: Checksum PASSED")
-                    return {
-                        "status":    "ok",
-                        "exception": "",
-                        "expected":  expected_checksum,
-                        "computed":  computed,
-                        "match":     True,
-                    }
-                else:
-                    logger.warning(f"{self.host}: Checksum FAILED")
-                    return {
-                        "status":    "failed",
-                        "exception": "Checksum mismatch",
-                        "expected":  expected_checksum,
-                        "computed":  computed,
-                        "match":     False,
-                    }
-
-        except Exception as e:
-            msg = f"{self.host}: Checksum verification failed for vendor: {self.vendor}: {e}"
-            logger.error(msg)
-            return {
-                "status":    "failed",
-                "exception": str(e),
-                "expected":  "",
-                "computed":  "",
-                "match":     False,
-            }
+            return failure_payload
+   
     # def disableReProtectFilter(self, conn, logger):
     #     """
     #     Removes RE protection firewall filter from loopback interface (lo0).
