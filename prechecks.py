@@ -333,22 +333,14 @@ class PreCheck:
                 command = f"file checksum md5 /var/tmp/{target_image}"
                 logger.info(f"{self.host}: Executing '{command}'")
 
-                # Aggressively clear the buffer — read whatever is sitting there and discard it
-                import time
-                time.sleep(3)
-                conn.read_channel()   # discard stale output
-                time.sleep(1)
-                conn.read_channel()   # second pass to be sure
-
                 output = conn.send_command(
                     command,
-                    expect_string=r"MD5\s*\(.*?\)\s*=\s*[a-f0-9]{32}",
-                    read_timeout=300,   # large image MD5 can take several minutes
+                    expect_string=r".*>",
+                    read_timeout=300,
                     strip_prompt=True,
                     strip_command=True,
                 )
-                logger.info(f"{self.host}: output of the md5 checksum ====>> {output}")
-
+                logger.info(f"{self.host}: MD5 output ====>> {output}")
                 match = re.search(r'MD5\s*\(.*?\)\s*=\s*(\S+)', output)
 
                 if not match:
