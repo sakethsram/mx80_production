@@ -295,7 +295,7 @@ def run_upgrade(conn, dev: dict, device_key: str, logger):
             print(msg)
 
             # ── MD5 checksum ──────────────────────────────────────────────────
-            verify_checksum = precheck.verifyChecksum(conn, checksum, image, logger)
+            verify_checksum = upgrade.verifyChecksum(conn, checksum, image, logger)
             if not verify_checksum.get("match"):
                 msg = "Checksum verification failed"
                 logger.info(msg)
