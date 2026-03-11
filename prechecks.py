@@ -1,55 +1,43 @@
-import logging
 import re
 from lib.utilities import *
 
-logger = logging.getLogger(__name__)
 
-#----------------------------------------------------#
+# ─────────────────────────────────────────────────────────────────────────────
 # PreCheck class
-#----------------------------------------------------#
+# ─────────────────────────────────────────────────────────────────────────────
 class PreCheck:
-
     """
-    Handles configuration and log backups from devices.
-    Currently support JUNOS devices
+    Handles pre-upgrade checks: storage, disk backup, config backup, image transfer.
+    Supports vendors defined in deviceDetails.yaml → accepted_vendors.
+    conn and logger are always passed in from run_device_pipeline().
     """
 
     def __init__(self, device):
         self.device          = device
-        self.conn            = None
         self.host            = device.get("host")
-        self.device_type     = device.get('device_type')
-        self.vendor          = device.get('vendor')
-        self.model           = device.get('model')
-        self.username        = device.get('username')
-        self.remote_server   = device.get('remote_backup_server')
-        self.remote_password = device.get('remote_password')
-        self.min_disk_gb     = device.get('min_disk_gb')
-        self.accepted_vendor = ["juniper", "cisco"]
+        self.device_type     = device.get("device_type")
+        self.vendor          = device.get("vendor")
+        self.model           = device.get("model")
+        self.username        = device.get("username")
+        self.remote_server   = device.get("remote_backup_server")
+        self.remote_password = device.get("remote_password")
+        self.min_disk_gb     = device.get("min_disk_gb")
+        # accepted_vendors comes from the YAML, stored on dev by run_device_pipeline
+        self.accepted_vendors = device.get("accepted_vendors", [])
 
-    def checkStorage(self, conn, min_disk_gb):
+    # ─────────────────────────────────────────────────────────────────────────
+    def checkStorage(self, conn, min_disk_gb, logger):
         try:
-            msg = f"{self.host}: Checking system storage for vendor: {self.vendor} "
-            logger.info(msg)
-
-            if not conn:
-                msg = "Not connected to device"
-                logger.error(msg)
-                raise RuntimeError("Not connected to device")
+            logger.info(f"[{self.host}] checkStorage — vendor: {self.vendor}")
 
             storage_output = conn.send_command("show system storage", expect_string=r'.*>')
 
-            avail_space = re.search(r"^/dev/gpt/var\s+\S+\s+\S+\s+(\S+)*", storage_output, re.M).group(1)
-            avail_space = avail_space[:-1]
-            avail_space = int(float(avail_space))
+            match = re.search(r"^/dev/gpt/var\s+\S+\s+\S+\s+(\S+)", storage_output, re.M)
+            if not match:
+                raise ValueError(f"[{self.host}] Could not parse storage output")
 
-            if avail_space == None:
-                msg = f"{self.host} Unable to parse storage output for vendor: {self.vendor}"
-                logger.error(msg)
-                raise ValueError(msg)
-
-            msg = f"{self.host}:  {avail_space} GB available for {self.vendor}"
-            logger.info(msg)
+            avail_space = int(float(match.group(1).rstrip("%")))
+            logger.info(f"[{self.host}] checkStorage — {avail_space} GB available")
 
             # Enough space
             if avail_space > min_disk_gb:
@@ -59,18 +47,16 @@ class PreCheck:
                     "exception":     "",
                     "sufficient":    True,
                 }
-                logger.info(result)
+                logger.info(f"[{self.host}] checkStorage — sufficient space: {result}")
                 return result
 
-            # ---------------------------------------------------
-            # LOW STORAGE → START CLEANUP
-            # ---------------------------------------------------
-            logger.warning(f"{self.host}: Low space! Running system cleanup")
+            # ── LOW STORAGE → CLEANUP ─────────────────────────────────────────
+            logger.warning(f"[{self.host}] checkStorage — low space, running cleanup")
 
-            files_to_delete = self.device.get("cleanup_files")
-
-            if len(files_to_delete) == 0:
-                logger.error(f"{self.host}: cleanup_files EMPTY -> No files are available to delete")
+            files_to_delete = self.device.get("cleanup_files", [])
+            if not files_to_delete:
+                msg = f"[{self.host}] checkStorage — cleanup_files empty, cannot free space"
+                logger.error(msg)
                 return {
                     "status":        "failed",
                     "deleted_files": [],
@@ -79,10 +65,10 @@ class PreCheck:
                 }
 
             deleted_files = []
-            for file in files_to_delete:
-                logger.info(f"{self.host}: Deleting {file}")
-                conn.send_command(f"file delete {file}")
-                deleted_files.append(file)
+            for f in files_to_delete:
+                logger.info(f"[{self.host}] checkStorage — deleting {f}")
+                conn.send_command(f"file delete {f}")
+                deleted_files.append(f)
 
             result = {
                 "status":        "low_space_cleaned",
@@ -90,46 +76,39 @@ class PreCheck:
                 "exception":     "",
                 "sufficient":    False,
             }
-            logger.info(result)
+            logger.info(f"[{self.host}] checkStorage — cleanup done: {result}")
             return result
 
-        except Exception:
-            msg = f"{self.host}: Storage cleanup failed for vendor: {self.vendor}"
+        except Exception as e:
+            msg = f"[{self.host}] checkStorage failed: {e}"
             logger.exception(msg)
-            raise   
+            raise
 
-    def preBackupDisk(self, conn):
+    # ─────────────────────────────────────────────────────────────────────────
+    def preBackupDisk(self, conn, logger):
         try:
-            logger.info(f"Backing up the whole primary disk1 config to disk2 for rollback for vendor: {self.vendor}")
+            logger.info(f"[{self.host}] preBackupDisk — vendor: {self.vendor}")
 
-            if not conn:
-                msg = f"Not connected to device for vendor: {self.vendor}"
-                logger.error(msg)
-                raise RuntimeError("Not connected to device")
-
-            if self.vendor not in self.accepted_vendor:
-                msg = f"Unsupported vendor: {self.vendor}"
-                logger.error(msg)
-                raise ValueError(msg)
+            if self.vendor not in self.accepted_vendors:
+                raise ValueError(f"[{self.host}] preBackupDisk — unsupported vendor: {self.vendor}")
 
             if self.vendor == "juniper":
-                logger.info(f"Check number of disks on a juniper device")
                 output = conn.send_command("show vmhost version", read_timeout=300)
 
                 if "set b" in output and "set p" in output:
-                    logger.info(f"There are 2 disks in a device for vendor: {self.vendor}\n will take a backup of primary disk to backup disk")
-                    cmd = "request vmhost snapshot"
-                    logger.info(f"{self.host}: executing the '{cmd}' for vendor: {self.vendor}")
+                    logger.info(f"[{self.host}] preBackupDisk — dual disk, taking snapshot")
+                    cmd    = "request vmhost snapshot"
                     output = conn.send_command_timing(cmd)
-                    if cmd in output or "yes,no" in output.lower():output += conn.send_command("yes", expect_string=r".*>", max_loops=3, read_timeout=900)
-                    logger.info(f"{self.host}: Disk1 backup is done for {self.vendor}")
+                    if cmd in output or "yes,no" in output.lower():
+                        output += conn.send_command("yes", expect_string=r".*>", max_loops=3, read_timeout=900)
+                    logger.info(f"[{self.host}] preBackupDisk — snapshot complete")
                     return {
                         "status":     "ok",
                         "exception":  "",
                         "disk_count": "dual",
                     }
                 else:
-                    logger.info(f"There is only 1 disk in a device for {self.vendor}\n No need to take a disk backup")
+                    logger.info(f"[{self.host}] preBackupDisk — single disk, skipping snapshot")
                     return {
                         "status":     "skipped",
                         "exception":  "",
@@ -137,45 +116,35 @@ class PreCheck:
                     }
 
         except Exception as e:
-            msg = f"{self.host}: Disk backup failed for {self.vendor}: {e}"
+            msg = f"[{self.host}] preBackupDisk failed: {e}"
             logger.error(msg)
             return {
                 "status":     "failed",
                 "exception":  str(e),
                 "disk_count": "",
             }
-    def preBackup(self, conn, filename):
+
+    # ─────────────────────────────────────────────────────────────────────────
+    def preBackup(self, conn, filename, logger):
         try:
-            msg = f"Taking device backup for vendor: {self.vendor}"
-            logger.info(msg)
+            logger.info(f"[{self.host}] preBackup — vendor: {self.vendor}")
 
-            if not conn:
-                msg = f"Not connected to device for vendor: {self.vendor}"
-                logger.error(msg)
-                raise RuntimeError("Not connected to device")
-
-            if self.vendor not in self.accepted_vendor:
-                msg = f"Unsupported vendor: {self.vendor}"
-                logger.error(msg)
-                raise ValueError(msg)
+            if self.vendor not in self.accepted_vendors:
+                raise ValueError(f"[{self.host}] preBackup — unsupported vendor: {self.vendor}")
 
             if self.vendor == "juniper":
-                preBackupConfig = False
-                preDeviceLog    = False
+                pre_backup_config = False
+                pre_device_log    = False
 
                 # Step 1: Backup running config
-                config_commands = [
-                    f"save {filename}",
-                    "run file list"
-                ]
-                configBackup = conn.send_config_set(config_commands, cmd_verify=False, strip_command=True)
-                if configBackup:
-                    logger.info(f"{self.host}: Config saved, copying to remote server")
+                config_commands = [f"save {filename}", "run file list"]
+                config_backup   = conn.send_config_set(config_commands, cmd_verify=False, strip_command=True)
+                if config_backup:
+                    logger.info(f"[{self.host}] preBackup — config saved, SCP to remote server")
                     src      = f"/var/home/lab/{filename}"
                     dest     = f"{self.remote_server}:/var/tmp/{filename}"
-                    saveFile = self.scpFile(conn, src, dest)
-                    if saveFile:
-                        preBackupConfig = True
+                    if self.scpFile(conn, src, dest, logger):
+                        pre_backup_config = True
                     else:
                         return {
                             "status":      "failed",
@@ -188,27 +157,26 @@ class PreCheck:
                 # Step 2: Backup device log
                 log_commands = [
                     f"request support information | save /var/log/{filename}.txt",
-                    f"file archive compress source /var/log/* destination /var/tmp/{filename}.tgz"
+                    f"file archive compress source /var/log/* destination /var/tmp/{filename}.tgz",
                 ]
-                for cmd in log_commands:    logs = conn.send_command_timing(cmd, read_timeout=900, last_read=10.0)
-                logs = True
-                if logs:
-                    logger.info(f"{self.host}: Logs archived, copying to remote server")
-                    src      = f"/var/tmp/{filename}.tgz"
-                    dest     = f"{self.remote_server}:/var/tmp/{filename}.tgz"
-                    saveFile = self.scpFile(conn, src, dest)
-                    if saveFile:
-                        preDeviceLog = True
-                    else:
-                        return {
-                            "status":      "failed",
-                            "exception":   "SCP of log file failed",
-                            "config_file": filename,
-                            "log_file":    f"{filename}.tgz",
-                            "destination": dest,
-                        }
+                for cmd in log_commands:
+                    conn.send_command_timing(cmd, read_timeout=900, last_read=10.0)
 
-                if not preBackupConfig or not preDeviceLog:
+                logger.info(f"[{self.host}] preBackup — logs archived, SCP to remote server")
+                src  = f"/var/tmp/{filename}.tgz"
+                dest = f"{self.remote_server}:/var/tmp/{filename}.tgz"
+                if self.scpFile(conn, src, dest, logger):
+                    pre_device_log = True
+                else:
+                    return {
+                        "status":      "failed",
+                        "exception":   "SCP of log file failed",
+                        "config_file": filename,
+                        "log_file":    f"{filename}.tgz",
+                        "destination": dest,
+                    }
+
+                if not pre_backup_config or not pre_device_log:
                     return {
                         "status":      "failed",
                         "exception":   "Config or log backup incomplete",
@@ -226,7 +194,7 @@ class PreCheck:
                 }
 
         except Exception as e:
-            msg = f"{self.host}: Device backup failed for vendor: {self.vendor}: {e}"
+            msg = f"[{self.host}] preBackup failed: {e}"
             logger.error(msg)
             return {
                 "status":      "failed",
@@ -235,61 +203,48 @@ class PreCheck:
                 "log_file":    "",
                 "destination": "",
             }
-    def scpFile(self, conn, src, dest):
+
+    # ─────────────────────────────────────────────────────────────────────────
+    def scpFile(self, conn, src, dest, logger):
         try:
-            msg = f"Copying files to remote server"
-            logger.info(msg)
+            logger.info(f"[{self.host}] scpFile — {src} → {dest}")
 
             cmd = [
-                "start shell",
-                "\n",
-                f"scp -C {src} {dest}",
-                "\n",
-                self.remote_password,
-                "\n",
-                "exit",
-                "\n"
+                "start shell", "\n",
+                f"scp -C {src} {dest}", "\n",
+                self.remote_password, "\n",
+                "exit", "\n",
             ]
-            saving_file = conn.send_multiline_timing(cmd, read_timeout=1800)
-            logger.debug(f"{self.host}: SCP output:\n{saving_file}")
+            output = conn.send_multiline_timing(cmd, read_timeout=1800)
+            logger.debug(f"[{self.host}] scpFile output:\n{output}")
 
-            if "No such file or directory" in saving_file:
-                msg = f"{self.host}: No such file or directory: {src}"
-                logger.error(msg)
+            if "No such file or directory" in output:
+                logger.error(f"[{self.host}] scpFile — no such file: {src}")
                 return False
 
-            if not saving_file:
-                msg = f"{self.host}: SCP returned no output"
-                logger.error(msg)
+            if not output:
+                logger.error(f"[{self.host}] scpFile — no output returned")
                 return False
 
-            logger.info(f"{self.host}: File copied successfully")
+            logger.info(f"[{self.host}] scpFile — transfer complete")
             return True
 
         except Exception as e:
-            msg = f"{self.host}: SCP failed for {self.vendor}: {e}"
-            logger.error(msg)
+            logger.error(f"[{self.host}] scpFile failed: {e}")
             return False
-    def transferImage(self, conn, image_path, target_image):
+
+    # ─────────────────────────────────────────────────────────────────────────
+    def transferImage(self, conn, image_path, target_image, logger):
         try:
-            msg = f"Transferring image {target_image} to device for vendor: {self.vendor}"
-            logger.info(msg)
+            logger.info(f"[{self.host}] transferImage — {target_image}, vendor: {self.vendor}")
 
-            if not conn:
-                msg = "Not connected to device"
-                logger.error(msg)
-                raise RuntimeError("Not connected to device")
-
-            if self.vendor not in self.accepted_vendor:
-                msg = f"Unsupported vendor: {self.vendor}"
-                logger.error(msg)
-                raise ValueError(msg)
+            if self.vendor not in self.accepted_vendors:
+                raise ValueError(f"[{self.host}] transferImage — unsupported vendor: {self.vendor}")
 
             if self.vendor == "juniper":
-                src      = f"{self.remote_server}:{image_path}/{target_image}"
-                dest     = "/var/tmp/"
-                transfer = self.scpFile(conn, src, dest)
-                if not transfer:
+                src  = f"{self.remote_server}:{image_path}/{target_image}"
+                dest = "/var/tmp/"
+                if not self.scpFile(conn, src, dest, logger):
                     return {
                         "status":      "failed",
                         "exception":   f"SCP transfer failed for {target_image}",
@@ -297,7 +252,7 @@ class PreCheck:
                         "destination": dest,
                     }
 
-            logger.info(f"{self.host}: Image {target_image} transferred to {dest}")
+            logger.info(f"[{self.host}] transferImage — {target_image} transferred to {dest}")
             return {
                 "status":      "ok",
                 "exception":   "",
@@ -306,52 +261,10 @@ class PreCheck:
             }
 
         except Exception as e:
-            msg = f"{self.host}: Image transfer failed for vendor: {self.vendor}: {e}"
-            logger.error(msg)
+            logger.error(f"[{self.host}] transferImage failed: {e}")
             return {
                 "status":      "failed",
                 "exception":   str(e),
                 "image":       "",
                 "destination": "",
             }
-   
-    # def disableReProtectFilter(self, conn, logger):
-    #     """
-    #     Removes RE protection firewall filter from loopback interface (lo0).
-    #     show configuration | display set | match lo0.0
-    #     set interfaces lo0 unit 0 family inet filter input PROTECT-RE-FILTER
-    #     """
-    #     try:
-    #         if not conn:
-    #             msg = "Not connected to device"
-    #             logger.error(msg)
-    #             raise RuntimeError("Not connected to device")
-
-    #         if self.vendor not in self.accepted_vendor:
-    #             msg = f"Unsupported vendor: {self.vendor}"
-    #             logger.error(msg)
-    #             raise ValueError(msg)
-
-    #         filter_commands = [
-    #             "delete interfaces lo0.0 family inet filter",
-    #             "commit"
-    #         ]
-
-    #         print(filter_commands)
-
-    #         for cmd in filter_commands:
-    #             logger.info(f"{self.host}: Executing '{cmd}'")
-    #             print(f"Executing '{cmd}'")
-    #             output = conn.send_config_set(cmd, cmd_verify=False) + "\n"
-
-    #         if not output:
-    #             msg = f"{self.host}: Didn't get any output from the re-protect filter. please check the disableReProtectFilter()"
-    #             logger.error(msg)
-    #             print(msg)
-    #             return False
-
-    #         return True
-
-    #     except Exception:
-    #         logger.exception(f"{self.host}: Disable RE protect filter failed")
-    #         return False

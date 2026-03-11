@@ -66,7 +66,7 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
             logger.warning(f"[{device_key}] STEP 2 failed but continuing prechecks")
 
         # ── STEP 3: Check storage ─────────────────────────────────────────────
-        precheck = PreCheck(dev, dev.get("accepted_vendors"))
+        precheck = PreCheck(dev)
         storage  = precheck.checkStorage(conn, min_disk_gb, logger)
         if not storage:
             msg = f"{host}: checkStorage() failed"
@@ -79,7 +79,7 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
 
         # ── STEP 4: Backup active filesystem (disk1 → disk2) ─────────────────
         try:
-            backup_disk = precheck.preBackupDisk(conn)
+            backup_disk = precheck.preBackupDisk(conn, logger)
             device_results[device_key]["pre"]["backup_active_filesystem"] = backup_disk
 
             if backup_disk.get("status") == "failed":
@@ -116,7 +116,7 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
             target_image  = target.get("image")
             image_path    = dev.get("image_path")
 
-            transfer = precheck.transferImage(conn, image_path, target_image)
+            transfer = precheck.transferImage(conn, image_path, target_image, logger)
             device_results[device_key]["pre"]["transfer_image"] = transfer
 
             if transfer.get("status") == "failed":
@@ -150,7 +150,7 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# run_rollback  — Cherishma's logic, your conn/return types
+# run_rollback
 # ─────────────────────────────────────────────────────────────────────────────
 def run_rollback(conn, dev, device_key, rollback_image, logger):
     vendor      = dev.get("vendor").lower()
@@ -160,7 +160,7 @@ def run_rollback(conn, dev, device_key, rollback_image, logger):
     logger.info(f"[{device_key}] Rollback started at {datetime.now()}")
     print(f"[{device_key}] ===== ROLLBACK STARTED =====")
 
-    upgrade = Upgrade(dev, dev.get("accepted_vendors"))
+    upgrade = Upgrade(dev)
 
     try:
         if vendor == "juniper":
@@ -252,7 +252,7 @@ def run_rollback(conn, dev, device_key, rollback_image, logger):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# run_upgrade  — Cherishma's logic, your conn/return types
+# run_upgrade
 # ─────────────────────────────────────────────────────────────────────────────
 def run_upgrade(conn, dev: dict, device_key: str, logger):
     tid           = threading.get_ident()
@@ -264,14 +264,13 @@ def run_upgrade(conn, dev: dict, device_key: str, logger):
     logger.info(f"[THREAD-{tid}] [{device_key}] Upgrade started at {datetime.now()}")
     print(f"[{device_key}] ===== UPGRADE STARTED =====")
 
-    # rollback_image starts with current state — grows after each successful hop
     rollback_image = [{
         "image":       dev.get("curr_image"),
         "expected_os": dev.get("curr_os"),
     }]
 
-    upgrade  = Upgrade(dev, dev.get("accepted_vendors"))
-    precheck = PreCheck(dev, dev.get("accepted_vendors"))
+    upgrade  = Upgrade(dev)
+    precheck = PreCheck(dev)
 
     try:
         device_results[device_key]["upgrade"]["status"] = "in_progress"
@@ -340,12 +339,10 @@ def run_upgrade(conn, dev: dict, device_key: str, logger):
                     logger.error(f"[{device_key}] HOP {i+1}: Rollback also failed")
                 return conn, False
 
-            # hop succeeded
             hops[i]["status"] = "ok"
             rollback_image.append({"image": image, "expected_os": expected_os})
             logger.info(f"[{device_key}] HOP {i+1}: succeeded. rollback_chain: {rollback_image}")
 
-        # ── all hops done ─────────────────────────────────────────────────────
         device_results[device_key]["upgrade"]["status"] = "completed"
         msg = f"{device_name}: Image installation successful"
         logger.info(msg)
@@ -373,8 +370,10 @@ def run_device_pipeline(dev: dict, accepted_vendors: list):
     ip_clean   = host.replace(".", "_")
     device_key = f"{ip_clean}_{vendor}_{model}"
 
-    # ── init results + logger ─────────────────────────────────────────────────
+    # Store accepted_vendors on dev so PreCheck/Upgrade can read it from device dict
     dev["accepted_vendors"] = accepted_vendors
+
+    # ── init results + logger ─────────────────────────────────────────────────
     init_device_results(device_key, host, vendor, model, dev)
     logger = setup_logger(device_key, vendor=vendor, model=model)
 
@@ -456,7 +455,7 @@ def run_device_pipeline(dev: dict, accepted_vendors: list):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# main — loads YAML, sends each device to run_device_pipeline in its own thread
+# main
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
     devices          = load_yaml("deviceDetails.yaml")
