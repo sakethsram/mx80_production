@@ -422,17 +422,17 @@ def run_device_pipeline(dev: dict, accepted_vendors: list):
         logger.info(f"[{device_key}] Pre-checks passed — starting upgrade")
         print(f"[{device_key}] Pre-checks passed — starting upgrade")
 
-        # ── PHASE 2: UPGRADE ──────────────────────────────────────────────────
-        conn, upgrade_ok = run_upgrade(conn, dev, device_key, logger)
-        if not upgrade_ok:
-            msg = f"[{device_key}] Upgrade failed"
-            logger.error(msg)
-            print(msg)
-            return False
+        # # ── PHASE 2: UPGRADE ──────────────────────────────────────────────────
+        # conn, upgrade_ok = run_upgrade(conn, dev, device_key, logger)
+        # if not upgrade_ok:
+        #     msg = f"[{device_key}] Upgrade failed"
+        #     logger.error(msg)
+        #     print(msg)
+        #     return False
 
-        logger.info(f"[{device_key}] Upgrade succeeded")
-        print(f"[{device_key}] Upgrade succeeded")
-        return True
+        # logger.info(f"[{device_key}] Upgrade succeeded")
+        # print(f"[{device_key}] Upgrade succeeded")
+        # return True
 
     except ConnectionError:
         return False
