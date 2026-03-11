@@ -166,9 +166,18 @@ class PreCheck:
                     f"request support information | save /var/log/{filename}.txt",
                     f"file archive compress source /var/log/* destination /var/tmp/{filename}.tgz",
                 ]
-                for cmd in log_commands:
-                    conn.send_command_timing(cmd, read_timeout=900, last_read=10.0)
 
+                for cmd in log_commands:
+                    logger.info(f"[{self.host}] preBackup — waiting for command to complete: {cmd}")
+                    print(f"[preBackup] sending: {cmd}")
+
+                    output = conn.send_command(
+                        cmd,
+                        expect_string=r".*>",   # wait until the device prompt returns
+                        read_timeout=90000,        # give it up to 15 mins — archive can be slow
+                        strip_prompt=True,
+                        strip_command=True,
+                    )
                 logger.info(f"[{self.host}] preBackup — logs archived, SCP to remote server")
                 src  = f"/var/tmp/{filename}.tgz"
                 dest = f"{self.remote_server}:/var/tmp/{filename}.tgz"
