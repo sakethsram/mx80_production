@@ -1,11 +1,7 @@
-[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/juniper_mx204_2026-03-11_06-20-38.json
-2026-03-11 06:20:38,847 - ERROR - [MAIN] export failed for 10_80_71_55_juniper_mx204: generate_html_report() got an unexpected keyword argument 'output_path'
-Traceback (most recent call last):
-  File "/home/colt/Documents/MS1Automation/main.py", line 487, in main
-    export_device_summary(device_key)
-  File "/home/colt/Documents/MS1Automation/lib/utilities.py", line 519, in export_device_summary
-    generate_html_report(all_devices_summary, output_path=html_path)
-TypeError: generate_html_report() got an unexpected keyword argument 'output_path'
-2026-03-11 06:20:38,848 - INFO - [MAIN] JSON  -> /home/colt/Documents/MS1Automation/precheck_jsons
-2026-03-11 06:20:38,848 - INFO - [MAIN] HTML  -> /home/colt/Documents/MS1Automation/reports
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
+
+show ntp associations no-resolve | no-more
+     remote               refid           auth  st  t  when  poll reach  delay     offset   jitter
+===================================================================================================
+ 10.91.141.57           .INIT.               -  16  u     -  1024    0    0.000    +0.000    0.000
+(not parsed)
+parser returned empty result
