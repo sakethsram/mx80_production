@@ -217,7 +217,23 @@ def parse_22_show_ntp_associations(text_content: str) -> Dict[str, Any]:
     try:
         result = ShowNtpAssociations()
 
-        ntp_pattern = r'^\s*(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\w+)\s+(\S+)\s+(\d+)\s+(\d+)\s+([\d.]+)\s+([\d.+-]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)'
+        # Juniper NTP output columns (11 fields):
+        # remote  refid  auth  st  t  when  poll  reach  delay  offset  jitter
+        # Example:
+        #  10.91.141.57   .INIT.   -  16  u  -  1024  0  0.000  +0.000  0.000
+        ntp_pattern = (
+            r'^\s*([*#+x\- ]?)(\S+)'   # optional tally + remote
+            r'\s+(\S+)'                # refid
+            r'\s+(\S+)'                # auth
+            r'\s+(\d+)'                # st
+            r'\s+(\w+)'                # t
+            r'\s+(\S+)'                # when (can be '-')
+            r'\s+(\d+)'                # poll
+            r'\s+(\d+)'                # reach
+            r'\s+([\d.]+)'             # delay
+            r'\s+([+\-]?[\d.]+)'       # offset
+            r'\s+([\d.]+)'             # jitter
+        )
 
         for line in text_content.splitlines():
             if 'remote' in line or '=====' in line or not line.strip():
@@ -225,26 +241,23 @@ def parse_22_show_ntp_associations(text_content: str) -> Dict[str, Any]:
             match = re.match(ntp_pattern, line)
             if match:
                 ntp_entry = NtpAssociation(
-                    remote=match.group(1),
-                    refid=match.group(2),
-                    auth=match.group(3),
-                    st=int(match.group(4)),
-                    t=match.group(5),
-                    when=match.group(6),
-                    poll=int(match.group(7)),
-                    reach=int(match.group(8)),
-                    delay=float(match.group(9)),
-                    offset=match.group(10),
-                    jitter=float(match.group(11)),
-                    rootdelay=float(match.group(12)),
-                    rootdisp=float(match.group(13))
+                    remote=match.group(2),
+                    refid=match.group(3),
+                    auth=match.group(4),
+                    st=int(match.group(5)),
+                    t=match.group(6),
+                    when=match.group(7),
+                    poll=int(match.group(8)),
+                    reach=int(match.group(9)),
+                    delay=float(match.group(10)),
+                    offset=match.group(11),
+                    jitter=float(match.group(12)),
                 )
                 result.associations.append(ntp_entry)
 
         return result.to_dict()
     except Exception as e:
         return {"error": f"Error parsing {cmd}: {str(e)}"}
-
 
 # ────────────────────────────────────────────────────────────────────────────────
 def parse_23_show_vmhost_version(text_content: str) -> Dict[str, Any]:
