@@ -128,27 +128,48 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
 
         logger.info(f"[{device_key}] STEP 6 transfer image OK")
 
-        # ── STEP 7: MD5 ─────────────────────────────────────────────
-        try:
-            image_details    = dev.get("imageDetails", [])
-            target           = image_details[-1]          # verify the final target image
-            target_image     = target.get("image")
-            expected_checksum = target.get("checksum")
+    # ── STEP 7: Verify MD5 checksum for every image in imageDetails ───────
+        image_details = dev.get("imageDetails", [])
+        print(f"[STEP 7] image_details       = {image_details}")
+        print(f"[STEP 7] number of images    = {len(image_details)}")
 
-            checksum_result = precheck.verifyChecksum(conn, target_image, expected_checksum, logger)
-            device_results[device_key]["pre"]["verify_checksum"] = checksum_result
+        for i, img_entry in enumerate(image_details):
+            target_image      = img_entry.get("image")
+            expected_checksum = img_entry.get("checksum")
 
-            if not checksum_result.get("match"):
-                raise RuntimeError(
-                    checksum_result.get("exception", "MD5 checksum mismatch")
-                )
-        except Exception as e:
-            logger.error(f"[{device_key}] STEP 7 VERIFY CHECKSUM failed — {e}")
-            device_results[device_key]["pre"]["verify_checksum"]["exception"] = str(e)
-            return False
+            print(f"[STEP 7] ── image [{i}] ──────────────────────────────────")
+            print(f"[STEP 7] target_image      = {target_image}")
+            print(f"[STEP 7] expected_checksum = {expected_checksum}")
 
-        logger.info(f"[{device_key}] STEP 7 checksum OK")
-       
+            try:
+                checksum_result = precheck.verifyChecksum(conn, target_image, expected_checksum, logger)
+
+                print(f"[STEP 7] checksum_result   = {checksum_result}")
+
+                device_results[device_key]["pre"]["verify_checksum"][i].update({
+                    "status":    checksum_result.get("status"),
+                    "exception": checksum_result.get("exception", ""),
+                    "expected":  checksum_result.get("expected", ""),
+                    "computed":  checksum_result.get("computed", ""),
+                    "match":     checksum_result.get("match", False),
+                })
+
+                if not checksum_result.get("match"):
+                    print(f"[STEP 7] FAILED for image [{i}]: {target_image}")
+                    logger.error(f"[{device_key}] STEP 7 VERIFY CHECKSUM failed — {target_image}")
+                    return False
+
+                print(f"[STEP 7] image [{i}] checksum OK — {target_image}")
+                logger.info(f"[{device_key}] STEP 7 [{i}] checksum OK — {target_image}")
+
+            except Exception as e:
+                logger.error(f"[{device_key}] STEP 7 exception for image [{i}] {target_image} — {e}")
+                print(f"[STEP 7] EXCEPTION image [{i}]: {e}")
+                device_results[device_key]["pre"]["verify_checksum"][i]["exception"] = str(e)
+                return False
+
+        logger.info(f"[{device_key}] STEP 7 all checksums passed")
+
         # ── STEP 8: Merge results ─────────────────────────────────────────────
         try:
             thread_result = {
@@ -164,9 +185,10 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
 
         logger.info(f"[THREAD-{tid}] [{device_key}] All pre-checks passed")
         return True
+
     except Exception as e:
         logger.error(f"[THREAD-{tid}] [{device_key}] run_prechecks unhandled exception: {e}")
-        return False
+        return False 
 
 
 # ─────────────────────────────────────────────────────────────────────────────
