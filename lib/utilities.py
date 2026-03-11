@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # device_results — single source of truth for all device state
-# (shape documented in original utilities.py — unchanged)
 # ─────────────────────────────────────────────────────────────────────────────
 
 device_results: dict = {}
@@ -93,6 +92,18 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
                 "image":       "",
                 "destination": "",
             },
+            # ── verify_checksum — one slot per image in imageDetails ──────────
+            "verify_checksum": [
+                {
+                    "image":     img.get("image", ""),
+                    "status":    "not_started",
+                    "exception": "",
+                    "expected":  img.get("checksum", ""),
+                    "computed":  "",
+                    "match":     False,
+                }
+                for img in image_details
+            ],
             "disable_re_protect_filter": {
                 "status":    "not_started",
                 "exception": "",
@@ -103,13 +114,6 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
             "initial_os": initial_os,
             "target_os":  target_os,
             "exception":  "",
-            "validate_md5": {
-                "status":    "not_started",
-                "exception": "",
-                "expected":  "",
-                "computed":  "",
-                "match":     False,
-            },
             "hops": [
                 {
                     "image":     img.get("image", ""),
@@ -143,12 +147,6 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
 
 # ─────────────────────────────────────────────────────────────────────────────
 # get_show_version
-# Sends `show version` to the device, parses Hostname / Model / Junos version,
-# stores results into:
-#   device_results[device_key]["pre"]["show_version"]
-#   device_results[device_key]["device_info"]   ← drives the HTML top panel
-#
-# Returns True on success, False on failure.
 # ─────────────────────────────────────────────────────────────────────────────
 def get_show_version(device_key: str, conn, vendor: str, logger) -> bool:
     logger.info(f"[{device_key}] get_show_version — sending 'show version'")
@@ -163,33 +161,27 @@ def get_show_version(device_key: str, conn, vendor: str, logger) -> bool:
         version  = ""
 
         if vendor == "juniper":
-            # Hostname: EFFPER01
             m = re.search(r"^Hostname:\s+(\S+)", output, re.M)
             if m:
                 hostname = m.group(1).strip()
 
-            # Model: mx204
             m = re.search(r"^Model:\s+(\S+)", output, re.M)
             if m:
                 model = m.group(1).strip()
 
-            # Junos: 22.4R3.25
             m = re.search(r"^Junos:\s+(\S+)", output, re.M)
             if m:
                 version = m.group(1).strip()
 
         elif vendor == "cisco":
-            # Cisco IOS XR: "Cisco IOS XR Software, Version <ver>"
             m = re.search(r"Cisco IOS XR Software.*?Version\s+(\S+)", output, re.I)
             if m:
                 version = m.group(1).strip()
 
-            # hostname from prompt or "hostname <name>"
             m = re.search(r"^hostname\s+(\S+)", output, re.M | re.I)
             if m:
                 hostname = m.group(1).strip()
 
-        # ── store in pre["show_version"] ──────────────────────────────────────
         device_results[device_key]["pre"]["show_version"] = {
             "status":    "ok",
             "exception": "",
@@ -198,7 +190,6 @@ def get_show_version(device_key: str, conn, vendor: str, logger) -> bool:
             "hostname":  hostname,
         }
 
-        # ── propagate to device_info so HTML top panel is populated ───────────
         if hostname:
             device_results[device_key]["device_info"]["hostname"] = hostname
         if version:
@@ -225,7 +216,7 @@ def get_show_version(device_key: str, conn, vendor: str, logger) -> bool:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# normalise / registry helpers (unchanged)
+# normalise / registry helpers
 # ─────────────────────────────────────────────────────────────────────────────
 def normalise(cmd: str) -> str:
     cmd = re.sub(r'\s+', ' ', cmd.strip())
@@ -317,7 +308,7 @@ VENDOR_REGISTRY = {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# collect_outputs / parse_outputs (unchanged)
+# collect_outputs / parse_outputs
 # ─────────────────────────────────────────────────────────────────────────────
 def collect_outputs(device_key: str, vendor: str, commands: list,
                     check_type: str, conn, log) -> list:
@@ -417,7 +408,7 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# setup_logger (unchanged)
+# setup_logger
 # ─────────────────────────────────────────────────────────────────────────────
 def setup_logger(name: str, vendor: str = "", model: str = ""):
     vendor = vendor or "unknown"
@@ -442,7 +433,7 @@ def setup_logger(name: str, vendor: str = "", model: str = ""):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# login / logout (unchanged)
+# login / logout
 # ─────────────────────────────────────────────────────────────────────────────
 def login_device(host, username, password, device_type, session_log_path, logger):
     try:
@@ -478,7 +469,7 @@ def logout_device(conn, host, logger):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# load_yaml (unchanged)
+# load_yaml
 # ─────────────────────────────────────────────────────────────────────────────
 def load_yaml(filename):
     try:
@@ -491,7 +482,7 @@ def load_yaml(filename):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# export_device_summary (unchanged)
+# export_device_summary
 # ─────────────────────────────────────────────────────────────────────────────
 def export_device_summary(device_key: str):
     slot      = device_results.get(device_key, {})
@@ -512,7 +503,6 @@ def export_device_summary(device_key: str):
     print(f"[EXPORT] Summary JSON saved -> {summary_file}")
     print(f"[LOGS] Device log: logging/{vendor}_{model}_*.log | Session log: outputs/{vendor}_{model}_*.log")
 
-
     # ── HTML report ───────────────────────────────────────────────────────────
     reports_dir = os.path.join(os.getcwd(), "reports")
     os.makedirs(reports_dir, exist_ok=True)
@@ -525,7 +515,7 @@ def export_device_summary(device_key: str):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# merge_thread_result (unchanged)
+# merge_thread_result
 # ─────────────────────────────────────────────────────────────────────────────
 def merge_thread_result(device_key: str, result: dict):
     with results_lock:
@@ -543,7 +533,7 @@ def merge_thread_result(device_key: str, result: dict):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# connect / disconnect (unchanged)
+# connect / disconnect
 # ─────────────────────────────────────────────────────────────────────────────
 def connect(device_key: str, dev: dict, logger):
     host    = dev["host"]
@@ -596,7 +586,7 @@ def disconnect(device_key: str, logger):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# load_commands (unchanged)
+# load_commands
 # ─────────────────────────────────────────────────────────────────────────────
 def load_commands(vendor: str, model: str, logger) -> list:
     all_cmds = load_yaml("show_cmd_list.yaml")
