@@ -3,8 +3,10 @@ devices:
     vendor: "juniper"
     model: mx204
     device_type: "juniper"
-    curr_image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
-    curr_os: 23.4R2-S5.6
+    curr_image: junos-vmhost-install-mx-x86-64-22.4R3.25.tgz
+    curr_os: 22.4R3.25
+#    curr_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
+#    curr_os: 23.4R2-S6.9
 #    expected_os:
 #      - target_os: 23.4R2-S6.9
 #        intermediate_os: 23.4R2-S5.6
@@ -13,12 +15,13 @@ devices:
     username: "lab"
     password: "lab123"
     imageDetails:
-      - image: junos-vmhost-install-mx-x86-64-22.4R3.25.tgz
-        expected_os: 22.4R3.25
-        checksum: d866fae12b23e414469da93c0845008c
-      - image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
+      - image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
         expected_os: 23.4R2-S5.6
+        checksum: 3e97c983380ac3a1b28e143219c8960a
+      - image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
+        expected_os: 22.4R8.96
         checksum: dec5349a0d238dad686dc01f468a0bbe
+    #dec5349a0d238dad686dc01f468a0bbe
     image_path: "/home/automation2/software/juniper/junos/MX204"
     remote_backup_server: "automation2@10.80.109.134"
     remote_password: "kTRq8amH888r"
