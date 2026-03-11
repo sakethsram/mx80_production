@@ -1,0 +1,707 @@
+{
+  "10_80_71_55_juniper_mx204": {
+    "status": "",
+    "device_info": {
+      "host": "10.80.71.55",
+      "vendor": "juniper",
+      "model": "mx204",
+      "hostname": "",
+      "version": ""
+    },
+    "yaml": {
+      "host": "10.80.71.55",
+      "vendor": "juniper",
+      "model": "mx204",
+      "device_type": "juniper",
+      "curr_image": "junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz",
+      "curr_os": "23.4R2-S5.6",
+      "intermediate_release": true,
+      "min_disk_gb": 6,
+      "username": "lab",
+      "password": "lab123",
+      "imageDetails": [
+        {
+          "image": "junos-vmhost-install-mx-x86-64-22.4R3.25.tgz",
+          "expected_os": "22.4R3.25",
+          "checksum": "d866fae12b23e414469da93c0845008c"
+        },
+        {
+          "image": "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
+          "expected_os": "23.4R2-S5.6",
+          "checksum": "dec5349a0d238dad686dc01f468a0bbe"
+        }
+      ],
+      "image_path": "/home/automation2/software/juniper/junos/MX204",
+      "remote_backup_server": "automation2@10.80.109.134",
+      "remote_password": "kTRq8amH888r",
+      "cleanup_files": [
+        "juniper_mx204_2026-*",
+        "/var/tmp/juniper_mx204_2026-*"
+      ],
+      "accepted_vendors": [
+        "juniper",
+        "cisco"
+      ]
+    },
+    "pre": {
+      "connect": {
+        "ping": "up",
+        "status": true,
+        "exception": ""
+      },
+      "execute_show_commands": {
+        "status": "completed_with_errors",
+        "exception": "one or more parsers failed",
+        "commands": [
+          {
+            "cmd": "show arp no-resolve | no-more",
+            "output": "MAC Address       Address         Interface                Flags\n94:33:d8:ae:3b:03 10.80.70.1      fxp0.0                   none\nfe:54:00:00:18:fa 192.168.1.2     em2.32768                none\nTotal entries: 2\n",
+            "json": {
+              "entries": [
+                {
+                  "mac_address": "94:33:d8:ae:3b:03",
+                  "ip_address": "10.80.70.1",
+                  "interface": "fxp0.0",
+                  "flags": "none"
+                },
+                {
+                  "mac_address": "fe:54:00:00:18:fa",
+                  "ip_address": "192.168.1.2",
+                  "interface": "em2.32768",
+                  "flags": "none"
+                }
+              ],
+              "total_entries": 2
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show lldp neighbors | no-more",
+            "output": "",
+            "json": {
+              "entries": []
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show chassis routing-engine | no-more",
+            "output": "Routing Engine status:\n    CPU temperature             38 degrees C / 100 degrees F\n    DRAM                      16328 MB (16384 MB installed)\n    Memory utilization           0 percent\n    5 sec CPU utilization:\n      User                       7 percent\n      Background                 0 percent\n      Kernel                    13 percent\n      Interrupt                  1 percent\n      Idle                      80 percent\n    1 min CPU utilization:\n      User                       1 percent\n      Background                 0 percent\n      Kernel                     1 percent\n      Interrupt                  0 percent\n      Idle                      98 percent\n    5 min CPU utilization:\n      User                       0 percent\n      Background                 0 percent\n      Kernel                     0 percent\n      Interrupt                  0 percent\n      Idle                     100 percent\n    15 min CPU utilization:\n      User                       0 percent\n      Background                 0 percent\n      Kernel                     0 percent\n      Interrupt                  0 percent\n      Idle                     100 percent\n    Model                          RE-S-1600x8\n    Start time                     2026-03-09 16:19:31 UTC\n    Uptime                         1 minute, 52 seconds\n    Last reboot reason             0x2000:hypervisor reboot\n    Load averages:                 1 minute   5 minute  15 minute\n                                       1.21       0.37       0.14\n",
+            "json": {
+              "routing_engines": [
+                {
+                  "temperature": null,
+                  "cpu_temperature": "38 degrees C / 100 degrees F",
+                  "dram": "16328 MB (16384 MB installed)",
+                  "memory_utilization": 0,
+                  "cpu_util_5_sec": {
+                    "user": 7,
+                    "background": 0,
+                    "kernel": 13,
+                    "interrupt": 1,
+                    "idle": 80
+                  },
+                  "cpu_util_1_min": {
+                    "user": 1,
+                    "background": 0,
+                    "kernel": 1,
+                    "interrupt": 0,
+                    "idle": 98
+                  },
+                  "cpu_util_5_min": {
+                    "user": 0,
+                    "background": 0,
+                    "kernel": 0,
+                    "interrupt": 0,
+                    "idle": 100
+                  },
+                  "cpu_util_15_min": {
+                    "user": 0,
+                    "background": 0,
+                    "kernel": 0,
+                    "interrupt": 0,
+                    "idle": 100
+                  },
+                  "model": "RE-S-1600x8",
+                  "start_time": "2026-03-09 16:19:31 UTC",
+                  "uptime": "1 minute, 52 seconds",
+                  "last_reboot_reason": "0x2000:hypervisor reboot",
+                  "load_averages": {
+                    "one_minute": 1.21,
+                    "five_minute": 0.37,
+                    "fifteen_minute": 0.14
+                  }
+                }
+              ]
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show system uptime | no-more",
+            "output": "Current time: 2026-03-09 16:21:31 UTC\nTime Source:  LOCAL CLOCK \nSystem booted: 2026-03-09 16:19:31 UTC (00:02:00 ago)\nProtocols started: 2026-03-09 16:21:27 UTC (00:00:04 ago)\nLast configured: 2026-03-09 16:21:10 UTC (00:00:21 ago) by root\n 4:21PM  up 2 mins, 1 users, load averages: 2.50, 0.69, 0.25\n",
+            "json": {
+              "current_time": "2026-03-09 16:21:31 UTC",
+              "time_source": "LOCAL CLOCK",
+              "system_booted": "2026-03-09 16:19:31 UTC",
+              "system_booted_ago": "00:02:00 ago",
+              "protocols_started": "2026-03-09 16:21:27 UTC",
+              "protocols_started_ago": "00:00:04 ago",
+              "last_configured": "2026-03-09 16:21:10 UTC",
+              "last_configured_ago": "00:00:21 ago",
+              "last_configured_by": "root",
+              "uptime_time": "4:21PM",
+              "uptime_duration": "2 mins",
+              "users": 1,
+              "load_average_1min": 2.5,
+              "load_average_5min": 0.69,
+              "load_average_15min": 0.25
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show ntp associations no-resolve | no-more",
+            "output": "     remote               refid           auth  st  t  when  poll reach  delay     offset   jitter rootdelay rootdisp\n=====================================================================================================================\n 10.91.141.57           .INIT.               -  16  u     -    64    0    0.000    +0.000    0.000    0.000    0.000\n",
+            "json": {
+              "associations": [
+                {
+                  "remote": "10.91.141.57",
+                  "refid": ".INIT.",
+                  "auth": "-",
+                  "st": 16,
+                  "t": "u",
+                  "when": "-",
+                  "poll": 64,
+                  "reach": 0,
+                  "delay": 0.0,
+                  "offset": "+0.000",
+                  "jitter": 0.0,
+                  "rootdelay": 0.0,
+                  "rootdisp": 0.0
+                }
+              ]
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show vmhost version | no-more",
+            "output": "Current root details,                   Device sda, Label: jrootp_P, Partition: sda3,\nCurrent boot disk: Primary\nCurrent root set: p\nUEFI    Version: CBEP_P_SUM1_00.15.01\n\nPrimary Disk, Upgrade Time: Mon Mar  9 16:12:47 UTC 2026\n\nVersion: set p\nVMHost Version: 7.2955\nVMHost Root: vmhost-x86_64-23.4R2-S5-20250515_2123_builder\nVMHost Core: vmhost-core-x86-64-23.4R2-S6.9\nkernel: 5.2.60-rt15-LTS19\nJunos Disk: junos-install-mx-x86-64-23.4R2-S6.9\n\nVersion: set b\nVMHost Version: 7.2955\nVMHost Root: vmhost-x86_64-23.4R2-S5-20250515_2123_builder\nVMHost Core: vmhost-core-x86-64-23.4R2-S5.6\nkernel: 5.2.60-rt15-LTS19\nJunos Disk: junos-install-mx-x86-64-23.4R2-S5.6\n",
+            "json": {
+              "current_device": "sda",
+              "current_label": "jrootp_P",
+              "current_partition": "sda3,",
+              "current_boot_disk": "Primary",
+              "current_root_set": "p",
+              "uefi_version": "CBEP_P_SUM1_00.15.01",
+              "disk_type": "Primary Disk",
+              "upgrade_time": "Mon Mar  9 16:12:47 UTC 2026",
+              "versions": [
+                {
+                  "version_set": "p",
+                  "vmhost_version": "7.2955",
+                  "vmhost_root": "vmhost-x86_64-23.4R2-S5-20250515_2123_builder",
+                  "vmhost_core": "vmhost-core-x86-64-23.4R2-S6.9",
+                  "kernel": "5.2.60-rt15-LTS19",
+                  "junos_disk": "junos-install-mx-x86-64-23.4R2-S6.9"
+                },
+                {
+                  "version_set": "b",
+                  "vmhost_version": "7.2955",
+                  "vmhost_root": "vmhost-x86_64-23.4R2-S5-20250515_2123_builder",
+                  "vmhost_core": "vmhost-core-x86-64-23.4R2-S5.6",
+                  "kernel": "5.2.60-rt15-LTS19",
+                  "junos_disk": "junos-install-mx-x86-64-23.4R2-S5.6"
+                }
+              ]
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show vmhost snapshot | no-more",
+            "output": "UEFI \tVersion: CBEP_P_SUM1_00.15.01\n\nSecondary Disk, Snapshot Time: Mon Mar  9 15:51:38 UTC 2026\n\nVersion: set p\nVMHost Version: 7.2955\nVMHost Root: vmhost-x86_64-23.4R2-S5-20250515_2123_builder\nkernel: 5.2.60-rt15-LTS19\nJunos Disk: junos-install-mx-x86-64-23.4R2-S6.9\n\nVersion: set b\nVMHost Version: 7.2955\nVMHost Root: vmhost-x86_64-23.4R2-S5-20250515_2123_builder\nVMHost Core: vmhost-core-x86-64-23.4R2-S5.6\nkernel: 5.2.60-rt15-LTS19\nNo VMHost Junos version available.\n\n",
+            "json": {
+              "uefi_version": "CBEP_P_SUM1_00.15.01",
+              "disk_type": "Secondary Disk",
+              "snapshot_time": "Mon Mar  9 15:51:38 UTC 2026",
+              "versions": []
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show chassis hardware | no-more",
+            "output": "Hardware inventory:\nItem             Version  Part number  Serial number     Description\nChassis                                CM531             JNP204 [MX204]\nRouting Engine 0          BUILTIN      BUILTIN           RE-S-1600x8\nCB 0             REV 38   750-069579   CAPT5144          JNP204 [MX204]\nFPC 0                     BUILTIN      BUILTIN           MPC\nPEM 0            REV 04   740-070749   1F18A100637       JPSU-650W-AC-AO\nPEM 1            REV 04   740-070749   1F18A102166       JPSU-650W-AC-AO\nFan Tray 0                                               Fan Tray, Front to Back Airflow - AFO\nFan Tray 1                                               Fan Tray, Front to Back Airflow - AFO\nFan Tray 2                                               Fan Tray, Front to Back Airflow - AFO\n",
+            "json": {
+              "items": [
+                {
+                  "item": "Chassis",
+                  "version": null,
+                  "part_number": "CM531",
+                  "serial_number": "JNP204",
+                  "description": "[MX204]",
+                  "indent_level": 0
+                },
+                {
+                  "item": "Routing Engine 0",
+                  "version": null,
+                  "part_number": "BUILTIN",
+                  "serial_number": "BUILTIN",
+                  "description": "RE-S-1600x8",
+                  "indent_level": 0
+                },
+                {
+                  "item": "CB 0",
+                  "version": "38",
+                  "part_number": "750-069579",
+                  "serial_number": "CAPT5144",
+                  "description": "JNP204 [MX204]",
+                  "indent_level": 0
+                },
+                {
+                  "item": "FPC 0",
+                  "version": null,
+                  "part_number": "BUILTIN",
+                  "serial_number": "BUILTIN",
+                  "description": "MPC",
+                  "indent_level": 0
+                },
+                {
+                  "item": "PEM 0",
+                  "version": "04",
+                  "part_number": "740-070749",
+                  "serial_number": "1F18A100637",
+                  "description": "JPSU-650W-AC-AO",
+                  "indent_level": 0
+                },
+                {
+                  "item": "PEM 1",
+                  "version": "04",
+                  "part_number": "740-070749",
+                  "serial_number": "1F18A102166",
+                  "description": "JPSU-650W-AC-AO",
+                  "indent_level": 0
+                },
+                {
+                  "item": "Fan Tray 0",
+                  "version": null,
+                  "part_number": "Fan",
+                  "serial_number": "Tray,",
+                  "description": "Front to Back Airflow - AFO",
+                  "indent_level": 0
+                },
+                {
+                  "item": "Fan Tray 1",
+                  "version": null,
+                  "part_number": "Fan",
+                  "serial_number": "Tray,",
+                  "description": "Front to Back Airflow - AFO",
+                  "indent_level": 0
+                },
+                {
+                  "item": "Fan Tray 2",
+                  "version": null,
+                  "part_number": "Fan",
+                  "serial_number": "Tray,",
+                  "description": "Front to Back Airflow - AFO",
+                  "indent_level": 0
+                }
+              ]
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show chassis fpc detail | no-more",
+            "output": "Slot 0 information:\n  State                               Present   \n  Total CPU DRAM                    0 MB\n  Total RLDRAM                      0 MB\n  Total DDR DRAM                    0 MB\n  FIPS Capable                        False \n  Temperature                      Absent\n",
+            "json": {
+              "slots": [
+                {
+                  "slot": 0,
+                  "state": "Present",
+                  "total_cpu_dram": "0 MB",
+                  "total_rldram": "0 MB",
+                  "total_ddr_dram": "0 MB",
+                  "fips_capable": "False",
+                  "temperature": "Absent",
+                  "start_time": null,
+                  "uptime": null,
+                  "high_performance_mode_support": null,
+                  "pfes_in_high_performance_mode": null
+                }
+              ]
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show chassis alarms | no-more",
+            "output": "No alarms currently active\n",
+            "json": {
+              "chassis_alarms": "None"
+            },
+            "exception": ""
+          }
+        ]
+      },
+      "show_version": {
+        "status": "not_started",
+        "exception": "",
+        "version": "",
+        "platform": ""
+      },
+      "check_storage": {
+        "status": "ok",
+        "deleted_files": [],
+        "exception": "",
+        "sufficient": true
+      },
+      "backup_active_filesystem": {
+        "status": "ok",
+        "exception": "",
+        "disk_count": "dual"
+      },
+      "backup_running_config": {
+        "status": "ok",
+        "exception": "",
+        "config_file": "juniper_mx204_2026-03-09_21-52-03",
+        "log_file": "juniper_mx204_2026-03-09_21-52-03.tgz",
+        "destination": "automation2@10.80.109.134"
+      },
+      "transfer_image": {
+        "status": "ok",
+        "exception": "",
+        "image": "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
+        "destination": "/var/tmp/"
+      },
+      "validate_md5": {
+        "status": "failed",
+        "exception": "\nPattern not detected: 'MD5\\\\s*\\\\(.*?\\\\)\\\\s*=\\\\s*[a-f0-9]{32}' in output.\n\nThings you might try to fix this:\n1. Explicitly set your pattern using the expect_string argument.\n2. Increase the read_timeout to a larger value.\n\nYou can also look at the Netmiko session_log or debug log for more information.\n\n",
+        "expected": "",
+        "computed": "",
+        "match": false
+      },
+      "disable_re_protect_filter": {
+        "status": "not_started",
+        "exception": ""
+      }
+    },
+    "post": {
+      "connect": {
+        "ping": "up",
+        "status": true,
+        "exception": ""
+      },
+      "execute_show_commands": {
+        "status": "ok",
+        "exception": "",
+        "commands": [
+          {
+            "cmd": "show arp no-resolve | no-more",
+            "output": "MAC Address       Address         Interface                Flags\n94:33:d8:ae:3b:03 10.80.70.2      fxp0.0                   none\nfe:54:00:00:18:fa 192.168.1.2     em2.32768                none\nTotal entries: 2\n",
+            "json": {
+              "entries": [
+                {
+                  "mac_address": "94:33:d8:ae:3b:03",
+                  "ip_address": "10.80.70.1",
+                  "interface": "fxp0.0",
+                  "flags": "none"
+                },
+                {
+                  "mac_address": "fe:54:00:00:18:fa",
+                  "ip_address": "192.168.1.2",
+                  "interface": "em2.32768",
+                  "flags": "none"
+                }
+              ],
+              "total_entries": 2
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show lldp neighbors | no-more",
+            "output": "",
+            "json": {
+              "entries": []
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show chassis routing-engine | no-more",
+            "output": "Routing Engine status:\n    CPU temperature             41 degrees C / 105 degrees F\n    DRAM                      16328 MB (16384 MB installed)\n    Memory utilization           3 percent\n    5 sec CPU utilization:\n      User                       9 percent\n      Background                 0 percent\n      Kernel                    13 percent\n      Interrupt                  1 percent\n      Idle                      78 percent\n    1 min CPU utilization:\n      User                       1 percent\n      Background                 0 percent\n      Kernel                     1 percent\n      Interrupt                  0 percent\n      Idle                      98 percent\n    5 min CPU utilization:\n      User                       0 percent\n      Background                 0 percent\n      Kernel                     0 percent\n      Interrupt                  0 percent\n      Idle                     100 percent\n    15 min CPU utilization:\n      User                       0 percent\n      Background                 0 percent\n      Kernel                     0 percent\n      Interrupt                  0 percent\n      Idle                     100 percent\n    Model                          RE-S-1600x8\n    Start time                     2026-03-09 16:19:31 UTC\n    Uptime                         4 minutes, 33 seconds\n    Last reboot reason             0x2000:hypervisor reboot\n    Load averages:                 1 minute   5 minute  15 minute\n                                       0.48       0.21       0.09\n",
+            "json": {
+              "routing_engines": [
+                {
+                  "temperature": null,
+                  "cpu_temperature": "38 degrees C / 100 degrees F",
+                  "dram": "16328 MB (16384 MB installed)",
+                  "memory_utilization": 0,
+                  "cpu_util_5_sec": {
+                    "user": 7,
+                    "background": 0,
+                    "kernel": 13,
+                    "interrupt": 1,
+                    "idle": 80
+                  },
+                  "cpu_util_1_min": {
+                    "user": 1,
+                    "background": 0,
+                    "kernel": 1,
+                    "interrupt": 0,
+                    "idle": 98
+                  },
+                  "cpu_util_5_min": {
+                    "user": 0,
+                    "background": 0,
+                    "kernel": 0,
+                    "interrupt": 0,
+                    "idle": 100
+                  },
+                  "cpu_util_15_min": {
+                    "user": 0,
+                    "background": 0,
+                    "kernel": 0,
+                    "interrupt": 0,
+                    "idle": 100
+                  },
+                  "model": "RE-S-1600x8",
+                  "start_time": "2026-03-09 16:19:31 UTC",
+                  "uptime": "1 minute, 52 seconds",
+                  "last_reboot_reason": "0x2000:hypervisor reboot",
+                  "load_averages": {
+                    "one_minute": 1.21,
+                    "five_minute": 0.37,
+                    "fifteen_minute": 0.14
+                  }
+                }
+              ]
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show system uptime | no-more",
+            "output": "Current time: 2026-03-09 16:21:31 UTC\nTime Source:  LOCAL CLOCK \nSystem booted: 2026-03-09 16:19:31 UTC (00:02:00 ago)\nProtocols started: 2026-03-09 16:21:27 UTC (00:00:04 ago)\nLast configured: 2026-03-09 16:21:10 UTC (00:00:21 ago) by root\n 4:21PM  up 2 mins, 1 users, load averages: 2.50, 0.69, 0.25\n",
+            "json": {
+              "current_time": "2026-03-09 16:21:31 UTC",
+              "time_source": "LOCAL CLOCK",
+              "system_booted": "2026-03-09 16:19:31 UTC",
+              "system_booted_ago": "00:02:00 ago",
+              "protocols_started": "2026-03-09 16:21:27 UTC",
+              "protocols_started_ago": "00:00:04 ago",
+              "last_configured": "2026-03-09 16:21:10 UTC",
+              "last_configured_ago": "00:00:21 ago",
+              "last_configured_by": "root",
+              "uptime_time": "4:21PM",
+              "uptime_duration": "2 mins",
+              "users": 1,
+              "load_average_1min": 2.5,
+              "load_average_5min": 0.69,
+              "load_average_15min": 0.25
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show ntp associations no-resolve | no-more",
+            "output": "     remote               refid           auth  st  t  when  poll reach  delay     offset   jitter rootdelay rootdisp\n=====================================================================================================================\n 10.91.141.57           .INIT.               -  16  u     -    64    0    0.000    +0.000    0.000    0.000    0.000\n",
+            "json": {
+              "associations": [
+                {
+                  "remote": "10.91.141.57",
+                  "refid": ".INIT.",
+                  "auth": "-",
+                  "st": 16,
+                  "t": "u",
+                  "when": "-",
+                  "poll": 64,
+                  "reach": 0,
+                  "delay": 0.0,
+                  "offset": "+0.000",
+                  "jitter": 0.0,
+                  "rootdelay": 0.0,
+                  "rootdisp": 0.0
+                }
+              ]
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show vmhost version | no-more",
+            "output": "Current root details,                   Device sda, Label: jrootp_P, Partition: sda3,\nCurrent boot disk: Primary\nCurrent root set: p\nUEFI    Version: CBEP_P_SUM1_00.15.01\n\nPrimary Disk, Upgrade Time: Tue Mar 10 03:44:11 UTC 2026\n\nVersion: set p\nVMHost Version: 7.3001\nVMHost Root: vmhost-x86_64-23.4R2-S6-20260101_0900_builder\nVMHost Core: vmhost-core-x86-64-23.4R2-S6.10\nkernel: 5.2.60-rt15-LTS19\nJunos Disk: junos-install-mx-x86-64-23.4R2-S6.9\n\nVersion: set b\nVMHost Version: 7.3001\nVMHost Root: vmhost-x86_64-23.4R2-S6-20260101_0900_builder\nVMHost Core: vmhost-core-x86-64-23.4R2-S5.6\nkernel: 5.2.60-rt15-LTS19\nJunos Disk: junos-install-mx-x86-64-23.4R2-S5.6\n",
+            "json": {
+              "current_device": "sda",
+              "current_label": "jrootp_P",
+              "current_partition": "sda3,",
+              "current_boot_disk": "Primary",
+              "current_root_set": "p",
+              "uefi_version": "CBEP_P_SUM1_00.15.01",
+              "disk_type": "Primary Disk",
+              "upgrade_time": "Mon Mar  9 16:12:47 UTC 2026",
+              "versions": [
+                {
+                  "version_set": "p",
+                  "vmhost_version": "7.2955",
+                  "vmhost_root": "vmhost-x86_64-23.4R2-S5-20250515_2123_builder",
+                  "vmhost_core": "vmhost-core-x86-64-23.4R2-S6.9",
+                  "kernel": "5.2.60-rt15-LTS19",
+                  "junos_disk": "junos-install-mx-x86-64-23.4R2-S6.9"
+                },
+                {
+                  "version_set": "b",
+                  "vmhost_version": "7.2955",
+                  "vmhost_root": "vmhost-x86_64-23.4R2-S5-20250515_2123_builder",
+                  "vmhost_core": "vmhost-core-x86-64-23.4R2-S5.6",
+                  "kernel": "5.2.60-rt15-LTS19",
+                  "junos_disk": "junos-install-mx-x86-64-23.4R2-S5.6"
+                }
+              ]
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show vmhost snapshot | no-more",
+            "output": "UEFI \tVersion: CBEP_P_SUM1_00.15.01\n\nSecondary Disk, Snapshot Time: Mon Mar  9 15:51:38 UTC 2026\n\nVersion: set p\nVMHost Version: 7.2955\nVMHost Root: vmhost-x86_64-23.4R2-S5-20250515_2123_builder\nkernel: 5.2.60-rt15-LTS19\nJunos Disk: junos-install-mx-x86-64-23.4R2-S6.9\n\nVersion: set b\nVMHost Version: 7.2955\nVMHost Root: vmhost-x86_64-23.4R2-S5-20250515_2123_builder\nVMHost Core: vmhost-core-x86-64-23.4R2-S5.6\nkernel: 5.2.60-rt15-LTS19\nNo VMHost Junos version available.\n\n",
+            "json": {
+              "uefi_version": "CBEP_P_SUM1_00.15.01",
+              "disk_type": "Secondary Disk",
+              "snapshot_time": "Mon Mar  9 15:51:38 UTC 2026",
+              "versions": []
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show chassis hardware | no-more",
+            "output": "Hardware inventory:\nItem             Version  Part number  Serial number     Description\nChassis                                CM531             JNP204 [MX204]\nRouting Engine 0          BUILTIN      BUILTIN           RE-S-1600x8\nCB 0             REV 39   750-069579   CAPT5144          JNP204 [MX204]\nFPC 0                     BUILTIN      BUILTIN           MPC\nPEM 0            REV 04   740-070749   1F18A100637       JPSU-650W-AC-AO\nPEM 1            REV 04   740-070749   1F18A102166       JPSU-650W-AC-AO\nFan Tray 0                                               Fan Tray, Front to Back Airflow - AFO\nFan Tray 1                                               Fan Tray, Front to Back Airflow - AFO\nFan Tray 2                                               Fan Tray, Front to Back Airflow - AFO\n",
+            "json": {
+              "items": [
+                {
+                  "item": "Chassis",
+                  "version": null,
+                  "part_number": "CM531",
+                  "serial_number": "JNP204",
+                  "description": "[MX204]",
+                  "indent_level": 0
+                },
+                {
+                  "item": "Routing Engine 0",
+                  "version": null,
+                  "part_number": "BUILTIN",
+                  "serial_number": "BUILTIN",
+                  "description": "RE-S-1600x8",
+                  "indent_level": 0
+                },
+                {
+                  "item": "CB 0",
+                  "version": "38",
+                  "part_number": "750-069579",
+                  "serial_number": "CAPT5144",
+                  "description": "JNP204 [MX204]",
+                  "indent_level": 0
+                },
+                {
+                  "item": "FPC 0",
+                  "version": null,
+                  "part_number": "BUILTIN",
+                  "serial_number": "BUILTIN",
+                  "description": "MPC",
+                  "indent_level": 0
+                },
+                {
+                  "item": "PEM 0",
+                  "version": "04",
+                  "part_number": "740-070749",
+                  "serial_number": "1F18A100637",
+                  "description": "JPSU-650W-AC-AO",
+                  "indent_level": 0
+                },
+                {
+                  "item": "PEM 1",
+                  "version": "04",
+                  "part_number": "740-070749",
+                  "serial_number": "1F18A102166",
+                  "description": "JPSU-650W-AC-AO",
+                  "indent_level": 0
+                },
+                {
+                  "item": "Fan Tray 0",
+                  "version": null,
+                  "part_number": "Fan",
+                  "serial_number": "Tray,",
+                  "description": "Front to Back Airflow - AFO",
+                  "indent_level": 0
+                },
+                {
+                  "item": "Fan Tray 1",
+                  "version": null,
+                  "part_number": "Fan",
+                  "serial_number": "Tray,",
+                  "description": "Front to Back Airflow - AFO",
+                  "indent_level": 0
+                },
+                {
+                  "item": "Fan Tray 2",
+                  "version": null,
+                  "part_number": "Fan",
+                  "serial_number": "Tray,",
+                  "description": "Front to Back Airflow - AFO",
+                  "indent_level": 0
+                }
+              ]
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show chassis fpc detail | no-more",
+            "output": "Slot 0 information:\n  State                               Present   \n  Total CPU DRAM                    0 MB\n  Total RLDRAM                      0 MB\n  Total DDR DRAM                    0 MB\n  FIPS Capable                        False \n  Temperature                      Absent\n",
+            "json": {
+              "slots": [
+                {
+                  "slot": 0,
+                  "state": "Present",
+                  "total_cpu_dram": "0 MB",
+                  "total_rldram": "0 MB",
+                  "total_ddr_dram": "0 MB",
+                  "fips_capable": "False",
+                  "temperature": "Absent",
+                  "start_time": null,
+                  "uptime": null,
+                  "high_performance_mode_support": null,
+                  "pfes_in_high_performance_mode": null
+                }
+              ]
+            },
+            "exception": ""
+          },
+          {
+            "cmd": "show chassis alarms | no-more",
+            "output": "No alarms currently active\n",
+            "json": {
+              "chassis_alarms": "None"
+            },
+            "exception": ""
+          }
+        ]
+      },
+      "show_version": {
+        "status": "ok",
+        "exception": "",
+        "version": "23.4R2-S6.9",
+        "platform": "MX204"
+      }
+    },
+    "upgrade": {
+      "status": "completed",
+      "initial_os": "23.4R2-S5.6",
+      "target_os": "23.4R2-S6.9",
+      "exception": "",
+      "hops": [
+        {
+          "image": "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
+          "status": "ok",
+          "exception": "",
+          "md5_match": true
+        }
+      ]
+    },
+    "report": {
+      "overall_status": "success",
+      "pre_os": "23.4R2-S5.6",
+      "post_os": "23.4R2-S6.9",
+      "upgrade_time_seconds": 412,
+      "notes": "Upgrade completed successfully."
+    }
+  }
+}

@@ -66,20 +66,13 @@ logger = logging.getLogger(__name__)
 #           "status":      "not_started",
 #           "exception":   "",
 #           "destination": "",
-#           "md5_ok":      False,
+#           "config_file": "",
 #       },
 #       "transfer_image": {
 #           "status":      "not_started",
 #           "exception":   "",
 #           "image":       "",
 #           "destination": "",
-#       },
-#       "validate_md5": {
-#           "status":    "not_started",
-#           "exception": "",
-#           "expected":  "",
-#           "computed":  "",
-#           "match":     False,
 #       },
 #       "disable_re_protect_filter": {
 #           "status":    "not_started",
@@ -91,6 +84,13 @@ logger = logging.getLogger(__name__)
 #       "initial_os": "",   # curr_os from yaml — OS on device before any upgrade
 #       "target_os":  "",   # expected_os of the last entry in imageDetails
 #       "exception":  "",
+#       "validate_md5": {
+#           "status":    "not_started",
+#           "exception": "",
+#           "expected":  "",
+#           "computed":  "",
+#           "match":     False,
+#       },
 #       "hops": [
 #           {
 #               "image":     "junos-vmhost-install-mx-x86-64-22.4R3.25.tgz",
@@ -98,15 +98,25 @@ logger = logging.getLogger(__name__)
 #               "exception": "",
 #               "md5_match": False,
 #           },
-#           {
-#               "image":     "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
-#               "status":    "not_started",
-#               "exception": "",
-#               "md5_match": False,
-#           },
 #       ],
 #   },
-#   "post": [],
+#   "post": {
+#       "connect": {
+#           "status":    "not_started",
+#           "exception": "",
+#       },
+#       "execute_show_commands": {
+#           "status":    "not_started" | "in_progress" | "completed" | "completed_with_errors",
+#           "exception": "",
+#           "commands":  [],
+#       },
+#       "show_version": {
+#           "status":    "not_started",
+#           "exception": "",
+#           "version":   "",
+#           "platform":  "",
+#       },
+#   },
 # }
 #
 # ── EXAMPLE — fully populated upgrade block after successful A→B→C ───────────
@@ -116,6 +126,13 @@ logger = logging.getLogger(__name__)
 #     "initial_os": "23.4R2-S5.6",
 #     "target_os":  "23.4R2-S6.9",
 #     "exception":  "",
+#     "validate_md5": {
+#         "status":    "completed",
+#         "exception": "",
+#         "expected":  "abc123",
+#         "computed":  "abc123",
+#         "match":     True,
+#     },
 #     "hops": [
 #         {
 #             "image":     "junos-vmhost-install-mx-x86-64-22.4R3.25.tgz",
@@ -139,6 +156,13 @@ logger = logging.getLogger(__name__)
 #     "initial_os": "23.4R2-S5.6",
 #     "target_os":  "23.4R2-S6.9",
 #     "exception":  "imageUpgrade failed for junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
+#     "validate_md5": {
+#         "status":    "completed",
+#         "exception": "",
+#         "expected":  "abc123",
+#         "computed":  "abc123",
+#         "match":     True,
+#     },
 #     "hops": [
 #         {
 #             "image":     "junos-vmhost-install-mx-x86-64-22.4R3.25.tgz",
@@ -212,7 +236,7 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
                 "status":      "not_started",
                 "exception":   "",
                 "destination": "",
-                "md5_ok":      False,
+                "config_file": "",
             },
             "transfer_image": {
                 "status":      "not_started",
@@ -220,6 +244,16 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
                 "image":       "",
                 "destination": "",
             },
+            "disable_re_protect_filter": {
+                "status":    "not_started",
+                "exception": "",
+            },
+        },
+        "upgrade": {
+            "status":     "not_started",
+            "initial_os": initial_os,
+            "target_os":  target_os,
+            "exception":  "",
             "validate_md5": {
                 "status":    "not_started",
                 "exception": "",
@@ -227,17 +261,6 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
                 "computed":  "",
                 "match":     False,
             },
-            "disable_re_protect_filter": {
-                "status":    "not_started",
-                "exception": "",
-            },
-        },
-        "post": [],
-        "upgrade": {
-            "status":     "not_started",
-            "initial_os": initial_os,
-            "target_os":  target_os,
-            "exception":  "",
             "hops": [
                 {
                     "image":     img.get("image", ""),
@@ -247,6 +270,23 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
                 }
                 for img in image_details
             ],
+        },
+        "post": {
+            "connect": {
+                "status":    "not_started",
+                "exception": "",
+            },
+            "execute_show_commands": {
+                "status":    "not_started",
+                "exception": "",
+                "commands":  [],
+            },
+            "show_version": {
+                "status":    "not_started",
+                "exception": "",
+                "version":   "",
+                "platform":  "",
+            },
         },
     }
 
@@ -345,7 +385,8 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
 
     log.info(f"[{device_key}] collect_outputs — {len(commands)} command(s), check_type={check_type}")
 
-    device_results[device_key]["pre"]["execute_show_commands"]["status"] = "in_progress"
+    phase_key = "pre" if check_type == "pre" else "post"
+    device_results[device_key][phase_key]["execute_show_commands"]["status"] = "in_progress"
 
     entries = []
     for cmd in commands:
@@ -371,7 +412,7 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
         entries.append(entry)
         log.info(f"[{device_key}] '{cmd}' collected={collected} ({len(stripped)} chars)")
 
-    device_results[device_key]["pre"]["execute_show_commands"]["commands"] = entries
+    device_results[device_key][phase_key]["execute_show_commands"]["commands"] = entries
     log.info(f"[{device_key}] collect_outputs done — {len(entries)} entries stored")
     return entries
 
@@ -383,15 +424,16 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
         log.error(f"[{device_key}] No registry for vendor='{vendor}'")
         return False
 
+    phase_key = "pre" if check_type == "pre" else "post"
     entries = (
         device_results
         .get(device_key, {})
-        .get("pre", {})
+        .get(phase_key, {})
         .get("execute_show_commands", {})
         .get("commands", [])
     )
     if not entries:
-        log.warning(f"[{device_key}] Nothing in execute_show_commands.commands to parse")
+        log.warning(f"[{device_key}] Nothing in {phase_key}.execute_show_commands.commands to parse")
         return False
 
     all_ok = True
@@ -428,8 +470,8 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
             continue
 
     status = "completed" if all_ok else "completed_with_errors"
-    device_results[device_key]["pre"]["execute_show_commands"]["status"]    = status
-    device_results[device_key]["pre"]["execute_show_commands"]["exception"] = (
+    device_results[device_key][phase_key]["execute_show_commands"]["status"]    = status
+    device_results[device_key][phase_key]["execute_show_commands"]["exception"] = (
         "" if all_ok else "one or more parsers failed"
     )
 
