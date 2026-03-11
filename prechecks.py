@@ -36,8 +36,15 @@ class PreCheck:
             if not match:
                 raise ValueError(f"[{self.host}] Could not parse storage output")
 
-            avail_space = int(float(match.group(1).rstrip("%")))
-            logger.info(f"[{self.host}] checkStorage — {avail_space} GB available")
+            raw        = match.group(1).rstrip("%")
+            size_match = re.match(r"^([\d.]+)\s*([GMTK]?)B?$", raw, re.IGNORECASE)
+            if not size_match:
+                raise ValueError(f"[{self.host}] Unrecognised storage value: '{raw}'")
+            size_val   = float(size_match.group(1))
+            size_unit  = size_match.group(2).upper()
+            unit_to_gb = {"T": 1024, "G": 1, "M": 1 / 1024, "K": 1 / 1048576, "": 1}
+            avail_space = size_val * unit_to_gb.get(size_unit, 1)
+            logger.info(f"[{self.host}] checkStorage — {avail_space:.2f} GB available")
 
             # Enough space
             if avail_space > min_disk_gb:
