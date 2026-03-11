@@ -182,27 +182,24 @@ def run_rollback(conn, dev, device_key, rollback_image, logger):
                 rb_image    = details.get("image")
                 expected_os = details.get("expected_os")
 
-                print(f"[{device_key}] Rolling back using: {rb_image} -> expected OS: {expected_os}")
-                logger.info(f"[{device_key}] Rolling back: {rb_image} -> {expected_os}")
-
                 if not rb_image or not expected_os:
-                    msg = f"[{device_key}] Missing image or expected_os in rollback entry — aborting"
-                    logger.error(msg)
+                    msg = "Please provide the image details you want to rollback to"
+                    logger.info(msg)
                     print(msg)
                     device_results[device_key]["upgrade"]["status"]    = "rollback_failed"
                     device_results[device_key]["upgrade"]["exception"] = msg
                     return conn, False
 
-                hop_idx  = next((j for j, h in enumerate(hops) if h["image"] == rb_image), None)
                 step_msg = f"Rollback Step → Installing: {rb_image}, expecting OS: {expected_os}"
                 print(step_msg)
                 logger.info(step_msg)
+
+                hop_idx = next((j for j, h in enumerate(hops) if h["image"] == rb_image), None)
 
                 try:
                     conn, is_rollback = upgrade.imageUpgrade(
                         conn, expected_os, rb_image, device_name, logger
                     )
-                    logger.info(f"[{device_key}] imageUpgrade (rollback) result: {is_rollback}")
                 except Exception as e:
                     msg = f"[{device_key}] imageUpgrade raised exception during rollback for {rb_image}: {e}"
                     logger.error(msg)
@@ -215,8 +212,8 @@ def run_rollback(conn, dev, device_key, rollback_image, logger):
                     return conn, False
 
                 if not is_rollback:
-                    msg = f"[{device_key}] Rollback hop failed for {rb_image}"
-                    logger.error(msg)
+                    msg = f"Rollback is not successful for {device_name}"
+                    logger.info(msg)
                     print(msg)
                     if hop_idx is not None:
                         hops[hop_idx]["status"]    = "rollback_failed"
@@ -225,25 +222,25 @@ def run_rollback(conn, dev, device_key, rollback_image, logger):
                     device_results[device_key]["upgrade"]["exception"] = msg
                     return conn, False
 
-                print(f"[{device_key}] Rollback hop succeeded: {rb_image}")
-                logger.info(f"[{device_key}] Rollback hop succeeded: {rb_image}")
                 if hop_idx is not None:
                     hops[hop_idx]["status"] = "rolled_back"
 
                 if expected_os == original_os:
-                    msg = f"[{device_key}] Original OS {original_os} restored — rollback complete"
-                    logger.info(msg)
-                    print(msg)
+                    done_msg = f"{device_name}: Original OS {original_os} restored. Rollback complete."
+                    logger.info(done_msg)
+                    print(done_msg)
                     device_results[device_key]["upgrade"]["status"] = "rolled_back"
                     return conn, True
 
-        logger.info(f"[{device_key}] Multi-step rollback completed")
-        print(f"[{device_key}] Rollback completed")
+        logger.info(f"{device_name}: Multi-step rollback completed.")
+        msg = f"Rollback is successful for {device_name}"
+        logger.info(msg)
+        print(msg)
         device_results[device_key]["upgrade"]["status"] = "rolled_back"
         return conn, True
 
     except Exception as e:
-        msg = f"[{device_key}] Rollback — unhandled exception: {e}"
+        msg = f"[{device_key}] Rollback failed for {device_name} due to {e}"
         logger.error(msg)
         print(msg)
         device_results[device_key]["upgrade"]["status"]    = "rollback_failed"
@@ -255,13 +252,12 @@ def run_rollback(conn, dev, device_key, rollback_image, logger):
 # run_upgrade
 # ─────────────────────────────────────────────────────────────────────────────
 def run_upgrade(conn, dev: dict, device_key: str, logger):
-    tid           = threading.get_ident()
     vendor        = dev.get("vendor").lower()
     model         = str(dev.get("model")).lower().replace("-", "")
     device_name   = f"{vendor}_{model}"
     image_details = dev.get("imageDetails", [])
 
-    logger.info(f"[THREAD-{tid}] [{device_key}] Upgrade started at {datetime.now()}")
+    logger.info(f"[{device_key}] Upgrade started at {datetime.now()}")
     print(f"[{device_key}] ===== UPGRADE STARTED =====")
 
     rollback_image = [{
@@ -277,20 +273,16 @@ def run_upgrade(conn, dev: dict, device_key: str, logger):
         hops = device_results[device_key]["upgrade"]["hops"]
 
         for i, details in enumerate(image_details):
-            image       = details.get("image")
-            expected_os = details.get("expected_os")
-            checksum    = details.get("checksum")
+            image       = details["image"]
+            expected_os = details["expected_os"]
+            checksum    = details["checksum"]
 
-            print(f"[{device_key}] ── HOP {i+1}/{len(image_details)}: {image} -> {expected_os} ──")
-            logger.info(f"[{device_key}] HOP {i+1}/{len(image_details)}: {image} -> {expected_os}")
-
-            # ── validate yaml fields ──────────────────────────────────────────
             if not image or not expected_os or not checksum:
                 msg = (
                     f"{device_name}: Please provide image details correctly — "
-                    f"one of image/expected_os/checksum is missing for HOP {i+1}"
+                    f"one of image, checksum, expected_os is missing"
                 )
-                logger.error(msg)
+                logger.info(msg)
                 print(msg)
                 hops[i]["status"]    = "failed"
                 hops[i]["exception"] = msg
@@ -298,37 +290,43 @@ def run_upgrade(conn, dev: dict, device_key: str, logger):
                 device_results[device_key]["upgrade"]["exception"] = msg
                 return conn, False
 
-            # ── MD5 checksum ──────────────────────────────────────────────────
-            msg = f"{device_name}: Verifying checksum for {image} (expected: {checksum})"
+            msg = f"{device_name}: Upgrading the devices using {image} and {expected_os}"
             logger.info(msg)
             print(msg)
 
+            # ── MD5 checksum ──────────────────────────────────────────────────
             verify_checksum = precheck.verifyChecksum(conn, checksum, image, logger)
-            if not verify_checksum:
-                msg = f"[{device_key}] HOP {i+1}: Checksum verification failed for {image}"
-                logger.error(msg)
-                print(msg)
+            if not verify_checksum.get("match"):
+                msg = "Checksum verification failed"
+                logger.info(msg)
                 hops[i]["status"]    = "failed"
                 hops[i]["exception"] = msg
                 hops[i]["md5_match"] = False
                 device_results[device_key]["upgrade"]["status"]    = "failed"
                 device_results[device_key]["upgrade"]["exception"] = msg
+                device_results[device_key]["upgrade"]["validate_md5"] = {
+                    "status":    verify_checksum.get("status"),
+                    "exception": verify_checksum.get("exception"),
+                    "expected":  verify_checksum.get("expected"),
+                    "computed":  verify_checksum.get("computed"),
+                    "match":     verify_checksum.get("match"),
+                }
                 return conn, False
 
             hops[i]["md5_match"] = True
-            logger.info(f"[{device_key}] HOP {i+1}: MD5 OK")
+            device_results[device_key]["upgrade"]["validate_md5"]["match"]  = True
+            device_results[device_key]["upgrade"]["validate_md5"]["status"] = "ok"
 
             # ── imageUpgrade ──────────────────────────────────────────────────
-            msg = f"{device_name}: Upgrading using {image} to {expected_os}"
-            logger.info(msg)
-            print(msg)
-
             conn, is_upgrade = upgrade.imageUpgrade(conn, expected_os, image, device_name, logger)
 
             if not is_upgrade:
-                msg = f"{device_name}: Upgrade not successful for HOP {i+1} — initiating rollback"
-                logger.error(msg)
+                msg = f"Upgrade is not successful for {device_name}"
+                logger.info(msg)
                 print(msg)
+                msg2 = f"Rolling back to the old image for {device_name}"
+                logger.info(msg2)
+                print(msg2)
                 hops[i]["status"]    = "failed"
                 hops[i]["exception"] = msg
                 device_results[device_key]["upgrade"]["status"]    = "failed"
@@ -336,21 +334,23 @@ def run_upgrade(conn, dev: dict, device_key: str, logger):
 
                 conn, rollback_ok = run_rollback(conn, dev, device_key, rollback_image, logger)
                 if not rollback_ok:
-                    logger.error(f"[{device_key}] HOP {i+1}: Rollback also failed")
+                    msg = "Rollback failed"
+                    logger.info(msg)
+                    print(msg)
                 return conn, False
 
             hops[i]["status"] = "ok"
             rollback_image.append({"image": image, "expected_os": expected_os})
-            logger.info(f"[{device_key}] HOP {i+1}: succeeded. rollback_chain: {rollback_image}")
+            logger.info(f"[{device_key}] HOP {i+1} succeeded. rollback_chain: {rollback_image}")
 
         device_results[device_key]["upgrade"]["status"] = "completed"
-        msg = f"{device_name}: Image installation successful"
+        msg = f"Image installation is successful for {device_name}"
         logger.info(msg)
         print(msg)
         return conn, True
 
     except Exception as e:
-        msg = f"[THREAD-{tid}] [{device_key}] Upgrade — unhandled exception: {e}"
+        msg = f"[{device_key}] Upgrade failed for {device_name} due to {e}"
         logger.error(msg)
         print(msg)
         device_results[device_key]["upgrade"]["status"]    = "failed"
@@ -421,17 +421,17 @@ def run_device_pipeline(dev: dict, accepted_vendors: list):
         logger.info(f"[{device_key}] Pre-checks passed — starting upgrade")
         print(f"[{device_key}] Pre-checks passed — starting upgrade")
 
-        # # ── PHASE 2: UPGRADE ──────────────────────────────────────────────────
-        # conn, upgrade_ok = run_upgrade(conn, dev, device_key, logger)
-        # if not upgrade_ok:
-        #     msg = f"[{device_key}] Upgrade failed"
-        #     logger.error(msg)
-        #     print(msg)
-        #     return False
+        # ── PHASE 2: UPGRADE ──────────────────────────────────────────────────
+        conn, upgrade_ok = run_upgrade(conn, dev, device_key, logger)
+        if not upgrade_ok:
+            msg = f"[{device_key}] Upgrade failed"
+            logger.error(msg)
+            print(msg)
+            return False
 
-        # logger.info(f"[{device_key}] Upgrade succeeded")
-        # print(f"[{device_key}] Upgrade succeeded")
-        # return True
+        logger.info(f"[{device_key}] Upgrade succeeded")
+        print(f"[{device_key}] Upgrade succeeded")
+        return True
 
     except ConnectionError:
         return False
