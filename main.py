@@ -77,58 +77,79 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
         device_results[device_key]["pre"]["check_storage"] = storage
         logger.info(f"[{device_key}] STEP 3 storage OK")
 
-        # # ── STEP 4: Backup active filesystem (disk1 → disk2) ─────────────────
-        # try:
-        #     backup_disk = precheck.preBackupDisk(conn, logger)
-        #     device_results[device_key]["pre"]["backup_active_filesystem"] = backup_disk
+        # ── STEP 4: Backup active filesystem (disk1 → disk2) ─────────────────
+        try:
+            backup_disk = precheck.preBackupDisk(conn, logger)
+            device_results[device_key]["pre"]["backup_active_filesystem"] = backup_disk
 
-        #     if backup_disk.get("status") == "failed":
-        #         raise RuntimeError(backup_disk.get("exception", "Disk backup failed"))
-        # except Exception as e:
-        #     logger.error(f"[{device_key}] STEP 4 BACKUP DISK failed — {e}")
-        #     device_results[device_key]["pre"]["backup_active_filesystem"]["exception"] = str(e)
-        #     return False
+            if backup_disk.get("status") == "failed":
+                raise RuntimeError(backup_disk.get("exception", "Disk backup failed"))
+        except Exception as e:
+            logger.error(f"[{device_key}] STEP 4 BACKUP DISK failed — {e}")
+            device_results[device_key]["pre"]["backup_active_filesystem"]["exception"] = str(e)
+            return False
 
-        # logger.info(f"[{device_key}] STEP 4 backup disk OK")
+        logger.info(f"[{device_key}] STEP 4 backup disk OK")
 
-        # # ── STEP 5: Backup running config (device → NMS) ─────────────────────
-        # try:
-        #     pre_check_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        #     filename            = f"{vendor_lc}_{model_lc}_{pre_check_timestamp}"
-        #     backup              = precheck.preBackup(conn, filename, logger)
-        #     device_results[device_key]["pre"]["backup_running_config"] = backup
+        # ── STEP 5: Backup running config (device → NMS) ─────────────────────
+        try:
+            pre_check_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+            filename            = f"{vendor_lc}_{model_lc}_{pre_check_timestamp}"
+            backup              = precheck.preBackup(conn, filename, logger)
+            device_results[device_key]["pre"]["backup_running_config"] = backup
 
-        #     if not backup:
-        #         raise RuntimeError("preBackup returned False")
-        #     if isinstance(backup, dict) and backup.get("status") == "failed":
-        #         raise RuntimeError(backup.get("exception", "Config backup failed"))
-        # except Exception as e:
-        #     logger.error(f"[{device_key}] STEP 5 BACKUP CONFIG failed — {e}")
-        #     device_results[device_key]["pre"]["backup_running_config"]["exception"] = str(e)
-        #     return False
+            if not backup:
+                raise RuntimeError("preBackup returned False")
+            if isinstance(backup, dict) and backup.get("status") == "failed":
+                raise RuntimeError(backup.get("exception", "Config backup failed"))
+        except Exception as e:
+            logger.error(f"[{device_key}] STEP 5 BACKUP CONFIG failed — {e}")
+            device_results[device_key]["pre"]["backup_running_config"]["exception"] = str(e)
+            return False
 
-        # logger.info(f"[{device_key}] STEP 5 backup config OK")
+        logger.info(f"[{device_key}] STEP 5 backup config OK")
 
-        # # ── STEP 6: Transfer upgrade image (NMS → device) ────────────────────
-        # try:
-        #     image_details = dev.get("imageDetails", [])
-        #     target        = image_details[-1]
-        #     target_image  = target.get("image")
-        #     image_path    = dev.get("image_path")
+        # ── STEP 6: Transfer upgrade image (NMS → device) ────────────────────
+        try:
+            image_details = dev.get("imageDetails", [])
+            target        = image_details[-1]
+            target_image  = target.get("image")
+            image_path    = dev.get("image_path")
 
-        #     transfer = precheck.transferImage(conn, image_path, target_image, logger)
-        #     device_results[device_key]["pre"]["transfer_image"] = transfer
+            transfer = precheck.transferImage(conn, image_path, target_image, logger)
+            device_results[device_key]["pre"]["transfer_image"] = transfer
 
-        #     if transfer.get("status") == "failed":
-        #         raise RuntimeError(transfer.get("exception", "Image transfer failed"))
-        # except Exception as e:
-        #     logger.error(f"[{device_key}] STEP 6 TRANSFER IMAGE failed — {e}")
-        #     device_results[device_key]["pre"]["transfer_image"]["exception"] = str(e)
-        #     return False
+            if transfer.get("status") == "failed":
+                raise RuntimeError(transfer.get("exception", "Image transfer failed"))
+        except Exception as e:
+            logger.error(f"[{device_key}] STEP 6 TRANSFER IMAGE failed — {e}")
+            device_results[device_key]["pre"]["transfer_image"]["exception"] = str(e)
+            return False
 
-        # logger.info(f"[{device_key}] STEP 6 transfer image OK")
+        logger.info(f"[{device_key}] STEP 6 transfer image OK")
 
         # ── STEP 7: Merge results ─────────────────────────────────────────────
+        try:
+            image_details    = dev.get("imageDetails", [])
+            target           = image_details[-1]          # verify the final target image
+            target_image     = target.get("image")
+            expected_checksum = target.get("checksum")
+
+            checksum_result = precheck.verifyChecksum(conn, target_image, expected_checksum, logger)
+            device_results[device_key]["pre"]["verify_checksum"] = checksum_result
+
+            if not checksum_result.get("match"):
+                raise RuntimeError(
+                    checksum_result.get("exception", "MD5 checksum mismatch")
+                )
+        except Exception as e:
+            logger.error(f"[{device_key}] STEP 7 VERIFY CHECKSUM failed — {e}")
+            device_results[device_key]["pre"]["verify_checksum"]["exception"] = str(e)
+            return False
+
+        logger.info(f"[{device_key}] STEP 7 checksum OK")
+       
+        # ── STEP 8: Merge results ─────────────────────────────────────────────
         try:
             thread_result = {
                 "pre":         device_results.get(device_key, {}).get("pre", {}),
@@ -138,12 +159,11 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
             }
             merge_thread_result(device_key, thread_result)
         except Exception as e:
-            logger.error(f"[{device_key}] STEP 7 MERGE failed — {e}")
+            logger.error(f"[{device_key}] STEP 8 MERGE failed — {e}")
             return False
 
         logger.info(f"[THREAD-{tid}] [{device_key}] All pre-checks passed")
         return True
-
     except Exception as e:
         logger.error(f"[THREAD-{tid}] [{device_key}] run_prechecks unhandled exception: {e}")
         return False
