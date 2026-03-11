@@ -1,3 +1,4 @@
+# main.py
 import logging
 import sys
 import threading
@@ -7,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from lib.utilities import *
 from prechecks import PreCheck
-from upgrade import Upgrade
+from upgrade import Upgrade, run_upgrade, run_rollback
 
 MAX_THREADS = 5
 
@@ -31,6 +32,8 @@ def execute_show_commands(device_key, vendor, model, conn, check_type, logger):
 
 # ─────────────────────────────────────────────────────────────────────────────
 # run_prechecks
+# Phase 1 — runs on the SAME thread as run_upgrade (see run_device_pipeline).
+# conn is established ONCE before this is called and passed straight through.
 # ─────────────────────────────────────────────────────────────────────────────
 def run_prechecks(conn, dev: dict, device_key: str, logger):
     tid         = threading.get_ident()
@@ -128,7 +131,7 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
 
         logger.info(f"[{device_key}] STEP 6 transfer image OK")
 
-    # ── STEP 7: Verify MD5 checksum for every image in imageDetails ───────
+        # ── STEP 7: Verify MD5 checksum for every image in imageDetails ───────
         image_details = dev.get("imageDetails", [])
         print(f"[STEP 7] image_details       = {image_details}")
         print(f"[STEP 7] number of images    = {len(image_details)}")
@@ -170,7 +173,7 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
 
         logger.info(f"[{device_key}] STEP 7 all checksums passed")
 
-        # ── STEP 8: Merge results ─────────────────────────────────────────────
+        # ── STEP 8: Merge pre results into device_results ─────────────────────
         try:
             thread_result = {
                 "pre":         device_results.get(device_key, {}).get("pre", {}),
@@ -188,222 +191,41 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
 
     except Exception as e:
         logger.error(f"[THREAD-{tid}] [{device_key}] run_prechecks unhandled exception: {e}")
-        return False 
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# run_rollback
-# ─────────────────────────────────────────────────────────────────────────────
-def run_rollback(conn, dev, device_key, rollback_image, logger):
-    vendor      = dev.get("vendor").lower()
-    model       = str(dev.get("model")).lower().replace("-", "")
-    device_name = f"{vendor}_{model}"
-
-    logger.info(f"[{device_key}] Rollback started at {datetime.now()}")
-    print(f"[{device_key}] ===== ROLLBACK STARTED =====")
-
-    upgrade = Upgrade(dev)
-
-    try:
-        if vendor == "juniper":
-            reversed_list = rollback_image[::-1]
-
-            log_lines = ["\n===== ROLLBACK CHAIN (REVERSED) ====="]
-            for i, entry in enumerate(reversed_list, start=1):
-                log_lines.append(
-                    f"{i}. image = {entry.get('image')}, expected_os = {entry.get('expected_os')}"
-                )
-            log_lines.append("=====================================\n")
-            logger.info("\n".join(log_lines))
-            print("\n".join(log_lines))
-
-            original_os = dev.get("curr_os")
-            hops        = device_results[device_key]["upgrade"]["hops"]
-
-            for details in reversed_list:
-                rb_image    = details.get("image")
-                expected_os = details.get("expected_os")
-
-                if not rb_image or not expected_os:
-                    msg = "Please provide the image details you want to rollback to"
-                    logger.info(msg)
-                    print(msg)
-                    device_results[device_key]["upgrade"]["status"]    = "rollback_failed"
-                    device_results[device_key]["upgrade"]["exception"] = msg
-                    return conn, False
-
-                step_msg = f"Rollback Step → Installing: {rb_image}, expecting OS: {expected_os}"
-                print(step_msg)
-                logger.info(step_msg)
-
-                hop_idx = next((j for j, h in enumerate(hops) if h["image"] == rb_image), None)
-
-                try:
-                    conn, is_rollback = upgrade.imageUpgrade(
-                        conn, expected_os, rb_image, device_name, logger
-                    )
-                except Exception as e:
-                    msg = f"[{device_key}] imageUpgrade raised exception during rollback for {rb_image}: {e}"
-                    logger.error(msg)
-                    print(msg)
-                    if hop_idx is not None:
-                        hops[hop_idx]["status"]    = "rollback_failed"
-                        hops[hop_idx]["exception"] = str(e)
-                    device_results[device_key]["upgrade"]["status"]    = "rollback_failed"
-                    device_results[device_key]["upgrade"]["exception"] = str(e)
-                    return conn, False
-
-                if not is_rollback:
-                    msg = f"Rollback is not successful for {device_name}"
-                    logger.info(msg)
-                    print(msg)
-                    if hop_idx is not None:
-                        hops[hop_idx]["status"]    = "rollback_failed"
-                        hops[hop_idx]["exception"] = msg
-                    device_results[device_key]["upgrade"]["status"]    = "rollback_failed"
-                    device_results[device_key]["upgrade"]["exception"] = msg
-                    return conn, False
-
-                if hop_idx is not None:
-                    hops[hop_idx]["status"] = "rolled_back"
-
-                if expected_os == original_os:
-                    done_msg = f"{device_name}: Original OS {original_os} restored. Rollback complete."
-                    logger.info(done_msg)
-                    print(done_msg)
-                    device_results[device_key]["upgrade"]["status"] = "rolled_back"
-                    return conn, True
-
-        logger.info(f"{device_name}: Multi-step rollback completed.")
-        msg = f"Rollback is successful for {device_name}"
-        logger.info(msg)
-        print(msg)
-        device_results[device_key]["upgrade"]["status"] = "rolled_back"
-        return conn, True
-
-    except Exception as e:
-        msg = f"[{device_key}] Rollback failed for {device_name} due to {e}"
-        logger.error(msg)
-        print(msg)
-        device_results[device_key]["upgrade"]["status"]    = "rollback_failed"
-        device_results[device_key]["upgrade"]["exception"] = str(e)
-        return conn, False
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# run_upgrade
-# ─────────────────────────────────────────────────────────────────────────────
-def run_upgrade(conn, dev: dict, device_key: str, logger):
-    vendor        = dev.get("vendor").lower()
-    model         = str(dev.get("model")).lower().replace("-", "")
-    device_name   = f"{vendor}_{model}"
-    image_details = dev.get("imageDetails", [])
-
-    logger.info(f"[{device_key}] Upgrade started at {datetime.now()}")
-    print(f"[{device_key}] ===== UPGRADE STARTED =====")
-
-    rollback_image = [{
-        "image":       dev.get("curr_image"),
-        "expected_os": dev.get("curr_os"),
-    }]
-
-    upgrade  = Upgrade(dev)
-    precheck = PreCheck(dev)
-
-    try:
-        device_results[device_key]["upgrade"]["status"] = "in_progress"
-        hops = device_results[device_key]["upgrade"]["hops"]
-
-        for i, details in enumerate(image_details):
-            image       = details["image"]
-            expected_os = details["expected_os"]
-            checksum    = details["checksum"]
-
-            if not image or not expected_os or not checksum:
-                msg = (
-                    f"{device_name}: Please provide image details correctly — "
-                    f"one of image, checksum, expected_os is missing"
-                )
-                logger.info(msg)
-                print(msg)
-                hops[i]["status"]    = "failed"
-                hops[i]["exception"] = msg
-                device_results[device_key]["upgrade"]["status"]    = "failed"
-                device_results[device_key]["upgrade"]["exception"] = msg
-                return conn, False
-
-            msg = f"{device_name}: Upgrading the devices using {image} and {expected_os}"
-            logger.info(msg)
-            print(msg)
-
-            # ── MD5 checksum ──────────────────────────────────────────────────
-            verify_checksum = upgrade.verifyChecksum(conn, checksum, image, logger)
-            if not verify_checksum.get("match"):
-                msg = "Checksum verification failed"
-                logger.info(msg)
-                hops[i]["status"]    = "failed"
-                hops[i]["exception"] = msg
-                hops[i]["md5_match"] = False
-                device_results[device_key]["upgrade"]["status"]    = "failed"
-                device_results[device_key]["upgrade"]["exception"] = msg
-                device_results[device_key]["upgrade"]["validate_md5"] = {
-                    "status":    verify_checksum.get("status"),
-                    "exception": verify_checksum.get("exception"),
-                    "expected":  verify_checksum.get("expected"),
-                    "computed":  verify_checksum.get("computed"),
-                    "match":     verify_checksum.get("match"),
-                }
-                return conn, False
-
-            hops[i]["md5_match"] = True
-            device_results[device_key]["upgrade"]["validate_md5"]["match"]  = True
-            device_results[device_key]["upgrade"]["validate_md5"]["status"] = "ok"
-
-            # ── imageUpgrade ──────────────────────────────────────────────────
-            conn, is_upgrade = upgrade.imageUpgrade(conn, expected_os, image, device_name, logger)
-
-            if not is_upgrade:
-                msg = f"Upgrade is not successful for {device_name}"
-                logger.info(msg)
-                print(msg)
-                msg2 = f"Rolling back to the old image for {device_name}"
-                logger.info(msg2)
-                print(msg2)
-                hops[i]["status"]    = "failed"
-                hops[i]["exception"] = msg
-                device_results[device_key]["upgrade"]["status"]    = "failed"
-                device_results[device_key]["upgrade"]["exception"] = msg
-
-                conn, rollback_ok = run_rollback(conn, dev, device_key, rollback_image, logger)
-                if not rollback_ok:
-                    msg = "Rollback failed"
-                    logger.info(msg)
-                    print(msg)
-                return conn, False
-
-            hops[i]["status"] = "ok"
-            rollback_image.append({"image": image, "expected_os": expected_os})
-            logger.info(f"[{device_key}] HOP {i+1} succeeded. rollback_chain: {rollback_image}")
-
-        device_results[device_key]["upgrade"]["status"] = "completed"
-        msg = f"Image installation is successful for {device_name}"
-        logger.info(msg)
-        print(msg)
-        return conn, True
-
-    except Exception as e:
-        msg = f"[{device_key}] Upgrade failed for {device_name} due to {e}"
-        logger.error(msg)
-        print(msg)
-        device_results[device_key]["upgrade"]["status"]    = "failed"
-        device_results[device_key]["upgrade"]["exception"] = str(e)
-        return conn, False
+        return False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # run_device_pipeline
-# Owns: init results/logger, vendor check, single connect, pre, upgrade, report.
-# Called once per device in its own thread.
+#
+# ONE thread per device — owns everything from connect to report.
+# Thread lifecycle:
+#
+#   ThreadPoolExecutor (max 5 threads)
+#       └─ Thread-N  ←── ONE thread per device, never shared
+#             │
+#             ├─ init_device_results()       set up JSON slots
+#             ├─ setup_logger()              per-device log file
+#             ├─ vendor check
+#             ├─ connect()                   SINGLE conn for pre-checks
+#             │
+#             ├─ PHASE 1: run_prechecks()    uses pre-check conn
+#             │     steps 1-8 run on this thread with this conn
+#             │
+#             ├─ PHASE 2: run_upgrade()      receives same conn
+#             │     ├─ hop 0: imageUpgrade() → systemReboot()
+#             │     │           └─ reconnect_and_verify()
+#             │     │                 disconnect() old conn
+#             │     │                 Upgrade.connect() → new conn
+#             │     │                 show version
+#             │     │                 write hops[0]['connect']
+#             │     ├─ hop 1: imageUpgrade() → systemReboot()
+#             │     │           └─ reconnect_and_verify() (same pattern)
+#             │     └─ (rollback if any hop fails)
+#             │
+#             └─ finally:
+#                   export_device_summary()  JSON + HTML report
+#                   disconnect()             clean up last conn
+#
 # ─────────────────────────────────────────────────────────────────────────────
 def run_device_pipeline(dev: dict, accepted_vendors: list):
     vendor     = dev.get("vendor").lower()
@@ -412,7 +234,7 @@ def run_device_pipeline(dev: dict, accepted_vendors: list):
     ip_clean   = host.replace(".", "_")
     device_key = f"{ip_clean}_{vendor}_{model}"
 
-    # Store accepted_vendors on dev so PreCheck/Upgrade can read it from device dict
+    # Store accepted_vendors on dev so PreCheck / Upgrade can read it
     dev["accepted_vendors"] = accepted_vendors
 
     # ── init results + logger ─────────────────────────────────────────────────
@@ -437,7 +259,11 @@ def run_device_pipeline(dev: dict, accepted_vendors: list):
             device_results[device_key]["pre"]["connect"]["exception"] = msg
             raise ConnectionError(msg)
 
-        # ── SINGLE CONNECTION — passed through all phases ─────────────────────
+        # ── CONNECT — one connection established here, passed to both phases ──
+        # Pre-checks use this conn directly.
+        # Upgrade phase receives this conn but replaces it after each reboot
+        # via Upgrade.reconnect_and_verify() → Upgrade.connect().
+        # The finally block always disconnects whatever conn is current.
         conn = connect(device_key, dev, logger)
         if not conn:
             msg = f"[{device_key}] connect() returned None"
@@ -450,41 +276,40 @@ def run_device_pipeline(dev: dict, accepted_vendors: list):
         print(f"[{device_key}] Connected to {host}")
 
         # ── PHASE 1: PRE-CHECKS ───────────────────────────────────────────────
-        logger.info(f"[{device_key}] Starting pre-checks")
-        print(f"[{device_key}] Starting pre-checks")
+        logger.info(f"[{device_key}] ── PHASE 1 PRE-CHECKS starting")
+        print(f"[{device_key}] ── PHASE 1 PRE-CHECKS starting")
 
         precheck_ok = run_prechecks(conn, dev, device_key, logger)
         if not precheck_ok:
-            msg = f"[{device_key}] Pre-checks failed — skipping upgrade"
+            msg = f"[{device_key}] Phase 1 FAILED — skipping upgrade"
             logger.error(msg)
             print(msg)
             return False
 
-        logger.info(f"[{device_key}] Pre-checks passed — starting upgrade")
-        print(f"[{device_key}] Pre-checks passed — starting upgrade")
+        logger.info(f"[{device_key}] ── PHASE 1 COMPLETE — starting Phase 2")
+        print(f"[{device_key}] ── PHASE 1 COMPLETE — starting Phase 2")
 
-        # # ── PHASE 2: UPGRADE ──────────────────────────────────────────────────
-        # conn, upgrade_ok = run_upgrade(conn, dev, device_key, logger)
-        # if not upgrade_ok:
-        #     msg = f"[{device_key}] Upgrade failed"
-        #     logger.error(msg)
-        #     print(msg)
-        #     return False
+        # ── PHASE 2: UPGRADE ─────────────────────────────────────────────────
+        # Same thread continues here with the same conn from Phase 1.
+        # run_upgrade() will replace conn internally after each reboot.
+        # We get the final conn back so finally can disconnect it cleanly.
+        conn, upgrade_ok = run_upgrade(conn, dev, device_key, accepted_vendors, logger)
 
-        # logger.info(f"[{device_key}] Upgrade succeeded")
-        # print(f"[{device_key}] Upgrade succeeded")
-        # return True
+        # Always sync device_results['conn'] with whatever conn we got back
+        device_results[device_key]["conn"] = conn
 
-    except ConnectionError:
-        return False
+        if not upgrade_ok:
+            msg = f"[{device_key}] Phase 2 FAILED (rollback attempted) — stopping device"
+            logger.error(msg)
+            print(msg)
+            return False
 
-    except Exception as e:
-        msg = f"[THREAD-{tid}] [{device_key}] Pipeline unhandled exception: {e}"
-        logger.error(msg)
-        print(msg)
-        return False
+        logger.info(f"[{device_key}] ── PHASE 2 COMPLETE — upgrade successful")
+        print(f"[{device_key}] ── PHASE 2 COMPLETE — upgrade successful")
+        return True
 
     finally:
+        # Always runs — success, failure, or exception
         try:
             export_device_summary(device_key)
             logger.info(f"[{device_key}] HTML report exported")

@@ -1,3 +1,4 @@
+# lib/utilities.py
 import logging
 import sys
 import os
@@ -114,12 +115,31 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
             "initial_os": initial_os,
             "target_os":  target_os,
             "exception":  "",
+            # ── top-level upgrade connect slot ────────────────────────────────
+            # Written by Upgrade.connect() on every fresh connection attempt
+            # during the upgrade phase.  The pre-check phase uses pre.connect
+            # above; this slot covers the upgrade-phase connections only.
+            "connect": {
+                "status":    "not_started",
+                "exception": "",
+            },
+            # ── per-hop results ───────────────────────────────────────────────
+            # One entry per imageDetails item.
+            # Written by imageUpgrade() and reconnect_and_verify().
             "hops": [
                 {
                     "image":     img.get("image", ""),
                     "status":    "not_started",
                     "exception": "",
                     "md5_match": False,
+                    # Written by Upgrade.reconnect_and_verify() after each
+                    # systemReboot() — records whether SSH came back,
+                    # which attempt succeeded, and any exception.
+                    "connect": {
+                        "status":    "not_started",
+                        "attempt":   0,
+                        "exception": "",
+                    },
                 }
                 for img in image_details
             ],
@@ -534,6 +554,8 @@ def merge_thread_result(device_key: str, result: dict):
 
 # ─────────────────────────────────────────────────────────────────────────────
 # connect / disconnect
+# Used for the PRE-CHECK phase connection.
+# Upgrade phase uses Upgrade.connect() / Upgrade.reconnect_and_verify().
 # ─────────────────────────────────────────────────────────────────────────────
 def connect(device_key: str, dev: dict, logger):
     host    = dev["host"]
