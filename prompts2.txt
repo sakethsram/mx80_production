@@ -1,7 +1,5 @@
-
-show ntp associations no-resolve | no-more
-     remote               refid           auth  st  t  when  poll reach  delay     offset   jitter
-===================================================================================================
- 10.91.141.57           .INIT.               -  16  u     -  1024    0    0.000    +0.000    0.000
-(not parsed)
-parser returned empty result
+create - run_device piple for each device - this will create one thread for each device and run the pre,up,post and report in the same - and does hte 
+html addition as well - 
+do not do anythin else 
+what i want in the run_device_pipeline - dont add functions that arent htere - 
+this run device piplein should do this - 1 . init each router , then run_prechecks 
