@@ -1,47 +1,14 @@
 #!/usr/bin/env python3
 """
 workflow_report_generator.py
-=============================
-Generates a dark-themed HTML report from device_results.
-
-device_results structure (per device_key):
-{
-  "status":      "",
-  "device_info": {"host", "vendor", "model", "hostname", "version"},
-  "pre": {
-      "connect":                   {"ping", "status": True|False, "exception": ""},
-      "execute_show_commands":     {"status": str, "exception": "", "commands": [{cmd,output,json,exception}]},
-      "show_version":              {"status": str, "exception": "", "version": "", "platform": ""},
-      "check_storage":             {"status": str, "deleted_files": [], "exception": "", "sufficient": False},
-      "backup_active_filesystem":  {"status": str, "exception": "", "disk_count": ""},
-      "backup_running_config":     {"status": str, "exception": "", "destination": "", "config_file": ""},
-      "transfer_image":            {"status": str, "exception": "", "image": "", "destination": ""},
-      "validate_md5":              {"status": str, "exception": "", "expected": "", "computed": "", "match": False},
-      "disable_re_protect_filter": {"status": str, "exception": ""},
-  },
-  "upgrade": {
-      "status":     "not_started"|"in_progress"|"completed"|"failed"|"rolled_back",
-      "initial_os": str,
-      "target_os":  str,
-      "exception":  str,
-      "hops": [
-          {"image": str, "status": str, "exception": str, "md5_match": bool}
-      ]
-  },
-  "post": {
-      "connect":               {"status": str, "exception": ""},
-      "execute_show_commands": {"status": str, "exception": "", "commands": [{cmd,output,json,exception}]},
-      "show_version":          {"status": str, "exception": "", "version": "", "platform": ""},
-  }
-}
 """
 
 from datetime import datetime
 import json
 import os
+import difflib as _dl
 
 
-# ── display names ─────────────────────────────────────────────────────────────
 PRE_TASK_TITLES = {
     "connect":                   "Connect to Device",
     "execute_show_commands":     "Collect Show Outputs",
@@ -97,10 +64,6 @@ def _norm_status(raw) -> str:
     return str(raw) if raw is not None else ""
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Command drawer (shared by pre + post execute_show_commands)
-# Always renders — shows placeholder if commands list is empty
-# ─────────────────────────────────────────────────────────────────────────────
 def _build_cmd_drawer(cmds: list, prefix: str, phase: str) -> str:
     drawer_id = f"cmds-{prefix}-{phase}"
 
@@ -146,9 +109,6 @@ def _build_cmd_drawer(cmds: list, prefix: str, phase: str) -> str:
             f'<div class="cmd-list">{"".join(items)}</div></div>')
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Upgrade hops table
-# ─────────────────────────────────────────────────────────────────────────────
 def _build_hops_rows(hops: list, prefix: str) -> str:
     if not hops:
         return ""
@@ -192,31 +152,111 @@ def _build_hops_rows(hops: list, prefix: str) -> str:
     return "\n".join(rows)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Diff utilities
-# ─────────────────────────────────────────────────────────────────────────────
-def _intra_diff_html(removed: str, added: str) -> tuple:
-    """Return (pre_html, post_html) with char-level highlights."""
-    rem_esc = _esc(removed)
-    add_esc = _esc(added)
-    pre_html  = f'<span class="diff-del-inline">{rem_esc}</span>' if removed else ""
-    post_html = f'<span class="diff-add-inline">{add_esc}</span>' if added  else ""
-    return pre_html, post_html
+def _build_full_diff_table(cmd: str, pre_output: str, post_output: str, tbl_id: str) -> str:
+    """
+    Build a side-by-side diff table showing the FULL command output.
+    Unchanged lines = green on both sides.
+    Changed/added/removed lines = red on the affected side.
+    No +/- symbols.
+    """
+    pre_lines  = (pre_output or "").splitlines()
+    post_lines = (post_output or "").splitlines()
+
+    if not pre_lines and not post_lines:
+        return ""
+
+    matcher = _dl.SequenceMatcher(None, pre_lines, post_lines, autojunk=False)
+    rows = []
+
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            for k in range(i2 - i1):
+                line = _esc(pre_lines[i1 + k])
+                rows.append(
+                    f'<tr>'
+                    f'<td class="diff-pre mono diff-line-ok">{line}</td>'
+                    f'<td class="diff-sep"></td>'
+                    f'<td class="diff-post mono diff-line-ok">{line}</td>'
+                    f'</tr>'
+                )
+        elif tag == "replace":
+            pre_blk  = pre_lines[i1:i2]
+            post_blk = post_lines[j1:j2]
+            pairs    = min(len(pre_blk), len(post_blk))
+            for k in range(pairs):
+                rows.append(
+                    f'<tr>'
+                    f'<td class="diff-pre mono diff-line-err">{_esc(pre_blk[k])}</td>'
+                    f'<td class="diff-sep"></td>'
+                    f'<td class="diff-post mono diff-line-err">{_esc(post_blk[k])}</td>'
+                    f'</tr>'
+                )
+            for k in range(pairs, len(pre_blk)):
+                rows.append(
+                    f'<tr>'
+                    f'<td class="diff-pre mono diff-line-err">{_esc(pre_blk[k])}</td>'
+                    f'<td class="diff-sep"></td>'
+                    f'<td class="diff-post mono diff-line-na">—</td>'
+                    f'</tr>'
+                )
+            for k in range(pairs, len(post_blk)):
+                rows.append(
+                    f'<tr>'
+                    f'<td class="diff-pre mono diff-line-na">—</td>'
+                    f'<td class="diff-sep"></td>'
+                    f'<td class="diff-post mono diff-line-err">{_esc(post_blk[k])}</td>'
+                    f'</tr>'
+                )
+        elif tag == "delete":
+            for ln in pre_lines[i1:i2]:
+                rows.append(
+                    f'<tr>'
+                    f'<td class="diff-pre mono diff-line-err">{_esc(ln)}</td>'
+                    f'<td class="diff-sep"></td>'
+                    f'<td class="diff-post mono diff-line-na">—</td>'
+                    f'</tr>'
+                )
+        elif tag == "insert":
+            for ln in post_lines[j1:j2]:
+                rows.append(
+                    f'<tr>'
+                    f'<td class="diff-pre mono diff-line-na">—</td>'
+                    f'<td class="diff-sep"></td>'
+                    f'<td class="diff-post mono diff-line-err">{_esc(ln)}</td>'
+                    f'</tr>'
+                )
+
+    if not rows:
+        return ""
+
+    return f'''
+<div class="diff-cmd-block">
+  <div class="diff-cmd-hd">
+    <button class="mini-btn" onclick="tgl(\'{tbl_id}\')">
+      <code>{_esc(cmd)}</code>
+    </button>
+  </div>
+  <div id="{tbl_id}" class="diff-tbl-wrap" hidden>
+    <table class="diff-tbl">
+      <thead><tr>
+        <th class="diff-th-pre">PRE</th>
+        <th class="diff-th-sep"></th>
+        <th class="diff-th-post">POST</th>
+      </tr></thead>
+      <tbody>{"".join(rows)}</tbody>
+    </table>
+  </div>
+</div>'''
 
 
-def _build_report_section(report: dict, prefix: str) -> str:
-    """
-    Build the side-by-side diff section for the report phase.
-    Returns HTML string (empty string if no diffs or report not generated).
-    """
+def _build_report_section(report: dict, prefix: str, device_data: dict = None) -> str:
     status = report.get("status", "pending")
     exc    = report.get("exception", "") or ""
     diff   = report.get("diff", {})
 
-    color   = PHASE_META["report"]["color"]
-    sec_id  = f"report-diff-{prefix}"
+    color  = PHASE_META["report"]["color"]
+    sec_id = f"report-diff-{prefix}"
 
-    # ── status badge ──────────────────────────────────────────────────────────
     norm = _norm_status(status)
     if norm == "ok":
         badge = '<span class="badge b-ok">Generated</span>'
@@ -230,7 +270,6 @@ def _build_report_section(report: dict, prefix: str) -> str:
     exc_html = (f'<span class="remark-err">{_esc(exc)}</span>'
                 if exc else '<span class="remark-na">—</span>')
 
-    # ── no diffs ──────────────────────────────────────────────────────────────
     if not diff:
         no_diff = ('<div class="diff-none">No differences found between pre and post outputs.</div>'
                    if status in ("generated", "ok")
@@ -247,85 +286,27 @@ def _build_report_section(report: dict, prefix: str) -> str:
 </tr>
 <tr class="phase-sep"><td colspan="4"></td></tr>'''
 
-    # ── build per-command diff tables ─────────────────────────────────────────
+    # Extract raw pre/post command outputs for full-line display
+    pre_cmd_map  = {}
+    post_cmd_map = {}
+    if device_data:
+        for c in (device_data.get("pre", {})
+                              .get("execute_show_commands", {})
+                              .get("commands", [])):
+            pre_cmd_map[c.get("cmd", "")] = c.get("output", "")
+        post_exec = device_data.get("post", {})
+        if isinstance(post_exec, dict):
+            for c in post_exec.get("execute_show_commands", {}).get("commands", []):
+                post_cmd_map[c.get("cmd", "")] = c.get("output", "")
+
     cmd_blocks = []
-    for cmd_str, entries in diff.items():
-        if not entries:
-            continue
-
-        tbl_id    = f"diff-{prefix}-{abs(hash(cmd_str)) % 999999}"
-        cmd_label = _esc(cmd_str)
-
-        changed = sum(1 for e in entries
-                      if e.get("pre","N/A") != "N/A" and e.get("post","N/A") != "N/A"
-                      and e.get("change","") != "")
-        added   = sum(1 for e in entries if e.get("pre","N/A")  == "N/A")
-        removed = sum(1 for e in entries if e.get("post","N/A") == "N/A")
-
-        summary_parts = []
-        if added:   summary_parts.append(f'<span class="diff-cnt add">+{added}</span>')
-        if removed: summary_parts.append(f'<span class="diff-cnt del">−{removed}</span>')
-        if changed: summary_parts.append(f'<span class="diff-cnt chg">~{changed}</span>')
-        summary_html = " ".join(summary_parts) or ""
-
-        rows = []
-        for entry in entries:
-            pre_val    = entry.get("pre",    "N/A")
-            post_val   = entry.get("post",   "N/A")
-            change     = entry.get("change", "")
-
-            if pre_val == "N/A":
-                # pure addition
-                pre_html  = '<span class="diff-na">N/A</span>'
-                post_html = f'<span class="diff-add">{_esc(post_val)}</span>'
-                row_cls   = "dr-add"
-            elif post_val == "N/A":
-                # pure deletion
-                pre_html  = f'<span class="diff-del">{_esc(pre_val)}</span>'
-                post_html = '<span class="diff-na">N/A</span>'
-                row_cls   = "dr-del"
-            elif isinstance(change, list) and len(change) == 2:
-                # intra-line diff: highlight changed chars within context
-                removed_chars, added_chars = change
-                # show full line with highlights embedded
-                pre_base  = _esc(pre_val.replace(removed_chars, ""))
-                post_base = _esc(post_val.replace(added_chars,  ""))
-                pre_html  = f'{pre_base}<span class="diff-del-inline">{_esc(removed_chars)}</span>'
-                post_html = f'{post_base}<span class="diff-add-inline">{_esc(added_chars)}</span>'
-                row_cls   = "dr-chg"
-            else:
-                # whole-line change (change == "")
-                pre_html  = f'<span class="diff-del">{_esc(pre_val)}</span>'
-                post_html = f'<span class="diff-add">{_esc(post_val)}</span>'
-                row_cls   = "dr-chg"
-
-            rows.append(
-                f'<tr class="{row_cls}">'
-                f'<td class="diff-pre mono">{pre_html}</td>'
-                f'<td class="diff-sep"></td>'
-                f'<td class="diff-post mono">{post_html}</td>'
-                f'</tr>'
-            )
-
-        cmd_blocks.append(f'''
-<div class="diff-cmd-block">
-  <div class="diff-cmd-hd">
-    <button class="mini-btn" onclick="tgl(\'{tbl_id}\')">
-      <code>{cmd_label}</code>
-    </button>
-    <span class="diff-summary">{summary_html}</span>
-  </div>
-  <div id="{tbl_id}" class="diff-tbl-wrap" hidden>
-    <table class="diff-tbl">
-      <thead><tr>
-        <th class="diff-th-pre">PRE</th>
-        <th class="diff-th-sep"></th>
-        <th class="diff-th-post">POST</th>
-      </tr></thead>
-      <tbody>{"".join(rows)}</tbody>
-    </table>
-  </div>
-</div>''')
+    for cmd_str in diff.keys():
+        tbl_id      = f"diff-{prefix}-{abs(hash(cmd_str)) % 999999}"
+        pre_output  = pre_cmd_map.get(cmd_str, "")
+        post_output = post_cmd_map.get(cmd_str, "")
+        block       = _build_full_diff_table(cmd_str, pre_output, post_output, tbl_id)
+        if block:
+            cmd_blocks.append(block)
 
     cmd_count   = len(diff)
     diff_toggle = f' <button class="mini-btn" onclick="tgl(\'{sec_id}\')">View Diffs ({cmd_count})</button>'
@@ -350,12 +331,8 @@ def _build_report_section(report: dict, prefix: str) -> str:
 <tr class="phase-sep"><td colspan="4"></td></tr>'''
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Build rows for pre or post phase
-# ─────────────────────────────────────────────────────────────────────────────
 def _build_phase_rows(tasks: dict, titles: dict, phase_key: str,
                       prefix: str, phase_meta: dict) -> tuple:
-    """Returns (rows_html, total, success, failed)"""
     rows    = []
     total   = success = failed = 0
     color   = phase_meta["color"]
@@ -375,10 +352,9 @@ def _build_phase_rows(tasks: dict, titles: dict, phase_key: str,
         display = titles.get(task_name, task_name.replace("_", " ").title())
 
         total += 1
-        if is_ok:       success += 1
-        elif not is_blank: failed += 1
+        if is_ok:          success += 1
+        elif not is_blank: failed  += 1
 
-        # phase cell (rowspan on first row only)
         if first:
             phase_cell = (
                 f'<td class="phase-cell" rowspan="{count}" '
@@ -390,7 +366,6 @@ def _build_phase_rows(tasks: dict, titles: dict, phase_key: str,
         else:
             phase_cell = ""
 
-        # badge
         if is_blank:
             badge = '<span class="badge b-ns">—</span>'
         elif is_ok:
@@ -398,22 +373,19 @@ def _build_phase_rows(tasks: dict, titles: dict, phase_key: str,
         else:
             badge = '<span class="badge b-fail">Failed</span>'
 
-        # remark
         if exc:
             remark = f'<span class="remark-err">{_esc(exc)}</span>'
         else:
             remark = '<span class="remark-na">—</span>'
 
-        # for execute_show_commands — always render toggle + drawer (even if empty)
         cmd_toggle = ""
         cmd_drawer = ""
         if task_name == "execute_show_commands":
             cmds   = td.get("commands", [])
             btn_id = f"cmds-{prefix}-{phase_key}"
-            count  = len(cmds)
-            lbl    = f"Outputs ({count})"
+            lbl    = f"Outputs ({len(cmds)})"
             cmd_toggle = (f' <button class="mini-btn" '
-                          f'onclick="tgl(\'{btn_id}\')">{ lbl}</button>')
+                          f'onclick="tgl(\'{btn_id}\')">{lbl}</button>')
             cmd_drawer = _build_cmd_drawer(cmds, prefix, phase_key)
 
         subtask_html = (
@@ -436,16 +408,11 @@ def _build_phase_rows(tasks: dict, titles: dict, phase_key: str,
     return "\n".join(rows), total, success, failed
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Build full table body for one device
-# ─────────────────────────────────────────────────────────────────────────────
 def build_tbody(device_data: dict, device_key: str) -> tuple:
-    """Returns (tbody_html, total, success, failed)"""
     prefix   = device_key.replace(".", "_").replace("-", "_")
     all_rows = []
     total = success = failed = 0
 
-    # ── PRE ──────────────────────────────────────────────────────────────────
     pre_tasks = {k: v for k, v in device_data.get("pre", {}).items()}
     if pre_tasks:
         rows, t, s, f = _build_phase_rows(
@@ -454,7 +421,6 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
         all_rows.append(rows)
         total += t; success += s; failed += f
 
-    # ── UPGRADE ───────────────────────────────────────────────────────────────
     upg = device_data.get("upgrade", {})
     if upg:
         color      = PHASE_META["upgrade"]["color"]
@@ -480,7 +446,6 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
 
         upg_remark = f'<span class="remark-err">{upg_exc}</span>' if upg_exc else '<span class="remark-na">—</span>'
 
-        # hops drawer
         hop_drawer = ""
         hop_toggle = ""
         if hops:
@@ -494,7 +459,6 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
   </table>
 </div>"""
 
-        # summary row
         all_rows.append(
             f'<tr class="task-row">'
             f'<td class="phase-cell" rowspan="3" style="border-left:3px solid {color};">'
@@ -522,12 +486,10 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
         )
         all_rows.append('<tr class="phase-sep"><td colspan="4"></td></tr>')
 
-        # count upgrade as 1 task
         total += 1
         if upg_status == "ok":       success += 1
         elif upg_status not in ("", "not_started"): failed += 1
 
-    # ── POST ──────────────────────────────────────────────────────────────────
     post_tasks = {k: v for k, v in device_data.get("post", {}).items()}
     if post_tasks:
         rows, t, s, f = _build_phase_rows(
@@ -536,10 +498,9 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
         all_rows.append(rows)
         total += t; success += s; failed += f
 
-    # ── REPORT (diff) ─────────────────────────────────────────────────────────
     report = device_data.get("report", {})
     if report:
-        report_rows = _build_report_section(report, prefix)
+        report_rows = _build_report_section(report, prefix, device_data)
         all_rows.append(report_rows)
         total += 1
         rpt_st = _norm_status(report.get("status", ""))
@@ -549,11 +510,7 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
     return "\n".join(all_rows), total, success, failed
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Phase summary cards
-# ─────────────────────────────────────────────────────────────────────────────
 def _phase_summary(device_data: dict) -> dict:
-    """Returns dict of phase -> (total, ok, failed) for summary cards."""
     out = {}
     for ph in ("pre", "post"):
         tasks = device_data.get(ph, {})
@@ -568,40 +525,35 @@ def _phase_summary(device_data: dict) -> dict:
         out[ph] = (t, s, f)
 
     upg = device_data.get("upgrade", {})
-    st  = _norm_status(upg.get("status", ""))
     hop_count = len(upg.get("hops", []))
     hop_ok    = sum(1 for h in upg.get("hops", []) if _norm_status(h.get("status","")) == "ok")
     out["upgrade"] = (hop_count, hop_ok, hop_count - hop_ok)
 
-    rpt     = device_data.get("report", {})
-    rpt_st  = _norm_status(rpt.get("status", ""))
-    diff_n  = len(rpt.get("diff", {}))
-    rpt_ok  = 1 if rpt_st == "ok"     else 0
-    rpt_f   = 1 if rpt_st == "failed" else 0
-    out["report"] = (1 if rpt else 0, rpt_ok, rpt_f)
+    rpt    = device_data.get("report", {})
+    rpt_st = _norm_status(rpt.get("status", ""))
+    out["report"] = (
+        1 if rpt else 0,
+        1 if rpt_st == "ok" else 0,
+        1 if rpt_st == "failed" else 0
+    )
     return out
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Device panel
-# ─────────────────────────────────────────────────────────────────────────────
 def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> str:
     tbody, total, success, failed = build_tbody(device_data, device_key)
     summary = _phase_summary(device_data)
 
-    pct      = round(success / total * 100) if total else 0
     pill_cls = "ok" if failed == 0 and total > 0 else ("fail" if success == 0 and total > 0 else "partial")
     pill_txt = "ALL PASSED" if failed == 0 and total > 0 else (f"{failed} FAILED" if total > 0 else "NO TASKS")
 
-    display  = "block" if is_first else "none"
-    tbl_id   = f"tbl-{device_key.replace('.','_').replace('-','_')}"
+    display = "block" if is_first else "none"
 
     def phase_card(key):
         t, s, f = summary.get(key, (0, 0, 0))
-        meta    = PHASE_META[key]
-        pct_ph  = round(s / t * 100) if t else 0
-        cls     = "ok" if f == 0 and t > 0 else ("fail" if s == 0 and t > 0 else "partial")
-        label   = "Hops" if key == "upgrade" else "Tasks"
+        meta   = PHASE_META[key]
+        pct_ph = round(s / t * 100) if t else 0
+        cls    = "ok" if f == 0 and t > 0 else ("fail" if s == 0 and t > 0 else "partial")
+        label  = "Hops" if key == "upgrade" else "Tasks"
         return f"""<div class="ph-card">
   <div class="ph-top">
     <span class="ph-lbl" style="color:{meta['color']};">{meta['label']}</span>
@@ -635,7 +587,7 @@ def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> st
     {phase_card("report")}
   </div>
 
-  <div id="{tbl_id}" class="tw">
+  <div class="tw">
     <table>
       <colgroup><col class="ct"><col class="cs"><col class="cst"><col class="cr"></colgroup>
       <thead><tr><th>Phase</th><th>Task</th><th>Status</th><th>Remark</th></tr></thead>
@@ -648,9 +600,6 @@ def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> st
 </div>"""
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Overall stats
-# ─────────────────────────────────────────────────────────────────────────────
 def _overall_stats(workflow_data: dict) -> tuple:
     total = success = failed = 0
     for device_data in workflow_data.values():
@@ -671,9 +620,6 @@ def _overall_stats(workflow_data: dict) -> tuple:
     return total, success, failed
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Device info JS map
-# ─────────────────────────────────────────────────────────────────────────────
 def _device_info_json(workflow_data: dict) -> str:
     info_map = {}
     for dk, dd in workflow_data.items():
@@ -688,9 +634,6 @@ def _device_info_json(workflow_data: dict) -> str:
     return json.dumps(info_map)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Main entry — generate_html_report
-# ─────────────────────────────────────────────────────────────────────────────
 def generate_html_report(workflow_data: dict, output_dir: str = ".") -> str:
     safe_data = {
         dk: {k: v for k, v in slot.items() if k not in ("conn", "yaml")}
@@ -741,23 +684,17 @@ def generate_html_report(workflow_data: dict, output_dir: str = ".") -> str:
 }}
 body{{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding:2rem 1rem 4rem;font-size:14px}}
 .wrap{{max-width:1080px;margin:0 auto}}
-
-/* header */
 .hdr{{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;
       margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)}}
 .hdr h1{{font-size:1.35rem;font-weight:700;color:var(--text);letter-spacing:-.01em}}
 .hdr h1 span{{color:var(--accent)}}
 .hdr .sub{{font-family:var(--mono);font-size:.68rem;color:var(--muted2);margin-top:.3rem}}
-
-/* pills */
 .pill{{display:inline-block;padding:.2rem .65rem;border-radius:3px;
        font-family:var(--mono);font-size:.65rem;font-weight:600;
        letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}}
 .pill.ok{{background:rgba(34,197,94,.1);color:var(--ok);border:1px solid rgba(34,197,94,.2)}}
 .pill.fail{{background:rgba(244,63,94,.1);color:var(--err);border:1px solid rgba(244,63,94,.2)}}
 .pill.partial{{background:rgba(245,158,11,.1);color:var(--warn);border:1px solid rgba(245,158,11,.2)}}
-
-/* selector */
 .sel-bar{{display:flex;align-items:center;gap:.75rem;background:var(--surf);
           border:1px solid var(--border);border-radius:var(--r);
           padding:.75rem 1rem;margin-bottom:1.25rem}}
@@ -769,42 +706,25 @@ body{{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:
 .dev-sel:focus{{border-color:var(--accent)}}
 .dev-sel option{{background:var(--surf2);color:var(--text)}}
 .dev-cnt{{font-family:var(--mono);font-size:.62rem;color:var(--muted);margin-left:auto}}
-
-/* device panel */
 .device-panel{{animation:fadeIn .2s ease}}
 @keyframes fadeIn{{from{{opacity:0;transform:translateY(4px)}}to{{opacity:1;transform:none}}}}
-
 .dev-header{{display:flex;align-items:center;justify-content:space-between;
              margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border)}}
 .dev-left{{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}}
 .dev-key{{font-family:var(--mono);font-size:.95rem;font-weight:600;color:var(--text)}}
 .meta-ts{{font-family:var(--mono);font-size:.62rem;color:var(--muted)}}
-
-/* device info row */
 .dev-info-row{{display:flex;flex-wrap:wrap;gap:1.5rem;background:var(--surf);
                border:1px solid var(--border);border-radius:var(--r);
                padding:.9rem 1.1rem;margin-bottom:1rem}}
 .df{{display:flex;flex-direction:column;gap:.2rem}}
 .df .lbl{{font-size:.58rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}}
 .df .val{{font-family:var(--mono);font-size:.8rem;color:var(--accent)}}
-
-/* phase summary */
 .ph-summary{{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1rem}}
 .ph-card{{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:.8rem 1rem}}
 .ph-top{{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}}
 .ph-lbl{{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-family:var(--mono)}}
 .prog{{height:2px;background:var(--border);border-radius:99px;overflow:hidden}}
 .progbar{{height:100%;border-radius:99px;transition:width .4s ease}}
-
-/* expand button */
-.tw-toggle{{margin-bottom:.5rem}}
-.expand-btn{{background:var(--surf2);border:1px solid var(--border2);border-radius:var(--r);
-             color:var(--muted2);font-family:var(--mono);font-size:.72rem;
-             padding:.4rem .85rem;cursor:pointer;transition:all .15s}}
-.expand-btn:hover{{border-color:var(--accent);color:var(--accent)}}
-.expand-btn.open{{color:var(--accent);border-color:var(--accent)}}
-
-/* table */
 .tw{{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);
      overflow:hidden;margin-bottom:1.5rem}}
 table{{width:100%;border-collapse:collapse}}
@@ -826,8 +746,6 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
 .status-cell{{text-align:center;vertical-align:middle!important}}
 .remark-cell{{font-family:var(--mono);font-size:.72rem!important;word-break:break-word}}
 .remark-err{{color:#fca5a5}} .remark-na{{color:var(--border)}} .remark-ok{{color:#86efac}}
-
-/* badges */
 .badge{{display:inline-block;padding:.15rem .5rem;border-radius:3px;
         font-size:.6rem;font-weight:600;letter-spacing:.05em;
         font-family:var(--mono);white-space:nowrap;text-transform:uppercase}}
@@ -836,8 +754,6 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
 .b-ns{{background:transparent;color:var(--muted);border:1px solid var(--border)}}
 .b-warn{{background:rgba(245,158,11,.1);color:var(--warn);border:1px solid rgba(245,158,11,.2)}}
 .b-ip{{background:rgba(56,189,248,.1);color:var(--accent);border:1px solid rgba(56,189,248,.2)}}
-
-/* mini buttons */
 .mini-btn{{display:inline-block;margin:.2rem .15rem 0 0;padding:.1rem .42rem;
            background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.18);
            border-radius:3px;font-family:var(--mono);font-size:.58rem;font-weight:600;
@@ -845,8 +761,6 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
 .mini-btn:hover{{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.38)}}
 .mini-btn.mini-err{{background:rgba(244,63,94,.06);border-color:rgba(244,63,94,.22);color:var(--err)}}
 .mini-btn.mini-err:hover{{background:rgba(244,63,94,.14)}}
-
-/* log / cmd boxes */
 .log-box{{margin-top:.4rem;background:#060810;border:1px solid var(--border2);
           border-radius:4px;padding:.5rem .7rem;overflow-x:auto}}
 .log-box pre{{font-family:var(--mono);font-size:.66rem;line-height:1.8;
@@ -863,15 +777,11 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
 .dot-ok{{background:var(--ok)}} .dot-fail{{background:var(--err)}}
 .cm-cmd{{font-family:var(--mono);font-size:.72rem;color:#cbd5e1;flex:1;min-width:0;word-break:break-all}}
 .cm-btns{{display:flex;gap:.25rem;flex-wrap:wrap;margin-left:auto}}
-
-/* hop table */
 .hop-table{{width:100%;border-collapse:collapse;font-size:.75rem;margin-top:.4rem}}
 .hop-table th{{padding:.35rem .6rem;font-size:.58rem;text-transform:uppercase;
                letter-spacing:.08em;color:var(--muted);font-weight:600;
                background:var(--surf3);border-bottom:1px solid var(--border);text-align:left}}
 .hop-table td{{padding:.4rem .6rem;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.72rem}}
-
-/* JSON */
 .json-sec{{margin-top:1.5rem}}
 .json-sec summary{{cursor:pointer;font-family:var(--mono);font-size:.68rem;font-weight:600;
                    text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
@@ -889,29 +799,23 @@ pre.jb{{margin-top:.6rem;background:var(--surf);border:1px solid var(--border);
 .diff-cmd-block{{background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}}
 .diff-cmd-hd{{display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;flex-wrap:wrap}}
 .diff-cmd-hd code{{font-family:var(--mono);font-size:.72rem;color:#cbd5e1}}
-.diff-summary{{display:flex;gap:.3rem;margin-left:auto}}
-.diff-cnt{{font-family:var(--mono);font-size:.62rem;font-weight:700;padding:.1rem .35rem;border-radius:3px}}
-.diff-cnt.add{{background:rgba(34,197,94,.12);color:var(--ok);border:1px solid rgba(34,197,94,.25)}}
-.diff-cnt.del{{background:rgba(244,63,94,.12);color:var(--err);border:1px solid rgba(244,63,94,.25)}}
-.diff-cnt.chg{{background:rgba(245,158,11,.12);color:var(--warn);border:1px solid rgba(245,158,11,.25)}}
 .diff-tbl-wrap{{overflow-x:auto;border-top:1px solid var(--border)}}
 .diff-tbl{{width:100%;border-collapse:collapse;table-layout:fixed}}
-.diff-tbl th,.diff-tbl td{{padding:.35rem .65rem;font-family:var(--mono);font-size:.68rem;line-height:1.6;word-break:break-all}}
+.diff-tbl th,.diff-tbl td{{padding:.28rem .65rem;font-family:var(--mono);font-size:.67rem;line-height:1.55;word-break:break-all}}
 .diff-th-pre{{width:48%;background:rgba(244,63,94,.06);color:var(--err);font-size:.58rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;border-bottom:1px solid var(--border)}}
 .diff-th-post{{width:48%;background:rgba(34,197,94,.06);color:var(--ok);font-size:.58rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;border-bottom:1px solid var(--border)}}
 .diff-th-sep{{width:4px;background:var(--bg);border-bottom:1px solid var(--border)}}
-.dr-add td{{background:rgba(34,197,94,.04)}}
-.dr-del td{{background:rgba(244,63,94,.04)}}
-.dr-chg td{{background:rgba(245,158,11,.03)}}
-.diff-tbl tr:not(:last-child) td{{border-bottom:1px solid rgba(255,255,255,.04)}}
-.diff-sep{{width:4px!important;padding:0!important;background:var(--border)}}
-.diff-pre{{color:#fca5a5!important;vertical-align:top}}
-.diff-post{{color:#86efac!important;vertical-align:top}}
-.diff-add{{color:var(--ok)}} .diff-del{{color:var(--err)}}
-.diff-add-inline{{background:rgba(34,197,94,.22);color:var(--ok);border-radius:2px;padding:0 1px}}
-.diff-del-inline{{background:rgba(244,63,94,.22);color:var(--err);border-radius:2px;padding:0 1px}}
-.diff-na{{color:var(--muted);font-style:italic}}
+.diff-tbl tr:not(:last-child) td{{border-bottom:1px solid rgba(255,255,255,.03)}}
+.diff-sep{{width:4px!important;padding:0!important;background:var(--border2)}}
+
+/* line coloring */
+.diff-pre,.diff-post{{vertical-align:top}}
+.diff-line-ok{{color:#86efac}}
+.diff-line-err{{color:#fca5a5;background:rgba(244,63,94,.07)}}
+.diff-line-na{{color:var(--muted);font-style:italic}}
+
 .diff-none{{font-family:var(--mono);font-size:.72rem;color:var(--muted);padding:.4rem 0;font-style:italic}}
+
 @media(max-width:600px){{
   .ph-summary{{grid-template-columns:repeat(2,1fr)}}
   .hdr{{flex-direction:column}}
@@ -974,14 +878,6 @@ function tgl(id) {{
   if (el) el.hidden = !el.hidden;
 }}
 
-function toggleTable(id, btn) {{
-  var el = document.getElementById(id);
-  if (!el) return;
-  el.hidden = !el.hidden;
-  btn.classList.toggle('open', !el.hidden);
-  btn.textContent = el.hidden ? '▶ Show Full Task Table' : '▼ Hide Task Table';
-}}
-
 document.addEventListener('DOMContentLoaded', function() {{
   updateInfo('{_esc(first_key)}');
 }});
@@ -997,64 +893,33 @@ document.addEventListener('DOMContentLoaded', function() {{
     return file_path
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# mock_device_results  — build a realistic device_results dict for testing
-#
-# Usage:
-#   data = mock_device_results()
-#   path = generate_html_report(data, output_dir=".")
-#
-# Parameters (all optional):
-#   devices   – list of dicts, each with keys:
-#                 host, vendor, model, hostname,
-#                 curr_os, target_os, hops (list of dicts with image/os keys),
-#                 pre_fail  (task name to force-fail, e.g. "validate_md5"),
-#                 upgrade_status ("completed"|"failed"|"not_started"|"rolled_back")
-#   If devices is None, two Juniper devices are created automatically.
-# ─────────────────────────────────────────────────────────────────────────────
 def mock_device_results(devices: list = None) -> dict:
-    import random, hashlib
+    import hashlib
 
-    # ── default device specs ──────────────────────────────────────────────────
     if devices is None:
         devices = [
             {
-                "host":           "10.0.0.1",
-                "vendor":         "juniper",
-                "model":          "MX204",
-                "hostname":       "core-router-01",
-                "curr_os":        "21.4R3.15",
-                "target_os":      "22.4R3.25",
+                "host": "10.0.0.1", "vendor": "juniper", "model": "MX204",
+                "hostname": "core-router-01", "curr_os": "21.4R3.15", "target_os": "22.4R3.25",
                 "hops": [
                     {"image": "junos-vmhost-mx-22.1R1.10.tgz", "os": "22.1R1.10"},
                     {"image": "junos-vmhost-mx-22.4R3.25.tgz", "os": "22.4R3.25"},
                 ],
-                "pre_fail":       None,          # e.g. "validate_md5"
-                "upgrade_status": "completed",
+                "pre_fail": None, "upgrade_status": "completed",
             },
             {
-                "host":           "10.0.0.2",
-                "vendor":         "juniper",
-                "model":          "MX480",
-                "hostname":       "core-router-02",
-                "curr_os":        "21.2R1.11",
-                "target_os":      "22.4R3.25",
-                "hops": [
-                    {"image": "junos-vmhost-mx-22.4R3.25.tgz", "os": "22.4R3.25"},
-                ],
-                "pre_fail":       "validate_md5",  # simulate a checksum failure
-                "upgrade_status": "not_started",
+                "host": "10.0.0.2", "vendor": "juniper", "model": "MX480",
+                "hostname": "core-router-02", "curr_os": "21.2R1.11", "target_os": "22.4R3.25",
+                "hops": [{"image": "junos-vmhost-mx-22.4R3.25.tgz", "os": "22.4R3.25"}],
+                "pre_fail": "validate_md5", "upgrade_status": "not_started",
             },
         ]
 
-    def _md5(s: str) -> str:
+    def _md5(s):
         return hashlib.md5(s.encode()).hexdigest()
 
-    def _show_cmds(vendor: str, model: str, phase: str) -> list:
-        """Realistic Juniper show command outputs with raw text + parsed JSON."""
-
-        # ── show chassis fpc detail | no-more ────────────────────────────────
-        fpc_raw = (
+    def _show_cmds(vendor, model, phase):
+        fpc_pre = (
             "Slot 0 information:\n"
             "  State                               Online\n"
             "  Total CPU DRAM                   2048 MB\n"
@@ -1065,19 +930,18 @@ def mock_device_results(devices: list = None) -> dict:
             "  Start time:                        2024-01-10 08:23:11 UTC\n"
             "  Uptime:                            5 days, 6 hours, 12 minutes, 44 seconds\n"
         )
-        fpc_json = {
-            "slots": [{
-                "slot": 0, "state": "Online",
-                "total_cpu_dram": "2048 MB", "total_rldram": "256 MB",
-                "total_ddr_dram": "4096 MB", "fips_capable": "False",
-                "temperature": "38 degrees C / 100 degrees F",
-                "start_time": "2024-01-10 08:23:11 UTC",
-                "uptime": "5 days, 6 hours, 12 minutes, 44 seconds",
-            }]
-        }
-
-        # ── show interfaces terse | no-more ──────────────────────────────────
-        iface_raw = (
+        fpc_post = (
+            "Slot 0 information:\n"
+            "  State                               Online\n"
+            "  Total CPU DRAM                   2048 MB\n"
+            "  Total RLDRAM                      256 MB\n"
+            "  Total DDR DRAM                   4096 MB\n"
+            "  FIPS Capable                        False\n"
+            "  Temperature                        41 degrees C / 106 degrees F\n"
+            "  Start time:                        2024-01-10 14:55:02 UTC\n"
+            "  Uptime:                            0 days, 0 hours, 4 minutes, 12 seconds\n"
+        )
+        iface = (
             "Interface               Admin Link Proto    Local                 Remote\n"
             "ge-0/0/0                up    up\n"
             "ge-0/0/0.0              up    up   inet     192.168.1.1/30\n"
@@ -1086,39 +950,27 @@ def mock_device_results(devices: list = None) -> dict:
             "lo0                     up    up\n"
             "lo0.0                   up    up   inet     127.0.0.1           --> 0/0\n"
         )
-        iface_json = {
-            "interfaces": [
-                {"name": "ge-0/0/0", "admin": "up", "link": "up", "proto": "inet", "local": "192.168.1.1/30"},
-                {"name": "ge-0/0/1", "admin": "up", "link": "up", "proto": "inet", "local": "10.0.0.1/30"},
-                {"name": "lo0",      "admin": "up", "link": "up", "proto": "inet", "local": "127.0.0.1"},
-            ]
-        }
-
-        # ── show bgp summary | no-more ────────────────────────────────────────
-        bgp_raw = (
+        bgp_pre = (
             "Groups: 2  Peers: 4  Down peers: 0\n"
             "Table          Tot Paths  Act Paths  Suppressed  History  Damp State  Pending\n"
             "inet.0               284       280           0        0           0        0\n"
-            "Peer              AS      InPkt     OutPkt  LastEvt  Holdtime  Up/Down  State|#Active/Received/Accepted/Damped...\n"
+            "Peer              AS      InPkt     OutPkt  LastEvt  Holdtime  Up/Down  State\n"
             "10.0.0.10      65001      14829      14820  Establish       90 2d 4:12:08 Establ\n"
             "  inet.0: 142/142/142/0\n"
             "10.0.0.11      65001      14810      14815  Establish       90 2d 4:11:55 Establ\n"
             "  inet.0: 138/142/142/0\n"
         )
-        bgp_json = {
-            "bgp_summary": {
-                "groups": 2, "peers": 4, "down_peers": 0,
-                "peers_detail": [
-                    {"peer": "10.0.0.10", "as": 65001, "state": "Established",
-                     "updown": "2d 4:12:08", "active_routes": 142, "received_routes": 142},
-                    {"peer": "10.0.0.11", "as": 65001, "state": "Established",
-                     "updown": "2d 4:11:55", "active_routes": 138, "received_routes": 142},
-                ]
-            }
-        }
-
-        # ── show route summary | no-more ──────────────────────────────────────
-        route_raw = (
+        bgp_post = (
+            "Groups: 2  Peers: 4  Down peers: 0\n"
+            "Table          Tot Paths  Act Paths  Suppressed  History  Damp State  Pending\n"
+            "inet.0               284       280           0        0           0        0\n"
+            "Peer              AS      InPkt     OutPkt  LastEvt  Holdtime  Up/Down  State\n"
+            "10.0.0.10      65001          5          4  Establish       90 0d 0:04:10 Establ\n"
+            "  inet.0: 142/142/142/0\n"
+            "10.0.0.11      65001          4          4  Establish       90 0d 0:04:08 Establ\n"
+            "  inet.0: 138/142/142/0\n"
+        )
+        route_pre = (
             "Autonomous system number: 65000\n"
             "Router ID: 10.0.0.1\n\n"
             "inet.0: 142500 destinations, 142501 routes (142498 active, 0 holddown, 3 hidden)\n"
@@ -1129,293 +981,127 @@ def mock_device_results(devices: list = None) -> dict:
             "              Direct:      2 routes,      2 active\n"
             "                 BGP:   4119 routes,   4118 active\n"
         )
-        route_json = {
-            "route_summary": {
-                "router_id": "10.0.0.1", "as": 65000,
-                "tables": [
-                    {"table": "inet.0",  "destinations": 142500, "routes": 142501,
-                     "active": 142498, "holddown": 0, "hidden": 3},
-                    {"table": "inet6.0", "destinations": 4120,   "routes": 4121,
-                     "active": 4120,   "holddown": 0, "hidden": 0},
-                ]
-            }
-        }
-
+        route_post = (
+            "Autonomous system number: 65000\n"
+            "Router ID: 10.0.0.1\n\n"
+            "inet.0: 142498 destinations, 142499 routes (142498 active, 0 holddown, 1 hidden)\n"
+            "              Direct:      5 routes,      5 active\n"
+            "               Local:      5 routes,      5 active\n"
+            "                 BGP:  142491 routes,  142488 active\n"
+            "inet6.0: 4120 destinations, 4121 routes (4120 active, 0 holddown, 0 hidden)\n"
+            "              Direct:      2 routes,      2 active\n"
+            "                 BGP:   4119 routes,   4118 active\n"
+        )
         return [
-            {
-                "cmd":       "show chassis fpc detail | no-more",
-                "output":    fpc_raw,
-                "json":      fpc_json,
-                "exception": "",
-            },
-            {
-                "cmd":       "show interfaces terse | no-more",
-                "output":    iface_raw,
-                "json":      iface_json,
-                "exception": "",
-            },
-            {
-                "cmd":       "show bgp summary | no-more",
-                "output":    bgp_raw,
-                "json":      bgp_json,
-                "exception": "",
-            },
-            {
-                "cmd":       "show route summary | no-more",
-                "output":    route_raw,
-                "json":      route_json,
-                "exception": "",
-            },
+            {"cmd": "show chassis fpc detail | no-more", "output": fpc_post if phase == "post" else fpc_pre, "json": {}, "exception": ""},
+            {"cmd": "show interfaces terse | no-more",   "output": iface, "json": {}, "exception": ""},
+            {"cmd": "show bgp summary | no-more",        "output": bgp_post if phase == "post" else bgp_pre, "json": {}, "exception": ""},
+            {"cmd": "show route summary | no-more",      "output": route_post if phase == "post" else route_pre, "json": {}, "exception": ""},
         ]
 
     result = {}
-
     for spec in devices:
         host    = spec["host"]
         vendor  = spec["vendor"].lower()
         model   = str(spec["model"]).lower().replace("-", "")
-        ip_key  = host.replace(".", "_")
-        dk      = f"{ip_key}_{vendor}_{model}"
-
-        curr_os   = spec["curr_os"]
+        dk      = f"{host.replace('.','_')}_{vendor}_{model}"
+        curr_os = spec["curr_os"]
         target_os = spec["target_os"]
         hops_spec = spec.get("hops", [])
-        pre_fail  = spec.get("pre_fail")          # task name to force-fail
+        pre_fail  = spec.get("pre_fail")
         upg_st    = spec.get("upgrade_status", "completed")
+        good_md5  = _md5(f"{host}-image")
+        ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-        good_md5 = _md5(f"{host}-image")
+        def _ps(task):
+            return "failed" if pre_fail and task == pre_fail else "ok"
 
-        # ── pre-checks ────────────────────────────────────────────────────────
-        def _pre_status(task):
-            if pre_fail and task == pre_fail:
-                return "failed"
-            return "ok"
-
-        def _pre_exc(task):
+        def _pe(task):
             if pre_fail and task == pre_fail:
                 excmap = {
-                    "connect":                   "SSH connection refused (timeout 30s)",
-                    "show_version":              "Could not parse version from output",
-                    "check_storage":             "Insufficient disk space: 1.2 GB available, 4.0 GB required",
-                    "backup_active_filesystem":  "request vmhost snapshot timed out after 900s",
-                    "backup_running_config":     "SCP transfer failed: Permission denied (publickey)",
-                    "transfer_image":            "SCP transfer failed: No route to host 192.168.1.100",
-                    "validate_md5":              f"Checksum mismatch: expected={good_md5} computed={_md5('bad')}",
-                    "disable_re_protect_filter": "disableReProtectFilter returned False",
+                    "validate_md5": f"Checksum mismatch: expected={good_md5} computed={_md5('bad')}",
+                    "transfer_image": "SCP transfer failed: No route to host",
+                    "connect": "SSH connection refused",
+                    "check_storage": "Insufficient disk space",
                 }
                 return excmap.get(task, "Unknown error")
             return ""
 
-        ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
         pre = {
-            "connect": {
-                "status":    _pre_status("connect"),
-                "exception": _pre_exc("connect"),
-                "ping":      True,
-            },
-            "execute_show_commands": {
-                "status":    "ok",
-                "exception": "",
-                "commands":  _show_cmds(vendor, model, "pre"),
-            },
-            "show_version": {
-                "status":    _pre_status("show_version"),
-                "exception": _pre_exc("show_version"),
-                "version":   curr_os,
-                "platform":  spec["model"],
-            },
-            "check_storage": {
-                "status":        _pre_status("check_storage"),
-                "exception":     _pre_exc("check_storage"),
-                "deleted_files": [],
-                "sufficient":    pre_fail != "check_storage",
-            },
-            "backup_active_filesystem": {
-                "status":     _pre_status("backup_active_filesystem"),
-                "exception":  _pre_exc("backup_active_filesystem"),
-                "disk_count": "dual",
-            },
-            "backup_running_config": {
-                "status":      _pre_status("backup_running_config"),
-                "exception":   _pre_exc("backup_running_config"),
-                "config_file": f"{vendor}_{model}_{ts}",
-                "destination": "192.168.1.100",
-            },
-            "transfer_image": {
-                "status":      _pre_status("transfer_image"),
-                "exception":   _pre_exc("transfer_image"),
-                "image":       hops_spec[-1]["image"] if hops_spec else "",
-                "destination": "/var/tmp/",
-            },
-            "validate_md5": {
-                "status":    _pre_status("validate_md5"),
-                "exception": _pre_exc("validate_md5"),
-                "expected":  good_md5,
-                "computed":  good_md5 if pre_fail != "validate_md5" else _md5("bad"),
-                "match":     pre_fail != "validate_md5",
-            },
+            "connect": {"status": _ps("connect"), "exception": _pe("connect"), "ping": True},
+            "execute_show_commands": {"status": "ok", "exception": "", "commands": _show_cmds(vendor, model, "pre")},
+            "show_version": {"status": _ps("show_version"), "exception": _pe("show_version"), "version": curr_os, "platform": spec["model"]},
+            "check_storage": {"status": _ps("check_storage"), "exception": _pe("check_storage"), "deleted_files": [], "sufficient": True},
+            "backup_active_filesystem": {"status": _ps("backup_active_filesystem"), "exception": _pe("backup_active_filesystem"), "disk_count": "dual"},
+            "backup_running_config": {"status": _ps("backup_running_config"), "exception": _pe("backup_running_config"), "config_file": f"{vendor}_{model}_{ts}", "destination": "192.168.1.100"},
+            "transfer_image": {"status": _ps("transfer_image"), "exception": _pe("transfer_image"), "image": hops_spec[-1]["image"] if hops_spec else "", "destination": "/var/tmp/"},
+            "validate_md5": {"status": _ps("validate_md5"), "exception": _pe("validate_md5"), "expected": good_md5, "computed": good_md5 if pre_fail != "validate_md5" else _md5("bad"), "match": pre_fail != "validate_md5"},
         }
 
-        # ── upgrade ───────────────────────────────────────────────────────────
         hop_entries = []
         for i, h in enumerate(hops_spec):
-            if upg_st == "completed":
-                h_status  = "ok"
-                h_exc     = ""
-                h_md5     = True
-            elif upg_st == "not_started":
-                h_status  = "not_started"
-                h_exc     = ""
-                h_md5     = False
+            if upg_st == "completed":   hs, he, hm = "ok", "", True
+            elif upg_st == "not_started": hs, he, hm = "not_started", "", False
             elif upg_st == "failed":
-                # last hop fails, earlier ones ok
-                h_status  = "failed" if i == len(hops_spec) - 1 else "ok"
-                h_exc     = "imageUpgrade timed out waiting for reboot" if h_status == "failed" else ""
-                h_md5     = True
-            elif upg_st == "rolled_back":
-                h_status  = "rolled_back"
-                h_exc     = ""
-                h_md5     = True
-            else:
-                h_status  = "not_started"
-                h_exc     = ""
-                h_md5     = False
-
-            hop_entries.append({
-                "image":     h["image"],
-                "status":    h_status,
-                "exception": h_exc,
-                "md5_match": h_md5,
-            })
-
-        upg_exc = ""
-        if upg_st == "failed":
-            upg_exc = "imageUpgrade timed out waiting for reboot on final hop"
+                hs = "failed" if i == len(hops_spec) - 1 else "ok"
+                he = "imageUpgrade timed out" if hs == "failed" else ""
+                hm = True
+            else: hs, he, hm = "not_started", "", False
+            hop_entries.append({"image": h["image"], "status": hs, "exception": he, "md5_match": hm})
 
         upgrade = {
-            "status":     upg_st,
-            "initial_os": curr_os,
-            "target_os":  target_os,
-            "exception":  upg_exc,
-            "hops":       hop_entries,
+            "status": upg_st, "initial_os": curr_os, "target_os": target_os,
+            "exception": "imageUpgrade timed out on final hop" if upg_st == "failed" else "",
+            "hops": hop_entries,
         }
 
-        # ── post-checks ───────────────────────────────────────────────────────
         post_ok = (upg_st == "completed" and pre_fail is None)
         post = {
-            "connect": {
-                "status":    "ok" if post_ok else "not_started",
-                "exception": "",
-            },
-            "execute_show_commands": {
-                "status":    "ok" if post_ok else "not_started",
-                "exception": "",
-                "commands":  _show_cmds(vendor, model, "post") if post_ok else [],
-            },
-            "show_version": {
-                "status":    "ok" if post_ok else "not_started",
-                "exception": "",
-                "version":   target_os if post_ok else "",
-                "platform":  spec["model"],
-            },
+            "connect": {"status": "ok" if post_ok else "not_started", "exception": ""},
+            "execute_show_commands": {"status": "ok" if post_ok else "not_started", "exception": "", "commands": _show_cmds(vendor, model, "post") if post_ok else []},
+            "show_version": {"status": "ok" if post_ok else "not_started", "exception": "", "version": target_os if post_ok else "", "platform": spec["model"]},
         }
 
-        # ── report (diff) ─────────────────────────────────────────────────────
         if post_ok:
-            report = {
-                "status":    "generated",
-                "exception": "",
-                "diff": {
-                    "show chassis fpc detail | no-more": [
-                        {
-                            "pre":    "  State                               Online",
-                            "post":   "  State                               Online",
-                            "change": "",
-                        },
-                        {
-                            "pre":    "  Total CPU DRAM                   2048 MB",
-                            "post":   "  Total CPU DRAM                   2048 MB",
-                            "change": "",
-                        },
-                        {
-                            "pre":    "  Temperature                        38 degrees C / 100 degrees F",
-                            "post":   "  Temperature                        41 degrees C / 106 degrees F",
-                            "change": ["38 degrees C / 100 degrees F", "41 degrees C / 106 degrees F"],
-                        },
-                        {
-                            "pre":    "  Uptime:                            5 days, 6 hours, 12 minutes, 44 seconds",
-                            "post":   "  Uptime:                            0 days, 0 hours, 4 minutes, 12 seconds",
-                            "change": ["5 days, 6 hours, 12 minutes, 44 seconds", "0 days, 0 hours, 4 minutes, 12 seconds"],
-                        },
-                    ],
-                    "show interfaces terse | no-more": [
-                        {
-                            "pre":    "ge-0/0/0                up    up",
-                            "post":   "ge-0/0/0                up    up",
-                            "change": "",
-                        },
-                    ],
-                    "show bgp summary | no-more": [
-                        {
-                            "pre":    "10.0.0.10      65001      14829      14820  Establish       90 2d 4:12:08 Establ",
-                            "post":   "N/A",
-                            "change": "",
-                        },
-                        {
-                            "pre":    "N/A",
-                            "post":   "10.0.0.10      65001          5          4  Establish       90 0d 0:04:10 Establ",
-                            "change": "",
-                        },
-                        {
-                            "pre":    "10.0.0.11      65001      14810      14815  Establish       90 2d 4:11:55 Establ",
-                            "post":   "N/A",
-                            "change": "",
-                        },
-                        {
-                            "pre":    "N/A",
-                            "post":   "10.0.0.11      65001          4          4  Establish       90 0d 0:04:08 Establ",
-                            "change": "",
-                        },
-                    ],
-                    "show route summary | no-more": [
-                        {
-                            "pre":    "inet.0: 142500 destinations, 142501 routes (142498 active, 0 holddown, 3 hidden)",
-                            "post":   "inet.0: 142498 destinations, 142499 routes (142498 active, 0 holddown, 1 hidden)",
-                            "change": ["142500 destinations, 142501 routes (142498 active, 0 holddown, 3 hidden)",
-                                       "142498 destinations, 142499 routes (142498 active, 0 holddown, 1 hidden)"],
-                        },
-                    ],
-                },
-            }
+            pre_map  = {c["cmd"]: c["output"] for c in pre["execute_show_commands"]["commands"]}
+            post_map = {c["cmd"]: c["output"] for c in post["execute_show_commands"]["commands"]}
+
+            def _diff_simple(pre_out, post_out):
+                pre_ls, post_ls = pre_out.splitlines(), post_out.splitlines()
+                entries = []
+                for tag, i1, i2, j1, j2 in _dl.SequenceMatcher(None, pre_ls, post_ls, autojunk=False).get_opcodes():
+                    if tag == "equal": continue
+                    if tag == "replace":
+                        pb, qb = pre_ls[i1:i2], post_ls[j1:j2]
+                        pairs = min(len(pb), len(qb))
+                        for k in range(pairs): entries.append({"pre": pb[k], "post": qb[k], "change": ""})
+                        for k in range(pairs, len(pb)): entries.append({"pre": pb[k], "post": "N/A", "change": ""})
+                        for k in range(pairs, len(qb)): entries.append({"pre": "N/A", "post": qb[k], "change": ""})
+                    elif tag == "delete":
+                        for ln in pre_ls[i1:i2]: entries.append({"pre": ln, "post": "N/A", "change": ""})
+                    elif tag == "insert":
+                        for ln in post_ls[j1:j2]: entries.append({"pre": "N/A", "post": ln, "change": ""})
+                return entries
+
+            diff_dict = {}
+            for cmd in sorted(set(pre_map) | set(post_map)):
+                entries = _diff_simple(pre_map.get(cmd, ""), post_map.get(cmd, ""))
+                if entries:
+                    diff_dict[cmd] = entries
+
+            report = {"status": "generated", "exception": "", "diff": diff_dict}
         else:
-            report = {
-                "status":    "pending",
-                "exception": "" if not pre_fail else f"Pre-check failed at {pre_fail} — diff skipped",
-                "diff":      {},
-            }
+            report = {"status": "pending", "exception": f"Pre-check failed at {pre_fail} — diff skipped" if pre_fail else "", "diff": {}}
 
         result[dk] = {
-            "status":      upg_st if pre_fail is None else "failed",
-            "device_info": {
-                "host":     host,
-                "vendor":   vendor,
-                "model":    spec["model"],
-                "hostname": spec["hostname"],
-                "version":  curr_os,
-            },
-            "pre":     pre,
-            "upgrade": upgrade,
-            "post":    post,
-            "report":  report,
+            "status": upg_st if pre_fail is None else "failed",
+            "device_info": {"host": host, "vendor": vendor, "model": spec["model"], "hostname": spec["hostname"], "version": curr_os},
+            "pre": pre, "upgrade": upgrade, "post": post, "report": report,
         }
 
     return result
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Quick self-test — run this file directly to generate a sample report
-# ─────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     data = mock_device_results()
     path = generate_html_report(data, output_dir=".")
