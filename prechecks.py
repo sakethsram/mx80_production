@@ -223,8 +223,6 @@ class PreCheck:
                 "exit", "\n",
             ]
             output = conn.send_multiline_timing(cmd, read_timeout=1800)
-            logger.debug(f"[{self.host}] scpFile output:\n{output}")
-
             if "No such file or directory" in output:
                 logger.error(f"[{self.host}] scpFile — no such file: {src}")
                 return False
