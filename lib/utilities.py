@@ -510,6 +510,8 @@ def export_device_summary(device_key: str):
     with open(summary_file, "w") as f:
         json.dump(all_devices_summary, f, indent=2, default=str)
     print(f"[EXPORT] Summary JSON saved -> {summary_file}")
+    print(f"[LOGS] Device log: logging/{vendor}_{model}_*.log | Session log: outputs/{vendor}_{model}_*.log")
+
 
     # ── HTML report ───────────────────────────────────────────────────────────
     reports_dir = os.path.join(os.getcwd(), "reports")
