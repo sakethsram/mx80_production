@@ -1,20 +1,40 @@
-2026-03-11 15:38:20,118 - INFO - [10_80_71_55_juniper_mx204] get_show_version — sending 'show version'
-2026-03-11 15:38:20,631 - INFO - [10_80_71_55_juniper_mx204] show_version parsed — hostname=EFFPER01  model=mx204  version=22.4R3.25
-2026-03-11 15:38:20,631 - INFO - [10.80.71.55] checkStorage — vendor: juniper
-2026-03-11 15:38:20,669 - ERROR - [10.80.71.55] checkStorage failed: could not convert string to float: '7.6G'
-Traceback (most recent call last):
-  File "/home/colt/Documents/MS1Automation/prechecks.py", line 39, in checkStorage
-    avail_space = int(float(match.group(1).rstrip("%")))
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-ValueError: could not convert string to float: '7.6G'
-2026-03-11 15:38:20,670 - ERROR - [THREAD-125714763097792] [10_80_71_55_juniper_mx204] run_prechecks unhandled exception: could not convert string to float: '7.6G'
-2026-03-11 15:38:20,670 - ERROR - [10_80_71_55_juniper_mx204] Pre-checks failed — skipping upgrade
-[10_80_71_55_juniper_mx204] Pre-checks failed — skipping upgrade
-[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/juniper_mx204_2026-03-11_15-38-20.json
-[REPORT] /home/colt/Documents/MS1Automation/reports/juniper_mx204_2026-03-11_15-38-20.html
-2026-03-11 15:38:20,700 - INFO - [10_80_71_55_juniper_mx204] HTML report exported
-2026-03-11 15:38:20,711 - INFO - Logout successful from 10.80.71.55
-2026-03-11 15:38:20,712 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
-2026-03-11 15:38:20,712 - INFO - [THREAD-125714763097792] [10_80_71_55_juniper_mx204] Pipeline finished at 2026-03-11 15:38:20.712115
+
+
+
+2026-03-11 16:13:57,961 - INFO - [10.80.71.55] scpFile — transfer complete
+2026-03-11 16:13:57,961 - INFO - [10_80_71_55_juniper_mx204] STEP 5 backup config OK
+2026-03-11 16:13:57,961 - INFO - [10.80.71.55] transferImage — junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz, vendor: juniper
+2026-03-11 16:13:57,961 - INFO - [10.80.71.55] scpFile — automation2@10.80.109.134:/home/automation2/software/juniper/junos/MX204/junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz → /var/tmp/
+2026-03-11 16:14:15,570 - DEBUG - [10.80.71.55] scpFile output:
+start shell
+
+scp -C automation2@10.80.109.134:/home/automation2/software/juniper/junos/MX204/junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz /var/tmp/
+
+kTRq8amH888r
+
+exit
+
+
+2026-03-11 16:14:15,570 - INFO - [10.80.71.55] scpFile — transfer complete
+2026-03-11 16:14:15,570 - INFO - [10.80.71.55] transferImage — junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz transferred to /var/tmp/
+2026-03-11 16:14:15,571 - INFO - [10_80_71_55_juniper_mx204] STEP 6 transfer image OK
+2026-03-11 16:14:15,571 - INFO - [merge] device_key='10_80_71_55_juniper_mx204' merged into device_results
+2026-03-11 16:14:15,571 - INFO - [THREAD-139841919796928] [10_80_71_55_juniper_mx204] All pre-checks passed
+2026-03-11 16:14:15,571 - INFO - [10_80_71_55_juniper_mx204] Pre-checks passed — starting upgrade
+[10_80_71_55_juniper_mx204] Pre-checks passed — starting upgrade
+2026-03-11 16:14:15,571 - INFO - [10_80_71_55_juniper_mx204] Upgrade started at 2026-03-11 16:14:15.571578
+[10_80_71_55_juniper_mx204] ===== UPGRADE STARTED =====
+2026-03-11 16:14:15,571 - INFO - juniper_mx204: Upgrading the devices using junos-vmhost-install-mx-x86-64-22.4R3.25.tgz and 22.4R3.25
+juniper_mx204: Upgrading the devices using junos-vmhost-install-mx-x86-64-22.4R3.25.tgz and 22.4R3.25
+2026-03-11 16:14:15,572 - ERROR - [10_80_71_55_juniper_mx204] Upgrade failed for juniper_mx204 due to 'PreCheck' object has no attribute 'verifyChecksum'
+[10_80_71_55_juniper_mx204] Upgrade failed for juniper_mx204 due to 'PreCheck' object has no attribute 'verifyChecksum'
+2026-03-11 16:14:15,572 - ERROR - [10_80_71_55_juniper_mx204] Upgrade failed
+[10_80_71_55_juniper_mx204] Upgrade failed
+[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/juniper_mx204_2026-03-11_16-14-15.json
+[REPORT] /home/colt/Documents/MS1Automation/reports/juniper_mx204_2026-03-11_16-14-15.html
+2026-03-11 16:14:15,603 - INFO - [10_80_71_55_juniper_mx204] HTML report exported
+2026-03-11 16:14:25,608 - INFO - Logout successful from 10.80.71.55
+2026-03-11 16:14:25,609 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
+2026-03-11 16:14:25,609 - INFO - [THREAD-139841919796928] [10_80_71_55_juniper_mx204] Pipeline finished at 2026-03-11 16:14:25.609277
 [10_80_71_55_juniper_mx204] ===== PIPELINE FINISHED =====
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
