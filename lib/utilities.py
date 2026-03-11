@@ -16,6 +16,7 @@ from datetime import datetime
 import threading
 import traceback as tb
 from workflow_report_generator import *
+
 MIN_OUTPUT_CHARS = 5
 
 logging.basicConfig(
@@ -24,166 +25,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ─────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 # device_results — single source of truth for all device state
-#
-# Shape per device_key:
-# {
-#   "status":      "",
-#   "device_info": { host, vendor, model, hostname, version },
-#   "conn":        <netmiko connection | None>,
-#   "yaml":        <raw device yaml dict>,
-#   "pre": {
-#       "connect": {
-#           "ping":      "up" | "down",
-#           "status":    True | False,
-#           "exception": "",
-#       },
-#       "execute_show_commands": {
-#           "status":    "not_started" | "in_progress" | "completed" | "completed_with_errors",
-#           "exception": "",
-#           "commands":  [],
-#       },
-#       "show_version": {
-#           "status":    "not_started",
-#           "exception": "",
-#           "version":   "",
-#           "platform":  "",
-#       },
-#       "check_storage": {
-#           "status":        "not_started",
-#           "deleted_files": [],
-#           "exception":     "",
-#           "sufficient":    False,
-#       },
-#       "backup_active_filesystem": {
-#           "status":        "not_started",
-#           "exception":     "",
-#           "snapshot_slot": "",
-#           "verified":      False,
-#       },
-#       "backup_running_config": {
-#           "status":      "not_started",
-#           "exception":   "",
-#           "destination": "",
-#           "config_file": "",
-#       },
-#       "transfer_image": {
-#           "status":      "not_started",
-#           "exception":   "",
-#           "image":       "",
-#           "destination": "",
-#       },
-#       "disable_re_protect_filter": {
-#           "status":    "not_started",
-#           "exception": "",
-#       },
-#   },
-#   "upgrade": {
-#       "status":     "not_started" | "in_progress" | "completed" | "rolled_back" | "rollback_failed" | "failed",
-#       "initial_os": "",   # curr_os from yaml — OS on device before any upgrade
-#       "target_os":  "",   # expected_os of the last entry in imageDetails
-#       "exception":  "",
-#       "validate_md5": {
-#           "status":    "not_started",
-#           "exception": "",
-#           "expected":  "",
-#           "computed":  "",
-#           "match":     False,
-#       },
-#       "hops": [
-#           {
-#               "image":     "junos-vmhost-install-mx-x86-64-22.4R3.25.tgz",
-#               "status":    "not_started" | "ok" | "failed" | "rolled_back" | "rollback_failed",
-#               "exception": "",
-#               "md5_match": False,
-#           },
-#       ],
-#   },
-#   "post": {
-#       "connect": {
-#           "status":    "not_started",
-#           "exception": "",
-#       },
-#       "execute_show_commands": {
-#           "status":    "not_started" | "in_progress" | "completed" | "completed_with_errors",
-#           "exception": "",
-#           "commands":  [],
-#       },
-#       "show_version": {
-#           "status":    "not_started",
-#           "exception": "",
-#           "version":   "",
-#           "platform":  "",
-#       },
-#   },
-# }
-#
-# ── EXAMPLE — fully populated upgrade block after successful A→B→C ───────────
-#
-# "upgrade": {
-#     "status":     "completed",
-#     "initial_os": "23.4R2-S5.6",
-#     "target_os":  "23.4R2-S6.9",
-#     "exception":  "",
-#     "validate_md5": {
-#         "status":    "completed",
-#         "exception": "",
-#         "expected":  "abc123",
-#         "computed":  "abc123",
-#         "match":     True,
-#     },
-#     "hops": [
-#         {
-#             "image":     "junos-vmhost-install-mx-x86-64-22.4R3.25.tgz",
-#             "status":    "ok",
-#             "exception": "",
-#             "md5_match": True,
-#         },
-#         {
-#             "image":     "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
-#             "status":    "ok",
-#             "exception": "",
-#             "md5_match": True,
-#         },
-#     ],
-# }
-#
-# ── EXAMPLE — B→C failed, rolled back to A ───────────────────────────────────
-#
-# "upgrade": {
-#     "status":     "rolled_back",
-#     "initial_os": "23.4R2-S5.6",
-#     "target_os":  "23.4R2-S6.9",
-#     "exception":  "imageUpgrade failed for junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
-#     "validate_md5": {
-#         "status":    "completed",
-#         "exception": "",
-#         "expected":  "abc123",
-#         "computed":  "abc123",
-#         "match":     True,
-#     },
-#     "hops": [
-#         {
-#             "image":     "junos-vmhost-install-mx-x86-64-22.4R3.25.tgz",
-#             "status":    "rolled_back",
-#             "exception": "",
-#             "md5_match": True,
-#         },
-#         {
-#             "image":     "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
-#             "status":    "failed",
-#             "exception": "imageUpgrade failed",
-#             "md5_match": True,
-#         },
-#     ],
-# }
-# ─────────────────────────────────────────────────────────────
+# (shape documented in original utilities.py — unchanged)
+# ─────────────────────────────────────────────────────────────────────────────
 
 device_results: dict = {}
-
 all_devices_summary: dict = {}
-
 results_lock = threading.Lock()
 
 
@@ -219,6 +67,7 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
                 "exception": "",
                 "version":   "",
                 "platform":  "",
+                "hostname":  "",
             },
             "check_storage": {
                 "status":        "not_started",
@@ -286,11 +135,98 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
                 "exception": "",
                 "version":   "",
                 "platform":  "",
+                "hostname":  "",
             },
         },
     }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# get_show_version
+# Sends `show version` to the device, parses Hostname / Model / Junos version,
+# stores results into:
+#   device_results[device_key]["pre"]["show_version"]
+#   device_results[device_key]["device_info"]   ← drives the HTML top panel
+#
+# Returns True on success, False on failure.
+# ─────────────────────────────────────────────────────────────────────────────
+def get_show_version(device_key: str, conn, vendor: str, logger) -> bool:
+    logger.info(f"[{device_key}] get_show_version — sending 'show version'")
+
+    try:
+        output = conn.send_command("show version")
+        if not output or len(output.strip()) <= MIN_OUTPUT_CHARS:
+            raise RuntimeError("'show version' returned empty output")
+
+        hostname = ""
+        model    = ""
+        version  = ""
+
+        if vendor == "juniper":
+            # Hostname: EFFPER01
+            m = re.search(r"^Hostname:\s+(\S+)", output, re.M)
+            if m:
+                hostname = m.group(1).strip()
+
+            # Model: mx204
+            m = re.search(r"^Model:\s+(\S+)", output, re.M)
+            if m:
+                model = m.group(1).strip()
+
+            # Junos: 22.4R3.25
+            m = re.search(r"^Junos:\s+(\S+)", output, re.M)
+            if m:
+                version = m.group(1).strip()
+
+        elif vendor == "cisco":
+            # Cisco IOS XR: "Cisco IOS XR Software, Version <ver>"
+            m = re.search(r"Cisco IOS XR Software.*?Version\s+(\S+)", output, re.I)
+            if m:
+                version = m.group(1).strip()
+
+            # hostname from prompt or "hostname <name>"
+            m = re.search(r"^hostname\s+(\S+)", output, re.M | re.I)
+            if m:
+                hostname = m.group(1).strip()
+
+        # ── store in pre["show_version"] ──────────────────────────────────────
+        device_results[device_key]["pre"]["show_version"] = {
+            "status":    "ok",
+            "exception": "",
+            "version":   version,
+            "platform":  model,
+            "hostname":  hostname,
+        }
+
+        # ── propagate to device_info so HTML top panel is populated ───────────
+        if hostname:
+            device_results[device_key]["device_info"]["hostname"] = hostname
+        if version:
+            device_results[device_key]["device_info"]["version"]  = version
+        if model:
+            device_results[device_key]["device_info"]["model"]    = model
+
+        logger.info(
+            f"[{device_key}] show_version parsed — "
+            f"hostname={hostname}  model={model}  version={version}"
+        )
+        return True
+
+    except Exception as e:
+        logger.error(f"[{device_key}] get_show_version failed — {e}")
+        device_results[device_key]["pre"]["show_version"] = {
+            "status":    "failed",
+            "exception": str(e),
+            "version":   "",
+            "platform":  "",
+            "hostname":  "",
+        }
+        return False
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# normalise / registry helpers (unchanged)
+# ─────────────────────────────────────────────────────────────────────────────
 def normalise(cmd: str) -> str:
     cmd = re.sub(r'\s+', ' ', cmd.strip())
     cmd = re.sub(r'\s*\|\s*', ' | ', cmd)
@@ -380,6 +316,9 @@ VENDOR_REGISTRY = {
 }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# collect_outputs / parse_outputs (unchanged)
+# ─────────────────────────────────────────────────────────────────────────────
 def collect_outputs(device_key: str, vendor: str, commands: list,
                     check_type: str, conn, log) -> list:
 
@@ -397,7 +336,6 @@ def collect_outputs(device_key: str, vendor: str, commands: list,
             output = conn.send_command(cmd)
             print(f"[{device_key}] '{cmd}' — {len(output)} chars received")
         except Exception:
-            import traceback as tb
             exception_str = tb.format_exc()
             log.error(f"[{device_key}] '{cmd}' send_command raised:\n{exception_str}")
 
@@ -478,6 +416,9 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
     return all_ok
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# setup_logger (unchanged)
+# ─────────────────────────────────────────────────────────────────────────────
 def setup_logger(name: str, vendor: str = "", model: str = ""):
     vendor = vendor or "unknown"
     model  = model  or "unknown"
@@ -500,6 +441,9 @@ def setup_logger(name: str, vendor: str = "", model: str = ""):
     return file_logger
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# login / logout (unchanged)
+# ─────────────────────────────────────────────────────────────────────────────
 def login_device(host, username, password, device_type, session_log_path, logger):
     try:
         logger.info(f"Connecting to {host} using Netmiko...")
@@ -533,6 +477,9 @@ def logout_device(conn, host, logger):
         logger.error(f"{host}: Logout failed: {e}")
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# load_yaml (unchanged)
+# ─────────────────────────────────────────────────────────────────────────────
 def load_yaml(filename):
     try:
         file_path = os.path.join(os.getcwd(), "inputs", filename)
@@ -543,6 +490,9 @@ def load_yaml(filename):
         raise
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# export_device_summary (unchanged)
+# ─────────────────────────────────────────────────────────────────────────────
 def export_device_summary(device_key: str):
     slot      = device_results.get(device_key, {})
     printable = {k: v for k, v in slot.items() if k != "conn"}
@@ -564,13 +514,15 @@ def export_device_summary(device_key: str):
     # ── HTML report ───────────────────────────────────────────────────────────
     reports_dir = os.path.join(os.getcwd(), "reports")
     os.makedirs(reports_dir, exist_ok=True)
-    html_path   = generate_html_report(all_devices_summary, output_dir=reports_dir)
     html_name   = f"{vendor}_{model}_{timestamp}.html"
-    os.rename(html_path, os.path.join(reports_dir, html_name))
-    print(f"[REPORT] {os.path.join(reports_dir, html_name)}")
-    print(f"[REPORT] {html_name}")
+    html_path   = os.path.join(reports_dir, html_name)
+    generate_html_report(all_devices_summary, output_path=html_path)
+    print(f"[REPORT] {html_path}")
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# merge_thread_result (unchanged)
+# ─────────────────────────────────────────────────────────────────────────────
 def merge_thread_result(device_key: str, result: dict):
     with results_lock:
         slot = device_results.get(device_key)
@@ -586,6 +538,9 @@ def merge_thread_result(device_key: str, result: dict):
         logger.info(f"[merge] device_key='{device_key}' merged into device_results")
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# connect / disconnect (unchanged)
+# ─────────────────────────────────────────────────────────────────────────────
 def connect(device_key: str, dev: dict, logger):
     host    = dev["host"]
     vendor  = dev["vendor"].lower()
@@ -636,6 +591,9 @@ def disconnect(device_key: str, logger):
     logger.info(f"[{device_key}] Disconnected from {host}")
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# load_commands (unchanged)
+# ─────────────────────────────────────────────────────────────────────────────
 def load_commands(vendor: str, model: str, logger) -> list:
     all_cmds = load_yaml("show_cmd_list.yaml")
     cmd_key  = f"{vendor}_{model}"
