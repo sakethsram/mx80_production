@@ -507,21 +507,21 @@ def main():
             future = executor.submit(device_thread)
             future_to_key[future] = device_key
 
-        for future in as_completed(future_to_key):
-            device_key = future_to_key[future]
-            try:
-                ok = future.result()
-                main_logger.info(f"[MAIN] {device_key} -> {'passed' if ok else 'FAILED'}")
-            except Exception as e:
-                main_logger.error(f"[MAIN] {device_key} thread raised: {e}")
+    #     for future in as_completed(future_to_key):
+    #         device_key = future_to_key[future]
+    #         try:
+    #             ok = future.result()
+    #             main_logger.info(f"[MAIN] {device_key} -> {'passed' if ok else 'FAILED'}")
+    #         except Exception as e:
+    #             main_logger.error(f"[MAIN] {device_key} thread raised: {e}")
 
-    # ── All devices done — export per-device JSON summaries ───────────────────
-    for dev in all_devs:
-        vendor_lc  = dev["vendor"].lower()
-        model_lc   = str(dev["model"]).lower().replace("-", "")
-        ip_clean   = dev["host"].replace(".", "_")
-        device_key = f"{ip_clean}_{vendor_lc}_{model_lc}"
-        export_device_summary(device_key)
+    # # ── All devices done — export per-device JSON summaries ───────────────────
+    # for dev in all_devs:
+    #     vendor_lc  = dev["vendor"].lower()
+    #     model_lc   = str(dev["model"]).lower().replace("-", "")
+    #     ip_clean   = dev["host"].replace(".", "_")
+    #     device_key = f"{ip_clean}_{vendor_lc}_{model_lc}"
+    #     export_device_summary(device_key)
 
     main_logger.info(f"[MAIN] JSON files location -> {os.path.join(os.getcwd(), 'precheck_jsons')}")
     sys.exit(0)

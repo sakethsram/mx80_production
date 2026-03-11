@@ -1,181 +1,148 @@
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ rm prechec^C
-(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ rm prechecks.py && vi prechecks.py
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ rm main.py && vi main.py
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ p main.py
-2026-03-10 08:10:45,929 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
-2026-03-10 08:10:45,929 - INFO - [MAIN] Spawning threads for 1 device(s)
-2026-03-10 08:10:45,930 - INFO - [THREAD-133456029042368] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-10 08:10:45.930802
-2026-03-10 08:10:45,931 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
-2026-03-10 08:10:45,931 - INFO - Connecting to 10.80.71.55 using Netmiko...
-2026-03-10 08:10:46,028 - INFO - Connected (version 2.0, client OpenSSH_9.7)
-2026-03-10 08:10:46,242 - INFO - Authentication (password) successful!
-2026-03-10 08:10:46,511 - INFO - Login successful to 10.80.71.55
-2026-03-10 08:10:46,511 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
-2026-03-10 08:10:46,514 - INFO - [load_commands] Loaded 35 commands for 'juniper_mx204'
-2026-03-10 08:10:46,514 - INFO - [10_80_71_55_juniper_mx204] collect_outputs — 35 command(s), check_type=pre
-2026-03-10 08:10:46,515 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show arp no-resolve | no-more'
-[10_80_71_55_juniper_mx204] 'show arp no-resolve | no-more' — 2707 chars received
-2026-03-10 08:10:46,649 - INFO - [10_80_71_55_juniper_mx204] 'show arp no-resolve | no-more' collected=True (2706 chars)
-2026-03-10 08:10:46,649 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show lldp neighbors | no-more'
-[10_80_71_55_juniper_mx204] 'show lldp neighbors | no-more' — 1718 chars received
-2026-03-10 08:10:46,732 - INFO - [10_80_71_55_juniper_mx204] 'show lldp neighbors | no-more' collected=True (1705 chars)
-2026-03-10 08:10:46,732 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis routing-engine | no-more'
-[10_80_71_55_juniper_mx204] 'show chassis routing-engine | no-more' — 1581 chars received
-2026-03-10 08:10:46,815 - INFO - [10_80_71_55_juniper_mx204] 'show chassis routing-engine | no-more' collected=True (1580 chars)
-2026-03-10 08:10:46,816 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system uptime | no-more'
+2026-03-11 05:49:49,232 - INFO - [MAIN] Initialised device_results for [10_80_71_55_juniper_mx204] host=10.80.71.55
+2026-03-11 05:49:49,232 - INFO - [MAIN] Spawning threads for 1 device(s)
+2026-03-11 05:49:49,233 - INFO - [THREAD-133408293136064] [10_80_71_55_juniper_mx204] Prechecks started at 2026-03-11 05:49:49.232997
+2026-03-11 05:49:49,233 - INFO - [10_80_71_55_juniper_mx204] Connecting to 10.80.71.55
+2026-03-11 05:49:49,233 - INFO - Connecting to 10.80.71.55 using Netmiko...
+2026-03-11 05:49:49,272 - INFO - Connected (version 2.0, client OpenSSH_7.5)
+2026-03-11 05:49:49,525 - INFO - Authentication (password) successful!
+2026-03-11 05:49:49,967 - INFO - Login successful to 10.80.71.55
+2026-03-11 05:49:49,967 - INFO - [10_80_71_55_juniper_mx204] Connected successfully to 10.80.71.55
+2026-03-11 05:49:49,972 - INFO - [load_commands] Loaded 35 commands for 'juniper_mx204'
+2026-03-11 05:49:49,972 - INFO - [10_80_71_55_juniper_mx204] collect_outputs — 35 command(s), check_type=pre
+2026-03-11 05:49:49,972 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show arp no-resolve | no-more'
+[10_80_71_55_juniper_mx204] 'show arp no-resolve | no-more' — 2643 chars received
+2026-03-11 05:49:50,131 - INFO - [10_80_71_55_juniper_mx204] 'show arp no-resolve | no-more' collected=True (2642 chars)
+2026-03-11 05:49:50,132 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show lldp neighbors | no-more'
+[10_80_71_55_juniper_mx204] 'show lldp neighbors | no-more' — 1411 chars received
+2026-03-11 05:49:50,214 - INFO - [10_80_71_55_juniper_mx204] 'show lldp neighbors | no-more' collected=True (1398 chars)
+2026-03-11 05:49:50,215 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis routing-engine | no-more'
+[10_80_71_55_juniper_mx204] 'show chassis routing-engine | no-more' — 1582 chars received
+2026-03-11 05:49:50,298 - INFO - [10_80_71_55_juniper_mx204] 'show chassis routing-engine | no-more' collected=True (1581 chars)
+2026-03-11 05:49:50,298 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system uptime | no-more'
 [10_80_71_55_juniper_mx204] 'show system uptime | no-more' — 300 chars received
-2026-03-10 08:10:46,949 - INFO - [10_80_71_55_juniper_mx204] 'show system uptime | no-more' collected=True (299 chars)
-2026-03-10 08:10:46,949 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show ntp associations no-resolve | no-more'
-[10_80_71_55_juniper_mx204] 'show ntp associations no-resolve | no-more' — 353 chars received
-2026-03-10 08:10:47,032 - INFO - [10_80_71_55_juniper_mx204] 'show ntp associations no-resolve | no-more' collected=True (347 chars)
-2026-03-10 08:10:47,033 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show vmhost version | no-more'
-[10_80_71_55_juniper_mx204] 'show vmhost version | no-more' — 661 chars received
-2026-03-10 08:10:49,459 - INFO - [10_80_71_55_juniper_mx204] 'show vmhost version | no-more' collected=True (660 chars)
-2026-03-10 08:10:49,460 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show vmhost snapshot | no-more'
-[10_80_71_55_juniper_mx204] 'show vmhost snapshot | no-more' — 530 chars received
-2026-03-10 08:10:50,929 - INFO - [10_80_71_55_juniper_mx204] 'show vmhost snapshot | no-more' collected=True (528 chars)
-2026-03-10 08:10:50,929 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis hardware | no-more'
-[10_80_71_55_juniper_mx204] 'show chassis hardware | no-more' — 1775 chars received
-2026-03-10 08:10:51,012 - INFO - [10_80_71_55_juniper_mx204] 'show chassis hardware | no-more' collected=True (1774 chars)
-2026-03-10 08:10:51,013 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis fpc detail | no-more'
-[10_80_71_55_juniper_mx204] 'show chassis fpc detail | no-more' — 499 chars received
-2026-03-10 08:10:51,096 - INFO - [10_80_71_55_juniper_mx204] 'show chassis fpc detail | no-more' collected=True (496 chars)
-2026-03-10 08:10:51,096 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis alarms | no-more'
+2026-03-11 05:49:50,406 - INFO - [10_80_71_55_juniper_mx204] 'show system uptime | no-more' collected=True (299 chars)
+2026-03-11 05:49:50,406 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show ntp associations no-resolve | no-more'
+[10_80_71_55_juniper_mx204] 'show ntp associations no-resolve | no-more' — 298 chars received
+2026-03-11 05:49:50,489 - INFO - [10_80_71_55_juniper_mx204] 'show ntp associations no-resolve | no-more' collected=True (292 chars)
+2026-03-11 05:49:50,489 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show vmhost version | no-more'
+[10_80_71_55_juniper_mx204] 'show vmhost version | no-more' — 636 chars received
+2026-03-11 05:49:52,865 - INFO - [10_80_71_55_juniper_mx204] 'show vmhost version | no-more' collected=True (634 chars)
+2026-03-11 05:49:52,866 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show vmhost snapshot | no-more'
+[10_80_71_55_juniper_mx204] 'show vmhost snapshot | no-more' — 523 chars received
+2026-03-11 05:49:54,234 - INFO - [10_80_71_55_juniper_mx204] 'show vmhost snapshot | no-more' collected=True (521 chars)
+2026-03-11 05:49:54,235 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis hardware | no-more'
+[10_80_71_55_juniper_mx204] 'show chassis hardware | no-more' — 1774 chars received
+2026-03-11 05:49:54,318 - INFO - [10_80_71_55_juniper_mx204] 'show chassis hardware | no-more' collected=True (1773 chars)
+2026-03-11 05:49:54,318 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis fpc detail | no-more'
+[10_80_71_55_juniper_mx204] 'show chassis fpc detail | no-more' — 500 chars received
+2026-03-11 05:49:54,401 - INFO - [10_80_71_55_juniper_mx204] 'show chassis fpc detail | no-more' collected=True (497 chars)
+2026-03-11 05:49:54,401 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis alarms | no-more'
 [10_80_71_55_juniper_mx204] 'show chassis alarms | no-more' — 27 chars received
-2026-03-10 08:10:51,179 - INFO - [10_80_71_55_juniper_mx204] 'show chassis alarms | no-more' collected=True (26 chars)
-2026-03-10 08:10:51,179 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system alarms | no-more'
+2026-03-11 05:49:54,484 - INFO - [10_80_71_55_juniper_mx204] 'show chassis alarms | no-more' collected=True (26 chars)
+2026-03-11 05:49:54,484 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system alarms | no-more'
 [10_80_71_55_juniper_mx204] 'show system alarms | no-more' — 27 chars received
-2026-03-10 08:10:51,262 - INFO - [10_80_71_55_juniper_mx204] 'show system alarms | no-more' collected=True (26 chars)
-2026-03-10 08:10:51,262 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis environment | no-more'
+2026-03-11 05:49:54,567 - INFO - [10_80_71_55_juniper_mx204] 'show system alarms | no-more' collected=True (26 chars)
+2026-03-11 05:49:54,567 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show chassis environment | no-more'
 [10_80_71_55_juniper_mx204] 'show chassis environment | no-more' — 2102 chars received
-2026-03-10 08:10:51,345 - INFO - [10_80_71_55_juniper_mx204] 'show chassis environment | no-more' collected=True (2101 chars)
-2026-03-10 08:10:51,346 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system resource-monitor fpc | no-more'
+2026-03-11 05:49:54,650 - INFO - [10_80_71_55_juniper_mx204] 'show chassis environment | no-more' collected=True (2101 chars)
+2026-03-11 05:49:54,650 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system resource-monitor fpc | no-more'
 [10_80_71_55_juniper_mx204] 'show system resource-monitor fpc | no-more' — 426 chars received
-2026-03-10 08:10:51,429 - INFO - [10_80_71_55_juniper_mx204] 'show system resource-monitor fpc | no-more' collected=True (425 chars)
-2026-03-10 08:10:51,429 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system processes extensive | match rpd | no-more'
+2026-03-11 05:49:54,733 - INFO - [10_80_71_55_juniper_mx204] 'show system resource-monitor fpc | no-more' collected=True (425 chars)
+2026-03-11 05:49:54,734 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show system processes extensive | match rpd | no-more'
 [10_80_71_55_juniper_mx204] 'show system processes extensive | match rpd | no-more' — 1367 chars received
-2026-03-10 08:10:51,512 - INFO - [10_80_71_55_juniper_mx204] 'show system processes extensive | match rpd | no-more' collected=True (1366 chars)
-2026-03-10 08:10:51,512 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show interface terse | no-more'
-[10_80_71_55_juniper_mx204] 'show interface terse | no-more' — 25060 chars received
-2026-03-10 08:10:51,851 - INFO - [10_80_71_55_juniper_mx204] 'show interface terse | no-more' collected=True (25059 chars)
-2026-03-10 08:10:51,851 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show oam ethernet connectivity-fault-management interfaces extensive | no-more'
+2026-03-11 05:49:54,816 - INFO - [10_80_71_55_juniper_mx204] 'show system processes extensive | match rpd | no-more' collected=True (1366 chars)
+2026-03-11 05:49:54,817 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show interface terse | no-more'
+[10_80_71_55_juniper_mx204] 'show interface terse | no-more' — 24990 chars received
+2026-03-11 05:49:55,251 - INFO - [10_80_71_55_juniper_mx204] 'show interface terse | no-more' collected=True (24989 chars)
+2026-03-11 05:49:55,252 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show oam ethernet connectivity-fault-management interfaces extensive | no-more'
 [10_80_71_55_juniper_mx204] 'show oam ethernet connectivity-fault-management interfaces extensive | no-more' — 402 chars received
-2026-03-10 08:10:52,087 - INFO - [10_80_71_55_juniper_mx204] 'show oam ethernet connectivity-fault-management interfaces extensive | no-more' collected=True (401 chars)
-2026-03-10 08:10:52,087 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show vrrp summary | no-more'
+2026-03-11 05:49:55,498 - INFO - [10_80_71_55_juniper_mx204] 'show oam ethernet connectivity-fault-management interfaces extensive | no-more' collected=True (401 chars)
+2026-03-11 05:49:55,499 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show vrrp summary | no-more'
 [10_80_71_55_juniper_mx204] 'show vrrp summary | no-more' — 67 chars received
-2026-03-10 08:10:52,170 - INFO - [10_80_71_55_juniper_mx204] 'show vrrp summary | no-more' collected=True (66 chars)
-2026-03-10 08:10:52,170 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show bfd session | no-more'
+2026-03-11 05:49:55,581 - INFO - [10_80_71_55_juniper_mx204] 'show vrrp summary | no-more' collected=True (66 chars)
+2026-03-11 05:49:55,582 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show bfd session | no-more'
 [10_80_71_55_juniper_mx204] 'show bfd session | no-more' — 629 chars received
-2026-03-10 08:10:52,253 - INFO - [10_80_71_55_juniper_mx204] 'show bfd session | no-more' collected=True (578 chars)
-2026-03-10 08:10:52,254 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp neighbor | no-more'
-[10_80_71_55_juniper_mx204] 'show rsvp neighbor | no-more' — 412 chars received
-2026-03-10 08:10:52,336 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp neighbor | no-more' collected=True (411 chars)
-2026-03-10 08:10:52,337 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp session | no-more'
+2026-03-11 05:49:55,664 - INFO - [10_80_71_55_juniper_mx204] 'show bfd session | no-more' collected=True (578 chars)
+2026-03-11 05:49:55,665 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp neighbor | no-more'
+[10_80_71_55_juniper_mx204] 'show rsvp neighbor | no-more' — 413 chars received
+2026-03-11 05:49:55,748 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp neighbor | no-more' collected=True (412 chars)
+2026-03-11 05:49:55,748 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp session | no-more'
 [10_80_71_55_juniper_mx204] 'show rsvp session | no-more' — 1407 chars received
-2026-03-10 08:10:52,420 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp session | no-more' collected=True (1406 chars)
-2026-03-10 08:10:52,420 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route table inet.0 | no-more'
+2026-03-11 05:49:55,831 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp session | no-more' collected=True (1406 chars)
+2026-03-11 05:49:55,831 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route table inet.0 | no-more'
 [10_80_71_55_juniper_mx204] 'show route table inet.0 | no-more' — 9988 chars received
-2026-03-10 08:10:52,610 - INFO - [10_80_71_55_juniper_mx204] 'show route table inet.0 | no-more' collected=True (9986 chars)
-2026-03-10 08:10:52,611 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route table inet.3 | no-more'
+2026-03-11 05:49:56,378 - INFO - [10_80_71_55_juniper_mx204] 'show route table inet.0 | no-more' collected=True (9986 chars)
+2026-03-11 05:49:56,379 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route table inet.3 | no-more'
 [10_80_71_55_juniper_mx204] 'show route table inet.3 | no-more' — 2154 chars received
-2026-03-10 08:10:52,775 - INFO - [10_80_71_55_juniper_mx204] 'show route table inet.3 | no-more' collected=True (2152 chars)
-2026-03-10 08:10:52,775 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route table mpls.0 | no-more'
-[10_80_71_55_juniper_mx204] 'show route table mpls.0 | no-more' — 13542 chars received
-2026-03-10 08:10:52,966 - INFO - [10_80_71_55_juniper_mx204] 'show route table mpls.0 | no-more' collected=True (13540 chars)
-2026-03-10 08:10:52,966 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls interface | no-more'
+2026-03-11 05:49:56,860 - INFO - [10_80_71_55_juniper_mx204] 'show route table inet.3 | no-more' collected=True (2152 chars)
+2026-03-11 05:49:56,860 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route table mpls.0 | no-more'
+[10_80_71_55_juniper_mx204] 'show route table mpls.0 | no-more' — 13708 chars received
+2026-03-11 05:49:57,433 - INFO - [10_80_71_55_juniper_mx204] 'show route table mpls.0 | no-more' collected=True (13706 chars)
+2026-03-11 05:49:57,433 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls interface | no-more'
 [10_80_71_55_juniper_mx204] 'show mpls interface | no-more' — 203 chars received
-2026-03-10 08:10:53,049 - INFO - [10_80_71_55_juniper_mx204] 'show mpls interface | no-more' collected=True (202 chars)
-2026-03-10 08:10:53,050 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls lsp | no-more'
+2026-03-11 05:49:57,516 - INFO - [10_80_71_55_juniper_mx204] 'show mpls interface | no-more' collected=True (202 chars)
+2026-03-11 05:49:57,516 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls lsp | no-more'
 [10_80_71_55_juniper_mx204] 'show mpls lsp | no-more' — 1549 chars received
-2026-03-10 08:10:53,133 - INFO - [10_80_71_55_juniper_mx204] 'show mpls lsp | no-more' collected=True (1548 chars)
-2026-03-10 08:10:53,133 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls lsp p2mp | no-more'
+2026-03-11 05:49:57,599 - INFO - [10_80_71_55_juniper_mx204] 'show mpls lsp | no-more' collected=True (1548 chars)
+2026-03-11 05:49:57,600 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls lsp p2mp | no-more'
 [10_80_71_55_juniper_mx204] 'show mpls lsp p2mp | no-more' — 2220 chars received
-2026-03-10 08:10:53,216 - INFO - [10_80_71_55_juniper_mx204] 'show mpls lsp p2mp | no-more' collected=True (2219 chars)
-2026-03-10 08:10:53,216 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show bgp summary | no-more'
+2026-03-11 05:49:57,683 - INFO - [10_80_71_55_juniper_mx204] 'show mpls lsp p2mp | no-more' collected=True (2219 chars)
+2026-03-11 05:49:57,683 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show bgp summary | no-more'
 [10_80_71_55_juniper_mx204] 'show bgp summary | no-more' — 5840 chars received
-2026-03-10 08:10:53,299 - INFO - [10_80_71_55_juniper_mx204] 'show bgp summary | no-more' collected=True (5839 chars)
-2026-03-10 08:10:53,300 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show bgp neighbor | no-more'
-[10_80_71_55_juniper_mx204] 'show bgp neighbor | no-more' — 75199 chars received
-2026-03-10 08:10:53,515 - INFO - [10_80_71_55_juniper_mx204] 'show bgp neighbor | no-more' collected=True (75198 chars)
-2026-03-10 08:10:53,515 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show isis adjacency extensive | no-more'
+2026-03-11 05:49:57,791 - INFO - [10_80_71_55_juniper_mx204] 'show bgp summary | no-more' collected=True (5839 chars)
+2026-03-11 05:49:57,791 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show bgp neighbor | no-more'
+[10_80_71_55_juniper_mx204] 'show bgp neighbor | no-more' — 75227 chars received
+2026-03-11 05:49:58,082 - INFO - [10_80_71_55_juniper_mx204] 'show bgp neighbor | no-more' collected=True (75226 chars)
+2026-03-11 05:49:58,082 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show isis adjacency extensive | no-more'
 [10_80_71_55_juniper_mx204] 'show isis adjacency extensive | no-more' — 935 chars received
-2026-03-10 08:10:53,598 - INFO - [10_80_71_55_juniper_mx204] 'show isis adjacency extensive | no-more' collected=True (926 chars)
-2026-03-10 08:10:53,598 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route summary | no-more'
-[10_80_71_55_juniper_mx204] 'show route summary | no-more' — 23637 chars received
-2026-03-10 08:10:53,707 - INFO - [10_80_71_55_juniper_mx204] 'show route summary | no-more' collected=True (23636 chars)
-2026-03-10 08:10:53,707 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp session | match DN | no-more'
+2026-03-11 05:49:58,165 - INFO - [10_80_71_55_juniper_mx204] 'show isis adjacency extensive | no-more' collected=True (926 chars)
+2026-03-11 05:49:58,165 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show route summary | no-more'
+[10_80_71_55_juniper_mx204] 'show route summary | no-more' — 34117 chars received
+2026-03-11 05:49:58,402 - INFO - [10_80_71_55_juniper_mx204] 'show route summary | no-more' collected=True (34116 chars)
+2026-03-11 05:49:58,402 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show rsvp session | match DN | no-more'
 [10_80_71_55_juniper_mx204] 'show rsvp session | match DN | no-more' — 0 chars received
-2026-03-10 08:10:53,790 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp session | match DN | no-more' collected=False (0 chars)
-2026-03-10 08:10:53,791 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls lsp unidirectional | match Dn | no-more'
+2026-03-11 05:49:58,485 - INFO - [10_80_71_55_juniper_mx204] 'show rsvp session | match DN | no-more' collected=False (0 chars)
+2026-03-11 05:49:58,485 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show mpls lsp unidirectional | match Dn | no-more'
 [10_80_71_55_juniper_mx204] 'show mpls lsp unidirectional | match Dn | no-more' — 152 chars received
-2026-03-10 08:10:53,874 - INFO - [10_80_71_55_juniper_mx204] 'show mpls lsp unidirectional | match Dn | no-more' collected=True (151 chars)
-2026-03-10 08:10:53,874 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show ldp neighbor | no-more'
+2026-03-11 05:49:58,568 - INFO - [10_80_71_55_juniper_mx204] 'show mpls lsp unidirectional | match Dn | no-more' collected=True (151 chars)
+2026-03-11 05:49:58,569 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show ldp neighbor | no-more'
 [10_80_71_55_juniper_mx204] 'show ldp neighbor | no-more' — 384 chars received
-2026-03-10 08:10:53,957 - INFO - [10_80_71_55_juniper_mx204] 'show ldp neighbor | no-more' collected=True (383 chars)
-2026-03-10 08:10:53,957 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show connections | no-more'
+2026-03-11 05:49:58,651 - INFO - [10_80_71_55_juniper_mx204] 'show ldp neighbor | no-more' collected=True (383 chars)
+2026-03-11 05:49:58,652 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show connections | no-more'
 [10_80_71_55_juniper_mx204] 'show connections | no-more' — 31 chars received
-2026-03-10 08:10:54,040 - INFO - [10_80_71_55_juniper_mx204] 'show connections | no-more' collected=True (30 chars)
-2026-03-10 08:10:54,040 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show log messages | last 200 | no-more'
-[10_80_71_55_juniper_mx204] 'show log messages | last 200 | no-more' — 37141 chars received
-2026-03-10 08:10:54,124 - INFO - [10_80_71_55_juniper_mx204] 'show log messages | last 200 | no-more' collected=True (37140 chars)
-2026-03-10 08:10:54,125 - INFO - [10_80_71_55_juniper_mx204] collect_outputs done — 35 entries stored
-2026-03-10 08:10:54,140 - INFO - 10.80.71.55: Checking system storage for vendor: juniper
-2026-03-10 08:10:54,259 - INFO - 10.80.71.55:  9 GB available for juniper
-2026-03-10 08:10:54,259 - INFO - {'status': 'ok', 'deleted_files': [], 'exception': '', 'sufficient': True}
-2026-03-10 08:10:54,259 - INFO - Backing up the whole primary disk1 config to disk2 for rollback for vendor: juniper
-2026-03-10 08:10:54,259 - INFO - Check number of disks on a juniper device
-2026-03-10 08:10:56,459 - INFO - There are 2 disks in a device for vendor: juniper
+2026-03-11 05:49:58,734 - INFO - [10_80_71_55_juniper_mx204] 'show connections | no-more' collected=True (30 chars)
+2026-03-11 05:49:58,735 - INFO - [10_80_71_55_juniper_mx204] Sending: 'show log messages | last 200 | no-more'
+[10_80_71_55_juniper_mx204] 'show log messages | last 200 | no-more' — 22083 chars received
+2026-03-11 05:49:58,995 - INFO - [10_80_71_55_juniper_mx204] 'show log messages | last 200 | no-more' collected=True (22082 chars)
+2026-03-11 05:49:58,995 - INFO - [10_80_71_55_juniper_mx204] collect_outputs done — 35 entries stored
+2026-03-11 05:49:59,011 - INFO - 10.80.71.55: Checking system storage for vendor: juniper
+2026-03-11 05:49:59,130 - INFO - 10.80.71.55:  7 GB available for juniper
+2026-03-11 05:49:59,130 - INFO - {'status': 'ok', 'deleted_files': [], 'exception': '', 'sufficient': True}
+2026-03-11 05:49:59,130 - INFO - Backing up the whole primary disk1 config to disk2 for rollback for vendor: juniper
+2026-03-11 05:49:59,130 - INFO - Check number of disks on a juniper device
+2026-03-11 05:50:01,330 - INFO - There are 2 disks in a device for vendor: juniper
  will take a backup of primary disk to backup disk
-2026-03-10 08:10:56,459 - INFO - 10.80.71.55: executing the 'request vmhost snapshot' for vendor: juniper
-2026-03-10 08:13:47,595 - INFO - 10.80.71.55: Disk1 backup is done for juniper
-2026-03-10 08:13:47,597 - INFO - Taking device backup for vendor: juniper
-2026-03-10 08:13:52,026 - INFO - 10.80.71.55: Config saved, copying to remote server
-2026-03-10 08:13:52,026 - INFO - Copying files to remote server
-2026-03-10 08:14:13,836 - INFO - 10.80.71.55: File copied successfully
-2026-03-10 08:14:34,239 - INFO - 10.80.71.55: Logs archived, copying to remote server
-2026-03-10 08:14:34,239 - INFO - Copying files to remote server
-2026-03-10 08:14:51,848 - INFO - 10.80.71.55: File copied successfully
-2026-03-10 08:14:51,848 - INFO - ==============================================================
-2026-03-10 08:14:51,848 - INFO - ENTER transferImage()
-2026-03-10 08:14:51,848 - INFO - Host            : 10.80.71.55
-2026-03-10 08:14:51,849 - INFO - Vendor          : juniper
-2026-03-10 08:14:51,849 - INFO - Image Path      : /home/automation2/software/juniper/junos/MX204
-2026-03-10 08:14:51,849 - INFO - Target Image    : junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
-2026-03-10 08:14:51,849 - INFO - Connection Obj  : <netmiko.juniper.juniper.JuniperSSH object at 0x7960a753f980>
-2026-03-10 08:14:51,849 - INFO - ==============================================================
-2026-03-10 08:14:51,849 - INFO - STEP 1 — Preparing transfer message
-2026-03-10 08:14:51,849 - INFO - Transferring image junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz to device for vendor: juniper
-2026-03-10 08:14:51,849 - INFO - STEP 2 — Checking connection object
-2026-03-10 08:14:51,849 - INFO - Connection object validated
-2026-03-10 08:14:51,849 - INFO - STEP 3 — Validating vendor support
-2026-03-10 08:14:51,849 - INFO - Accepted vendors list: ['juniper', 'cisco']
-2026-03-10 08:14:51,849 - INFO - Vendor juniper is supported
-2026-03-10 08:14:51,849 - INFO - STEP 4 — Checking vendor specific transfer logic
-2026-03-10 08:14:51,849 - INFO - Vendor identified as JUNIPER
-2026-03-10 08:14:51,849 - INFO - STEP 4.1 — Constructing SCP source path
-2026-03-10 08:14:51,849 - INFO - SCP Source Path: automation2@10.80.109.134:/home/automation2/software/juniper/junos/MX204/junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
-2026-03-10 08:14:51,849 - INFO - STEP 4.2 — Setting destination directory
-2026-03-10 08:14:51,849 - INFO - SCP Destination Path: /var/tmp/
-2026-03-10 08:14:51,849 - INFO - STEP 4.3 — Initiating SCP transfer
-2026-03-10 08:14:51,850 - INFO - Calling scpFile(conn=<netmiko.juniper.juniper.JuniperSSH object at 0x7960a753f980>, src=automation2@10.80.109.134:/home/automation2/software/juniper/junos/MX204/junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz, dest=/var/tmp/)
-2026-03-10 08:14:51,850 - INFO - Copying files to remote server
-2026-03-10 08:15:09,458 - INFO - 10.80.71.55: File copied successfully
-2026-03-10 08:15:09,459 - INFO - SCP transfer result: True
-2026-03-10 08:15:09,459 - INFO - SCP transfer completed successfully
-2026-03-10 08:15:09,459 - INFO - STEP 5 — Finalizing success response
-2026-03-10 08:15:09,459 - INFO - 10.80.71.55: Image junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz transferred to /var/tmp/
-2026-03-10 08:15:09,459 - INFO - Returning success payload: {'status': 'ok', 'exception': '', 'image': 'junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz', 'destination': '/var/tmp/'}
-2026-03-10 08:15:09,459 - INFO - EXIT transferImage() SUCCESS
-2026-03-10 08:15:09,459 - INFO - ==============================================================
-2026-03-10 08:15:09,459 - ERROR - [10_80_71_55_juniper_mx204] STEP 8 CHECKSUM failed — 'PreCheck' object has no attribute 'verifyChecksum'
-2026-03-10 08:15:19,465 - INFO - Logout successful from 10.80.71.55
-2026-03-10 08:15:19,465 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
-2026-03-10 08:15:19,465 - INFO - [THREAD-133456029042368] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-10 08:15:19.465774
-2026-03-10 08:15:19,467 - INFO - [MAIN] 10_80_71_55_juniper_mx204 -> FAILED
-[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/juniper_mx204_2026-03-10_08-15-19.json
-[REPORT] /home/colt/Documents/MS1Automation/reports/juniper_mx204_2026-03-10_08-15-19.html
-[REPORT] juniper_mx204_2026-03-10_08-15-19.html
-2026-03-10 08:15:19,500 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
+2026-03-11 05:50:01,330 - INFO - 10.80.71.55: executing the 'request vmhost snapshot' for vendor: juniper
+2026-03-11 05:52:56,830 - INFO - 10.80.71.55: Disk1 backup is done for juniper
+2026-03-11 05:52:56,831 - INFO - Taking device backup for vendor: juniper
+2026-03-11 05:53:01,260 - INFO - 10.80.71.55: Config saved, copying to remote server
+2026-03-11 05:53:01,260 - INFO - Copying files to remote server
+2026-03-11 05:53:20,969 - INFO - 10.80.71.55: File copied successfully
+2026-03-11 05:53:41,372 - INFO - 10.80.71.55: Logs archived, copying to remote server
+2026-03-11 05:53:41,372 - INFO - Copying files to remote server
+2026-03-11 05:53:58,980 - INFO - 10.80.71.55: File copied successfully
+2026-03-11 05:53:58,981 - INFO - Transferring image junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz to device for vendor: juniper
+2026-03-11 05:53:58,981 - INFO - Copying files to remote server
+2026-03-11 05:54:16,590 - INFO - 10.80.71.55: File copied successfully
+2026-03-11 05:54:16,590 - INFO - 10.80.71.55: Image junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz transferred to /var/tmp/
+2026-03-11 05:54:16,590 - INFO - [merge] device_key='10_80_71_55_juniper_mx204' merged into device_results
+2026-03-11 05:54:16,590 - INFO - [THREAD-133408293136064] [10_80_71_55_juniper_mx204] All pre-checks passed
+2026-03-11 05:54:26,596 - INFO - Logout successful from 10.80.71.55
+2026-03-11 05:54:26,596 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
+2026-03-11 05:54:26,596 - INFO - [THREAD-133408293136064] [10_80_71_55_juniper_mx204] Prechecks completed at 2026-03-11 05:54:26.596471
+2026-03-11 05:54:26,596 - INFO - [10_80_71_55_juniper_mx204] PRECHECKS_ONLY=True — skipping upgrade
+2026-03-11 05:54:26,597 - INFO - [MAIN] JSON files location -> /home/colt/Documents/MS1Automation/precheck_jsons
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ nano c
 (venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
-
-1. why isnt hte md5 checksum logs being printed
-2.
