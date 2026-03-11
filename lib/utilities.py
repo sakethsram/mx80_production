@@ -514,9 +514,11 @@ def export_device_summary(device_key: str):
     # ── HTML report ───────────────────────────────────────────────────────────
     reports_dir = os.path.join(os.getcwd(), "reports")
     os.makedirs(reports_dir, exist_ok=True)
+    generated   = generate_html_report(all_devices_summary, output_dir=reports_dir)
     html_name   = f"{vendor}_{model}_{timestamp}.html"
     html_path   = os.path.join(reports_dir, html_name)
-    generate_html_report(all_devices_summary, output_path=html_path)
+    if generated and generated != html_path:
+        os.rename(generated, html_path)
     print(f"[REPORT] {html_path}")
 
 
