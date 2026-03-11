@@ -128,7 +128,7 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
 
         logger.info(f"[{device_key}] STEP 6 transfer image OK")
 
-        # ── STEP 7: Merge results ─────────────────────────────────────────────
+        # ── STEP 7: MD5 ─────────────────────────────────────────────
         try:
             image_details    = dev.get("imageDetails", [])
             target           = image_details[-1]          # verify the final target image

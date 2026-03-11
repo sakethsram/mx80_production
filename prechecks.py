@@ -275,19 +275,36 @@ class PreCheck:
             }
     def verifyChecksum(self, conn, image, expected_checksum, logger):
         try:
+            print(f"[verifyChecksum] ── START ──────────────────────────────────────")
+            print(f"[verifyChecksum] self.host              = {self.host}")
+            print(f"[verifyChecksum] self.vendor            = {self.vendor}")
+            print(f"[verifyChecksum] self.accepted_vendors  = {self.accepted_vendors}")
+            print(f"[verifyChecksum] image                  = {image}")
+            print(f"[verifyChecksum] expected_checksum      = {expected_checksum}")
+            print(f"[verifyChecksum] conn                   = {conn}")
+
             logger.info(f"[{self.host}] verifyChecksum — image: {image}, vendor: {self.vendor}")
 
             if self.vendor not in self.accepted_vendors:
+                print(f"[verifyChecksum] ABORT — vendor '{self.vendor}' not in {self.accepted_vendors}")
                 raise ValueError(f"[{self.host}] verifyChecksum — unsupported vendor: {self.vendor}")
 
             if self.vendor == "juniper":
                 command = f"file checksum md5 /var/tmp/{image}"
-                logger.info(f"[{self.host}] verifyChecksum — executing: {command}")
+                print(f"[verifyChecksum] command                = {command}")
+
                 output = conn.send_command(command, expect_string=r".*>", read_timeout=120)
-                logger.debug(f"[{self.host}] verifyChecksum — raw output: {output}")
+
+                print(f"[verifyChecksum] raw output             =\n{output}")
+                print(f"[verifyChecksum] output type            = {type(output)}")
+                print(f"[verifyChecksum] output length          = {len(output) if output else 0}")
 
                 match = re.search(r"\.tgz\)\s*=\s*(\S+)", output)
+                print(f"[verifyChecksum] regex match obj        = {match}")
+
                 if not match:
+                    print(f"[verifyChecksum] FAILED — regex found nothing, full output below:")
+                    print(output)
                     return {
                         "status":    "failed",
                         "exception": f"Could not parse MD5 from output: {output[:200]}",
@@ -299,11 +316,15 @@ class PreCheck:
                 computed = match.group(1).strip()
                 matched  = computed == expected_checksum.strip()
 
-                logger.info(f"[{self.host}] verifyChecksum — expected:  {expected_checksum}")
-                logger.info(f"[{self.host}] verifyChecksum — computed:  {computed}")
-                logger.info(f"[{self.host}] verifyChecksum — match:     {matched}")
+                print(f"[verifyChecksum] computed               = {computed}")
+                print(f"[verifyChecksum] expected (stripped)    = {expected_checksum.strip()}")
+                print(f"[verifyChecksum] repr(computed)         = {repr(computed)}")
+                print(f"[verifyChecksum] repr(expected)         = {repr(expected_checksum.strip())}")
+                print(f"[verifyChecksum] len(computed)          = {len(computed)}")
+                print(f"[verifyChecksum] len(expected stripped) = {len(expected_checksum.strip())}")
+                print(f"[verifyChecksum] matched                = {matched}")
 
-                return {
+                result = {
                     "status":    "ok" if matched else "failed",
                     "exception": "" if matched else "Checksum mismatch",
                     "expected":  expected_checksum,
@@ -311,8 +332,13 @@ class PreCheck:
                     "match":     matched,
                 }
 
+                print(f"[verifyChecksum] result dict            = {result}")
+                print(f"[verifyChecksum] ── END ────────────────────────────────────")
+                return result
+
         except Exception as e:
-            logger.error(f"[{self.host}] verifyChecksum failed: {e}")
+            print(f"[verifyChecksum] EXCEPTION              = {e}")
+            print(f"[verifyChecksum] exception type         = {type(e)}")
             return {
                 "status":    "failed",
                 "exception": str(e),
