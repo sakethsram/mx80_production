@@ -3,21 +3,20 @@ downloader.py
 ─────────────────────────────────────────────────────────────────────────────
 Location:  ~/Documents/MS1Automation/downloader.py
 
-The reports and precheck_jsons folders are LOCAL (on this same machine).
-No SSH/SCP/Netmiko needed — this script just copies files locally.
-
 What it does:
   1. Lists both sibling folders (reports/ and precheck_jsons/)
-  2. Finds the single latest file across both folders (by filename timestamp)
-  3. Prints what it found — does NOT copy anything yet
+  2. Finds the single latest file across both folders
+  3. Clears the Desktop
+  4. Copies that file to ~/Desktop/
 ─────────────────────────────────────────────────────────────────────────────
 """
 
 import pathlib
+import shutil
 from datetime import datetime
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  PATHS  — relative to this script's own location
+#  PATHS
 # ─────────────────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR          = pathlib.Path(__file__).resolve().parent
@@ -34,7 +33,6 @@ def banner(msg: str) -> None:
 
 
 def list_local_folder(folder: pathlib.Path) -> None:
-    """Print all files in a folder, newest first."""
     banner(f"Local folder: {folder}")
     if not folder.exists():
         print(f"  [WARNING] Folder does not exist: {folder}")
@@ -53,17 +51,28 @@ def list_local_folder(folder: pathlib.Path) -> None:
 
 
 def find_latest_file(*folders: pathlib.Path) -> pathlib.Path:
-    """Return the single most-recently-modified file across all given folders."""
     all_files = []
     for folder in folders:
         if folder.exists():
             all_files.extend(f for f in folder.iterdir() if f.is_file())
-
     if not all_files:
         raise FileNotFoundError("No files found in any of the source folders.")
+    return max(all_files, key=lambda f: f.stat().st_mtime)
 
-    latest = max(all_files, key=lambda f: f.stat().st_mtime)
-    return latest
+
+def clear_desktop(desktop: pathlib.Path) -> None:
+    banner(f"Clearing Desktop: {desktop}")
+    if not desktop.exists():
+        print("  Desktop not found — nothing to clear.")
+        return
+    removed = 0
+    for item in desktop.iterdir():
+        try:
+            shutil.rmtree(item) if item.is_dir() else item.unlink()
+            removed += 1
+        except Exception as e:
+            print(f"  [SKIP] {item.name}: {e}")
+    print(f"  → Removed {removed} item(s).")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -86,9 +95,17 @@ def main() -> None:
     print(f"     Full path   : {latest}")
     print(f"     Modified    : {mtime}")
     print(f"     Size        : {size:,} bytes")
-    print(f"\n  Would copy to  : {LOCAL_DESKTOP / latest.name}")
 
-    banner("Done (print-only mode — nothing was copied)")
+    # STEP 3 — wipe the Desktop
+    clear_desktop(LOCAL_DESKTOP)
+
+    # STEP 4 — copy the file to the Desktop
+    banner("Copying to Desktop …")
+    dest = LOCAL_DESKTOP / latest.name
+    shutil.copy2(latest, dest)
+    print(f"  ✔  Copied to: {dest}")
+
+    banner("All done")
 
 
 if __name__ == "__main__":
