@@ -1,72 +1,305 @@
-C:\Users\la1-SRam\Desktop\reports
-
-2026-03-12 15:50:49,104 - INFO - [10_80_71_55_juniper_mx204] ── PHASE 4 DIFF starting
-2026-03-12 15:50:49,104 - ERROR - [10_80_71_55_juniper_mx204] PHASE 4 DIFF failed — No module named 'diff'
-[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/10_80_71_55_juniper_mx204_2026-03-12_15-50-49.json
-[LOGS] Device log : logging/10_80_71_55_juniper_mx204_*.log
-       Session log: outputs/10_80_71_55_juniper_mx204_*.log
-[REPORT] /home/colt/Documents/MS1Automation/reports/10_80_71_55_juniper_mx204_2026-03-12_15-50-49.html
-2026-03-12 15:50:49,137 - INFO - [10_80_71_55_juniper_mx204] HTML report exported
-2026-03-12 15:50:49,147 - INFO - Logout successful from 10.80.71.55
-2026-03-12 15:50:49,147 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
-2026-03-12 15:50:49,147 - INFO - [THREAD-128652266104512] [10_80_71_55_juniper_mx204] Pipeline finished at 2026-03-12 15:50:49.147896
 [10_80_71_55_juniper_mx204] ===== PIPELINE FINISHED =====
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ vi downloader.py
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$ p downloader.py
+
+────────────────────────────────────────────────────────────────────
+  Local folder: /home/colt/Documents/MS1Automation/reports
+────────────────────────────────────────────────────────────────────
+        10_80_71_55_juniper_mx204_2026-03-12_18-11-37.html    2026-03-12 18:11:37
+        10_80_71_55_juniper_mx204_2026-03-12_15-50-49.html    2026-03-12 15:50:49
+        juniper_mx204_2026-03-12_13-59-49.html                2026-03-12 13:59:49
+        juniper_mx204_2026-03-12_08-47-36.html                2026-03-12 08:47:36
+        juniper_mx204_2026-03-12_00-43-18.html                2026-03-12 00:43:18
+        juniper_mx204_2026-03-11_21-01-14.html                2026-03-11 21:01:14
+        juniper_mx204_2026-03-11_18-08-13.html                2026-03-11 18:08:13
+        juniper_mx204_2026-03-11_17-33-32.html                2026-03-11 17:33:32
+        juniper_mx204_2026-03-11_17-04-12.html                2026-03-11 17:04:12
+        juniper_mx204_2026-03-11_16-52-45.html                2026-03-11 16:52:45
+        juniper_mx204_2026-03-11_16-46-34.html                2026-03-11 16:46:34
+        juniper_mx204_2026-03-11_16-39-10.html                2026-03-11 16:39:10
+        juniper_mx204_2026-03-11_16-30-37.html                2026-03-11 16:30:37
+        juniper_mx204_2026-03-11_16-14-15.html                2026-03-11 16:14:15
+        juniper_mx204_2026-03-11_15-45-02.html                2026-03-11 15:45:02
+        juniper_mx204_2026-03-11_15-38-20.html                2026-03-11 15:38:20
+        juniper_mx204_2026-03-11_15-27-12.html                2026-03-11 15:27:12
+        juniper_mx204_2026-03-11_15-23-06.html                2026-03-11 15:23:07
+        juniper_mx204_2026-03-11_08-47-30.html                2026-03-11 08:47:30
+        juniper_mx204_2026-03-11_06-39-00.html                2026-03-11 06:39:00
+        juniper_mx204_2026-03-11_06-31-51.html                2026-03-11 06:31:51
+        juniper_mx204_2026-03-11_06-24-16.html                2026-03-11 06:24:16
+        juniper_mx204_2026-03-10_10-55-34.html                2026-03-10 10:55:34
+        juniper_mx204_2026-03-10_09-32-14.html                2026-03-10 09:32:14
+        juniper_mx204_2026-03-10_08-15-19.html                2026-03-10 08:15:19
+        juniper_mx204_2026-03-09_21-58-39.html                2026-03-09 21:58:39
+        juniper_mx204_2026-03-09_21-48-57.html                2026-03-09 21:48:57
+        juniper_mx204_2026-03-09_21-26-04.html                2026-03-09 21:26:04
+        juniper_mx204_2026-03-09_21-25-55.html                2026-03-09 21:25:55
+        juniper_mx204_2026-03-09_21-12-49.html                2026-03-09 21:12:49
+        juniper_mx204_2026-03-09_21-10-25.html                2026-03-09 21:10:25
+        juniper_mx204_2026-03-09_21-10-10.html                2026-03-09 21:10:10
+        juniper_mx204_2026-03-09_21-07-31.html                2026-03-09 21:07:31
+        juniper_mx204_2026-03-09_21-04-10.html                2026-03-09 21:04:10
+        juniper_mx204_2026-03-09_20-48-24.html                2026-03-09 20:48:24
+        juniper_mx204_2026-03-09_20-41-21.html                2026-03-09 20:41:21
+        workflow_report_09_03_26_11_11_38.html                2026-03-09 11:11:38
+        workflow_report_09_03_26_11_07_53.html                2026-03-09 11:07:53
+        workflow_report_09_03_26_11_04_22.html                2026-03-09 11:04:22
+        workflow_report_09_03_26_11_01_00.html                2026-03-09 11:01:00
+        workflow_report_09_03_26_10_57_01.html                2026-03-09 10:57:01
+        workflow_report_09_03_26_10_56_32.html                2026-03-09 10:56:32
+        workflow_report_09_03_26_10_56_20.html                2026-03-09 10:56:20
+        workflow_report_09_03_26_10_56_08.html                2026-03-09 10:56:08
+        workflow_report_09_03_26_10_53_32.html                2026-03-09 10:53:32
+        workflow_report_09_03_26_10_47_55.html                2026-03-09 10:47:55
+        workflow_report_09_03_26_10_44_31.html                2026-03-09 10:44:31
+        workflow_report_09_03_26_09_52_37.html                2026-03-09 09:52:37
+
+────────────────────────────────────────────────────────────────────
+  Local folder: /home/colt/Documents/MS1Automation/precheck_jsons
+────────────────────────────────────────────────────────────────────
+        10_80_71_55_juniper_mx204_2026-03-12_18-11-37.json    2026-03-12 18:11:37
+        10_80_71_55_juniper_mx204_2026-03-12_15-50-49.json    2026-03-12 15:50:49
+        juniper_mx204_2026-03-12_13-59-49.json                2026-03-12 13:59:49
+        juniper_mx204_2026-03-12_08-47-36.json                2026-03-12 08:47:36
+        juniper_mx204_2026-03-12_00-43-18.json                2026-03-12 00:43:18
+        juniper_mx204_2026-03-11_21-01-14.json                2026-03-11 21:01:14
+        juniper_mx204_2026-03-11_18-08-13.json                2026-03-11 18:08:13
+        juniper_mx204_2026-03-11_17-33-32.json                2026-03-11 17:33:32
+        juniper_mx204_2026-03-11_17-04-12.json                2026-03-11 17:04:12
+        juniper_mx204_2026-03-11_16-52-45.json                2026-03-11 16:52:45
+        juniper_mx204_2026-03-11_16-46-34.json                2026-03-11 16:46:34
+        juniper_mx204_2026-03-11_16-39-10.json                2026-03-11 16:39:10
+        juniper_mx204_2026-03-11_16-30-37.json                2026-03-11 16:30:37
+        juniper_mx204_2026-03-11_16-14-15.json                2026-03-11 16:14:15
+        juniper_mx204_2026-03-11_15-45-02.json                2026-03-11 15:45:02
+        juniper_mx204_2026-03-11_15-38-20.json                2026-03-11 15:38:20
+        juniper_mx204_2026-03-11_15-27-12.json                2026-03-11 15:27:12
+        juniper_mx204_2026-03-11_15-23-06.json                2026-03-11 15:23:06
+        juniper_mx204_2026-03-11_08-47-30.json                2026-03-11 08:47:30
+        juniper_mx204_2026-03-11_06-39-00.json                2026-03-11 06:39:00
+        juniper_mx204_2026-03-11_06-31-51.json                2026-03-11 06:31:51
+        juniper_mx204_2026-03-11_06-24-16.json                2026-03-11 06:24:16
+        juniper_mx204_2026-03-11_06-20-38.json                2026-03-11 06:20:38
+        juniper_mx204_2026-03-10_10-55-34.json                2026-03-10 10:55:34
+        juniper_mx204_2026-03-10_09-32-14.json                2026-03-10 09:32:14
+        juniper_mx204_2026-03-10_08-15-19.json                2026-03-10 08:15:19
+        juniper_mx204_2026-03-09_21-58-39.json                2026-03-09 21:58:39
+        juniper_mx204_2026-03-09_21-48-57.json                2026-03-09 21:48:57
+        juniper_mx204_2026-03-09_21-26-04.json                2026-03-09 21:26:04
+        juniper_mx204_2026-03-09_21-25-55.json                2026-03-09 21:25:55
+        juniper_mx204_2026-03-09_21-12-49.json                2026-03-09 21:12:49
+        juniper_mx204_2026-03-09_21-10-25.json                2026-03-09 21:10:25
+        juniper_mx204_2026-03-09_21-10-10.json                2026-03-09 21:10:10
+        juniper_mx204_2026-03-09_21-07-31.json                2026-03-09 21:07:31
+        juniper_mx204_2026-03-09_21-04-10.json                2026-03-09 21:04:10
+        juniper_mx204_2026-03-09_20-48-24.json                2026-03-09 20:48:24
+        juniper_mx204_2026-03-09_20-41-21.json                2026-03-09 20:41:21
+        juniper_mx204_2026-03-09_19-47-59.json                2026-03-09 19:47:59
+        juniper_mx204_2026-03-09_19-40-03.json                2026-03-09 19:40:03
+        juniper_mx204_2026-03-09_19-13-56.json                2026-03-09 19:13:56
+        juniper_mx204_2026-03-09_19-11-47.json                2026-03-09 19:11:47
+        juniper_mx204_2026-03-09_18-53-36.json                2026-03-09 18:53:36
+        all_devices_summary_2026-03-09_18-40-10.json          2026-03-09 18:40:10
+        all_devices_summary_2026-03-09_18-31-32.json          2026-03-09 18:31:32
+        all_devices_summary_2026-03-09_18-31-01.json          2026-03-09 18:31:01
+        all_devices_summary_2026-03-09_18-29-43.json          2026-03-09 18:29:43
+        all_devices_summary_2026-03-09_18-29-27.json          2026-03-09 18:29:27
+        all_devices_summary_2026-03-09_18-29-06.json          2026-03-09 18:29:06
+        all_devices_summary_2026-03-09_18-26-54.json          2026-03-09 18:26:54
+        all_devices_summary_2026-03-09_18-13-02.json          2026-03-09 18:13:02
+        all_devices_summary_2026-03-09_18-08-05.json          2026-03-09 18:08:05
+        all_devices_summary_2026-03-09_18-00-39.json          2026-03-09 18:00:39
+        all_devices_summary_2026-03-09_17-55-38.json          2026-03-09 17:55:38
+        all_devices_summary_2026-03-09_17-29-59.json          2026-03-09 17:29:59
+        all_devices_summary_2026-03-09_17-22-26.json          2026-03-09 17:22:26
+        all_devices_summary_2026-03-09_16-57-29.json          2026-03-09 16:57:29
+        all_devices_summary_2026-03-09_16-56-57.json          2026-03-09 16:56:57
+        all_devices_summary_2026-03-09_16-46-43.json          2026-03-09 16:46:43
+        all_devices_summary_2026-03-09_16-38-14.json          2026-03-09 16:34:14
+        all_devices_summary_2026-03-09_16-35-47.json          2026-03-09 16:31:47
+        all_devices_summary_2026-03-09_14-22-38.json          2026-03-09 14:18:38
+        all_devices_summary_2026-03-09_14-15-57.json          2026-03-09 14:11:57
+        all_devices_summary_2026-03-09_14-08-23.json          2026-03-09 14:04:23
+        all_devices_summary_2026-03-09_13-59-44.json          2026-03-09 13:55:44
+        all_devices_summary_2026-03-09_13-49-19.json          2026-03-09 13:45:19
+        all_devices_summary_2026-03-09_13-47-32.json          2026-03-09 13:43:32
+        all_devices_summary_2026-03-09_13-45-56.json          2026-03-09 13:41:56
+        all_devices_summary_2026-03-09_13-44-42.json          2026-03-09 13:40:42
+        all_devices_summary_2026-03-09_13-40-38.json          2026-03-09 13:36:38
+        all_devices_summary_2026-03-09_13-37-20.json          2026-03-09 13:33:20
+        all_devices_summary_2026-03-09_13-36-39.json          2026-03-09 13:32:39
+        all_devices_summary_2026-03-09_13-03-47.json          2026-03-09 12:59:47
+        all_devices_summary_2026-03-09_12-56-29.json          2026-03-09 12:52:29
+        all_devices_summary_2026-03-09_12-52-37.json          2026-03-09 12:48:37
+        all_devices_summary_2026-03-09_12-50-12.json          2026-03-09 12:46:12
+        all_devices_summary_2026-03-09_12-43-52.json          2026-03-09 12:39:52
+        all_devices_summary_2026-03-09_12-36-22.json          2026-03-09 12:32:22
+        all_devices_summary_2026-03-09_12-34-49.json          2026-03-09 12:30:49
+        all_devices_summary_2026-03-09_12-32-48.json          2026-03-09 12:28:48
+        all_devices_summary_2026-03-09_12-29-22.json          2026-03-09 12:25:22
+        all_devices_summary_2026-03-09_12-28-38.json          2026-03-09 12:24:38
+        all_devices_summary_2026-03-09_12-24-00.json          2026-03-09 12:20:00
+        all_devices_summary_2026-03-09_12-23-58.json          2026-03-09 12:19:58
+        all_devices_summary_2026-03-09_12-23-10.json          2026-03-09 12:19:10
+        all_devices_summary_2026-03-09_12-21-25.json          2026-03-09 12:17:25
+        all_devices_summary_2026-03-09_11-48-41.json          2026-03-09 11:44:41
+        all_devices_summary_2026-03-09_11-48-13.json          2026-03-09 11:44:13
+        all_devices_summary_2026-03-09_11-36-32.json          2026-03-09 11:32:32
+        all_devices_summary_2026-03-09_11-17-52.json          2026-03-09 11:13:52
+        all_devices_summary_2026-03-09_11-15-38.json          2026-03-09 11:11:38
+        all_devices_summary_2026-03-09_11-11-53.json          2026-03-09 11:07:53
+        all_devices_summary_2026-03-09_11-08-22.json          2026-03-09 11:04:22
+        all_devices_summary_2026-03-09_11-05-00.json          2026-03-09 11:01:00
+        all_devices_summary_2026-03-09_11-01-01.json          2026-03-09 10:57:01
+        all_devices_summary_2026-03-09_11-00-32.json          2026-03-09 10:56:32
+        all_devices_summary_2026-03-09_11-00-20.json          2026-03-09 10:56:20
+        all_devices_summary_2026-03-09_11-00-08.json          2026-03-09 10:56:08
+        all_devices_summary_2026-03-09_10-57-32.json          2026-03-09 10:53:32
+        all_devices_summary_2026-03-09_10-51-55.json          2026-03-09 10:47:55
+        all_devices_summary_2026-03-09_10-48-31.json          2026-03-09 10:44:31
+        all_devices_summary_2026-03-09_09-56-37.json          2026-03-09 09:52:37
+        all_devices_summary_2026-03-06_16-44-39.json          2026-03-06 16:40:39
+        all_devices_summary_2026-03-06_16-38-05.json          2026-03-06 16:34:05
+        all_devices_summary_2026-03-06_16-35-16.json          2026-03-06 16:31:16
+        all_devices_summary_2026-03-06_16-31-51.json          2026-03-06 16:27:51
+        all_devices_summary_2026-03-06_16-27-22.json          2026-03-06 16:23:22
+        all_devices_summary_2026-03-06_16-23-40.json          2026-03-06 16:19:40
+        all_devices_summary_2026-03-06_16-22-55.json          2026-03-06 16:18:55
+        all_devices_summary_2026-03-06_16-08-56.json          2026-03-06 16:04:56
+        all_devices_summary_2026-03-06_15-41-00.json          2026-03-06 15:37:00
+        all_devices_summary_2026-03-06_15-24-19.json          2026-03-06 15:20:19
+        all_devices_summary_2026-03-06_15-21-11.json          2026-03-06 15:17:11
+        all_devices_summary_2026-03-06_15-11-54.json          2026-03-06 15:07:54
+        all_devices_summary_2026-03-06_14-06-55.json          2026-03-06 14:02:55
+        all_devices_summary_2026-03-06_13-05-29.json          2026-03-06 13:01:29
+        all_devices_summary_2026-03-06_13-03-20.json          2026-03-06 12:59:20
+        all_devices_summary_2026-03-06_13-02-22.json          2026-03-06 12:58:22
+        all_devices_summary_2026-03-06_13-02-07.json          2026-03-06 12:58:07
+        all_devices_summary_2026-03-06_12-59-53.json          2026-03-06 12:55:53
+        all_devices_summary_2026-03-06_12-51-44.json          2026-03-06 12:47:44
+        all_devices_summary_2026-03-06_12-41-25.json          2026-03-06 12:37:25
+        all_devices_summary_2026-03-06_12-27-01.json          2026-03-06 12:23:01
+        all_devices_summary_2026-03-06_12-07-47.json          2026-03-06 12:03:47
+        all_devices_summary_2026-03-06_11-38-15.json          2026-03-06 11:34:15
+        all_devices_summary_2026-03-06_11-21-46.json          2026-03-06 11:17:46
+        all_devices_summary_2026-03-06_11-11-32.json          2026-03-06 11:07:32
+        all_devices_summary_2026-03-06_11-08-44.json          2026-03-06 11:04:44
+        all_devices_summary_2026-03-06_11-06-58.json          2026-03-06 11:02:58
+        all_devices_summary_2026-03-06_10-59-32.json          2026-03-06 10:55:32
+        all_devices_summary_2026-03-06_10-54-47.json          2026-03-06 10:50:47
+        all_devices_summary_2026-03-06_10-51-46.json          2026-03-06 10:47:46
+        all_devices_summary_2026-03-06_10-49-21.json          2026-03-06 10:45:21
+        all_devices_summary_2026-03-06_10-06-10.json          2026-03-06 10:02:10
+        all_devices_summary_2026-03-06_10-03-48.json          2026-03-06 09:59:48
+        all_devices_summary_2026-03-06_09-56-01.json          2026-03-06 09:52:01
+        all_devices_summary_2026-03-06_09-45-23.json          2026-03-06 09:41:23
+        all_devices_summary_2026-03-06_09-42-36.json          2026-03-06 09:38:36
+        all_devices_summary_2026-03-06_09-38-46.json          2026-03-06 09:34:46
+        all_devices_summary_2026-03-05_18-34-50.json          2026-03-05 18:30:50
+        all_devices_summary_2026-03-05_18-29-19.json          2026-03-05 18:25:19
+        all_devices_summary_2026-03-05_18-12-04.json          2026-03-05 18:08:04
+        all_devices_summary_2026-03-05_17-56-46.json          2026-03-05 17:52:46
+        all_devices_summary_2026-03-05_17-31-15.json          2026-03-05 17:27:15
+        all_devices_summary_2026-03-05_13-59-10.json          2026-03-05 13:55:10
+        all_devices_summary_2026-03-05_13-57-53.json          2026-03-05 13:53:53
+        all_devices_summary_2026-03-05_13-51-15.json          2026-03-05 13:47:15
+        all_devices_summary_2026-03-05_13-48-14.json          2026-03-05 13:44:14
+        all_devices_summary_2026-03-05_13-43-15.json          2026-03-05 13:39:15
+        all_devices_summary_2026-03-05_13-39-33.json          2026-03-05 13:35:33
+        all_devices_summary_2026-03-05_13-30-12.json          2026-03-05 13:26:12
+        all_devices_summary_2026-03-05_13-14-33.json          2026-03-05 13:10:33
+        all_devices_summary_2026-03-05_13-04-01.json          2026-03-05 13:00:01
+        all_devices_summary_2026-03-05_12-59-00.json          2026-03-05 12:55:00
+        all_devices_summary_2026-03-05_12-56-08.json          2026-03-05 12:52:08
+        all_devices_summary_2026-03-05_12-53-18.json          2026-03-05 12:49:18
+        all_devices_summary_2026-03-05_12-05-12.json          2026-03-05 12:01:12
+        all_devices_summary_2026-03-05_12-03-04.json          2026-03-05 11:59:04
+        all_devices_summary_2026-03-05_11-42-31.json          2026-03-05 11:38:31
+        all_devices_summary_2026-03-05_11-40-05.json          2026-03-05 11:36:05
+        all_devices_summary_2026-03-05_11-31-18.json          2026-03-05 11:27:18
+        all_devices_summary_2026-03-05_11-30-43.json          2026-03-05 11:26:43
+        all_devices_summary_2026-03-05_11-19-16.json          2026-03-05 11:15:16
+        all_devices_summary_2026-03-05_11-13-35.json          2026-03-05 11:09:35
+        all_devices_summary_2026-03-05_11-08-10.json          2026-03-05 11:04:10
+        all_devices_summary_2026-03-05_10-02-14.json          2026-03-05 09:58:14
+        all_devices_summary_2026-03-05_10-00-53.json          2026-03-05 09:56:53
+        all_devices_summary_2026-03-05_09-56-27.json          2026-03-05 09:52:27
+        all_devices_summary_2026-03-05_09-03-35.json          2026-03-05 08:59:35
+        all_devices_summary_2026-03-05_09-00-45.json          2026-03-05 08:56:45
+        all_devices_summary_2026-03-05_08-57-24.json          2026-03-05 08:53:24
+        all_devices_summary_2026-03-04_18-35-36.json          2026-03-04 18:31:36
+        all_devices_summary_2026-03-04_18-32-15.json          2026-03-04 18:28:15
+        all_devices_summary_2026-03-04_18-21-21.json          2026-03-04 18:21:21
+        all_devices_summary_2026-03-04_18-15-59.json          2026-03-04 18:15:59
+        all_devices_summary_2026-03-04_18-13-46.json          2026-03-04 18:13:46
+        all_devices_summary_2026-03-04_18-10-45.json          2026-03-04 18:06:45
+        all_devices_summary_2026-03-04_17-19-16.json          2026-03-04 17:15:16
+        all_devices_summary_2026-03-04_17-19-01.json          2026-03-04 17:15:01
+        upgrade_report_04_03_26_17_04_07.html                 2026-03-04 17:04:07
+        all_devices_summary_2026-03-04_17-08-07.json          2026-03-04 17:04:07
+        upgrade_report_04_03_26_17_03_52.html                 2026-03-04 17:03:52
+        all_devices_summary_2026-03-04_17-07-52.json          2026-03-04 17:03:52
+        all_devices_summary_2026-03-04_16-44-30.json          2026-03-04 16:40:30
+        all_devices_summary_2026-03-04_16-44-14.json          2026-03-04 16:40:14
+        all_devices_summary_2026-03-04_16-32-59.json          2026-03-04 16:28:59
+        all_devices_summary_2026-03-04_16-32-53.json          2026-03-04 16:28:53
+        all_devices_summary_2026-03-04_16-23-06.json          2026-03-04 16:28:09
+        all_devices_summary_2026-03-04_16-22-55.json          2026-03-04 16:18:55
+        all_devices_summary_2026-03-04_16-18-36.json          2026-03-04 16:14:36
+        all_devices_summary_2026-03-04_16-16-18.json          2026-03-04 16:12:18
+        all_devices_summary_2026-03-04_16-00-57.json          2026-03-04 15:56:57
+        all_devices_summary_2026-03-04_16-00-41.json          2026-03-04 15:56:41
+
+────────────────────────────────────────────────────────────────────
+  Clearing Desktop: /home/colt/Desktop
+────────────────────────────────────────────────────────────────────
+  → Removed 1 item(s).
+
+────────────────────────────────────────────────────────────────────
+  Connecting to 10.80.71.55 …
+────────────────────────────────────────────────────────────────────
+  → Connected  (prompt: lab@EFFPER01>)
+
+────────────────────────────────────────────────────────────────────
+  Scanning remote directories …
+────────────────────────────────────────────────────────────────────
+
+  /home/colt/Documents/MS1Automation/reports
+
+  → Disconnected.
+Traceback (most recent call last):
+  File "/home/colt/Documents/MS1Automation/downloader.py", line 236, in <module>
+    main()
+  File "/home/colt/Documents/MS1Automation/downloader.py", line 217, in main
+    latest_remote = find_single_latest_remote_file(conn)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/colt/Documents/MS1Automation/downloader.py", line 143, in find_single_latest_remote_file
+    raw = conn.send_command(f"ls -tp {remote_dir} 2>&1")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/colt/Documents/MS1Automation/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 111, in wrapper_decorator
+    return_val = func(self, *args, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/colt/Documents/MS1Automation/venv/lib/python3.12/site-packages/netmiko/utilities.py", line 667, in wrapper_decorator
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/colt/Documents/MS1Automation/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 1791, in send_command
+    new_data = self.command_echo_read(cmd=cmd, read_timeout=10)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/colt/Documents/MS1Automation/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 1494, in command_echo_read
+    new_data = self.read_until_pattern(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/colt/Documents/MS1Automation/venv/lib/python3.12/site-packages/netmiko/base_connection.py", line 755, in read_until_pattern
+    raise ReadTimeout(msg)
+netmiko.exceptions.ReadTimeout:
+
+Pattern not detected: 'ls\\ \\-tp\\ /home/colt/Documents/MS1Automation/reports\\ 2>\\&1' in output.
+
+Things you might try to fix this:
+1. Adjust the regex pattern to better identify the terminating string. Note, in
+many situations the pattern is automatically based on the network device's prompt.
+2. Increase the read_timeout to a larger value.
+
+You can also look at the Netmiko session_log or debug log for more information.
 
 
-
-      "exception": ""
-          }
-        }
-      ]
-    },
-    "post": {
-      "show_version": {
-        "status": "ok",
-        "exception": "",
-        "version": "23.4R2-S6.9",
-        "platform": "mx204",
-        "hostname": "EFFPER01"
-      }
-    },
-    "diff": {}
-  }
-}
-
-
-1. make the post checks have 3 things - 1. show  version , execute commadns(post),enable_re_protect_filter
-2. the diff -  i have some code for the diff - this code should be used to find the differneces bw pre and post checks execute commadns - use my code only 
-
-
- {
-            "cmd": "show lldp neighbors | no-more",
-            "output": "Local Interface    Parent Interface    Chassis Id          Port info          System Name\nxe-0/1/3           ae0                 1c:>
-            "json": {
-              "entries": [
-                {
-                  "local_interface": "xe-0/1/3",
-                  "parent_interface": "ae0",
-                  "chassis_id": "1c:9c:8c:f8:6c:40",
-                  "port_info": "513",
-                  "system_name": "EFFNAT01"
-                },
-                {
-                  "local_interface": "xe-0/1/1",
-                  "parent_interface": "-",
-                  "chassis_id": "70:6d:15:74:de:80",
-                  "port_info": "Ethernet1/25",
-                  "system_name": "EFFLLN01-LAB.prizmnet.colt.net"
-                },
-                {
-                  "local_interface": "xe-0/1/4",
-                  "parent_interface": "-",
-                  "chassis_id": "80:71:1f:75:07:c0",
-                  "port_info": "1069",
-                  "system_name": "ESLPER01"
-                },
-                {
-                  "local_interface": "xe-0/1/5",
-                  "parent_interface": "-",
-                  "chassis_id": "80:71:1f:76:ef:c0",
-                  "port_info": "788",
-                  "system_name": "EFFPER02"
-                },
+(venv) colt@colt-UCSC-C220-M7S:~/Documents/MS1Automation$
