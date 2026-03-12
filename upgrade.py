@@ -27,13 +27,14 @@ class Upgrade:
 
     # ─────────────────────────────────────────────────────────────────────────
     # connect
-    # Her PreCheck.connect() ported directly onto the Upgrade class.
-    # Creates a fresh Netmiko session, stores it in device_results['conn']
-    # AND in device_results['upgrade']['connect'], returns the conn object.
     # ─────────────────────────────────────────────────────────────────────────
     def connect(self, logger):
         try:
             logger.info(f"{self.host}: [Upgrade.connect] Connecting to device")
+            logger.debug(
+                f"{self.host}: [Upgrade.connect] device_type={self.device.get('device_type')}, "
+                f"username={self.device.get('username')}"
+            )
 
             session_log_dir = os.path.join(os.getcwd(), "outputs")
             os.makedirs(session_log_dir, exist_ok=True)
@@ -42,6 +43,7 @@ class Upgrade:
                 f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_upgrade.log"
             )
             session_log_path = os.path.join(session_log_dir, session_log_file)
+            logger.debug(f"{self.host}: [Upgrade.connect] Session log → {session_log_path}")
 
             conn = ConnectHandler(
                 device_type = self.device.get("device_type"),
@@ -82,20 +84,17 @@ class Upgrade:
 
     # ─────────────────────────────────────────────────────────────────────────
     # reconnect_and_verify
-    # Her procedure exactly:
-    #   1. disconnect stale session via utilities.disconnect()
-    #   2. retry loop — self.connect() each attempt
-    #   3. send show version to confirm SSH is live
-    #   4. write result into hops[hop_index]['connect']
-    #   5. return (conn, output) on success, raise on exhausted retries
-    # hop_index=-1 (rollback calls) skips hops[] write.
     # ─────────────────────────────────────────────────────────────────────────
     def reconnect_and_verify(self, hop_index: int, logger, max_retries=6, wait_time=20):
+        logger.info(
+            f"{self.host}: [reconnect_and_verify] Starting — "
+            f"hop_index={hop_index}, max_retries={max_retries}, wait_time={wait_time}s"
+        )
         disconnect(self.device_key, logger)          # kill stale session
 
         for attempt in range(max_retries):
             try:
-                logger.info(f"{self.host}: Reconnect attempt {attempt + 1}")
+                logger.info(f"{self.host}: Reconnect attempt {attempt + 1}/{max_retries}")
                 conn = self.connect(logger)
                 if conn:
                     output = conn.send_command("show version")
@@ -111,6 +110,16 @@ class Upgrade:
                             })
 
                         return conn, output
+                    else:
+                        logger.warning(
+                            f"{self.host}: [reconnect_and_verify] Connection up but "
+                            f"'show version' returned empty output on attempt {attempt + 1}"
+                        )
+                else:
+                    logger.warning(
+                        f"{self.host}: [reconnect_and_verify] connect() returned None "
+                        f"on attempt {attempt + 1}"
+                    )
 
             except Exception as e:
                 logger.warning(f"{self.host}: attempt {attempt + 1} failed: {e}")
@@ -125,6 +134,9 @@ class Upgrade:
             time.sleep(wait_time)
 
         # ── exhausted all retries ─────────────────────────────────────────────
+        logger.error(
+            f"{self.host}: [reconnect_and_verify] All {max_retries} reconnect attempts exhausted"
+        )
         if hop_index >= 0:
             device_results[self.device_key]["upgrade"]["hops"][hop_index]["connect"].update({
                 "status":    False,
@@ -137,9 +149,12 @@ class Upgrade:
     # imageUpgrade
     # ─────────────────────────────────────────────────────────────────────────
     def imageUpgrade(self, conn, expected_os, target_image, hop_index, logger):
-        try:
-            logger.info(f"{self.host}: Starting image upgrade process")
+        logger.info(
+            f"{self.host}: [imageUpgrade] Starting — "
+            f"hop_index={hop_index}, target_image={target_image}, expected_os={expected_os}"
+        )
 
+        try:
             if not conn:
                 msg = f"Not connected to device for vendor: {self.vendor}"
                 logger.error(msg)
@@ -153,6 +168,10 @@ class Upgrade:
             curr_version = device_results[self.device_key]["device_info"]["version"]
             print(f"[imageUpgrade] current version: {curr_version}")
             logger.info(f"{self.host}: current version -> {curr_version}")
+            logger.debug(
+                f"{self.host}: [imageUpgrade] Version check — "
+                f"curr={curr_version}, expected={expected_os}"
+            )
 
             # hop_index == -1 means this is a rollback call — never write into hops[]
             def _write_hop(update: dict):
@@ -168,6 +187,7 @@ class Upgrade:
 
             if self.vendor == "juniper":
                 cmd    = f"request vmhost software add /var/tmp/{target_image} no-validate"
+                logger.debug(f"{self.host}: [imageUpgrade] Sending: {cmd} (read_timeout=900s)")
                 output = conn.send_command(cmd, read_timeout=900)
                 print(f"[imageUpgrade] install output: {output}")
 
@@ -183,6 +203,7 @@ class Upgrade:
                     read_timeout=900
                 )
 
+            logger.info(f"{self.host}: [imageUpgrade] Install completed, initiating reboot")
             reboot_system = self.systemReboot(conn, logger)
             logger.info(f"{self.host}: Waiting for reboot after upgrade")
 
@@ -198,6 +219,9 @@ class Upgrade:
 
                 if version_pattern:
                     new_version = version_pattern.group("version")
+                    logger.debug(
+                        f"{self.host}: [imageUpgrade] Version regex matched — new_version={new_version}"
+                    )
                 else:
                     msg = "No version found in show version output after reboot"
                     logger.warning(msg)
@@ -222,6 +246,12 @@ class Upgrade:
                     _write_hop({"status": "failed", "exception": msg, "md5_match": False})
                     return conn, False
 
+            else:
+                logger.error(
+                    f"{self.host}: [imageUpgrade] systemReboot() returned False — "
+                    f"device did not come back for image {target_image}"
+                )
+
         except Exception as e:
             msg = f"{self.host}: Image upgrade failed: {e}"
             logger.exception(msg)
@@ -232,6 +262,9 @@ class Upgrade:
     # pingDevice
     # ─────────────────────────────────────────────────────────────────────────
     def pingDevice(self, logger, packet_size=5, count=2, timeout=2):
+        logger.debug(
+            f"{self.host}: [pingDevice] count={count}, packet_size={packet_size}, timeout={timeout}s"
+        )
         try:
             command = [
                 "ping",
@@ -245,7 +278,12 @@ class Upgrade:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
-            return result.returncode == 0
+            reachable = result.returncode == 0
+            if reachable:
+                logger.info(f"{self.host}: [pingDevice] Host is reachable (rc={result.returncode})")
+            else:
+                logger.warning(f"{self.host}: [pingDevice] Host did not respond (rc={result.returncode})")
+            return reachable
         except Exception as e:
             logger.error(f"{self.host}: Ping failed with error: {e}")
             logger.info(f"{self.host}: Host is not reachable")
@@ -255,9 +293,9 @@ class Upgrade:
     # systemReboot
     # ─────────────────────────────────────────────────────────────────────────
     def systemReboot(self, conn, logger):
-        try:
-            logger.info(f"{self.host}: Rebooting the system...")
+        logger.info(f"{self.host}: [systemReboot] Initiating reboot — vendor={self.vendor}")
 
+        try:
             if self.vendor == "juniper":
                 command = ["request vmhost reboot", "yes", "\n"]
             elif self.vendor == "cisco":
@@ -267,7 +305,7 @@ class Upgrade:
                 logger.error(msg)
                 raise ValueError(msg)
 
-            logger.info(f"{self.host}: Running {command}...")
+            logger.info(f"{self.host}: Rebooting the system...")
             print(f"[systemReboot] Running {command}...")
             output = conn.send_multiline_timing(command)
             print(f"[systemReboot] reboot output: {output}")
@@ -291,23 +329,26 @@ class Upgrade:
 
 # ─────────────────────────────────────────────────────────────────────────────
 # run_upgrade
-# Module-level function. Lives in upgrade.py.
-# Mirrors Charishma's run_upgrade() but writes results into device_results.
 # ─────────────────────────────────────────────────────────────────────────────
 def run_upgrade(conn, device: dict, device_key: str, accepted_vendors: list, logger):
-    host         = device.get("host")
-    vendor       = device.get("vendor")
-    model        = str(device.get("model")).lower().replace("-", "")
+    host          = device.get("host")
+    vendor        = device.get("vendor")
+    model         = str(device.get("model")).lower().replace("-", "")
     image_details = device.get("imageDetails", [])
-    curr_image   = device.get("curr_image")
-    curr_os      = device.get("curr_os")
+    curr_image    = device.get("curr_image")
+    curr_os       = device.get("curr_os")
 
     tid = threading.get_ident()
     logger.info(f"[THREAD-{tid}] [{device_key}] Upgrade started at {datetime.now()}")
+    logger.info(
+        f"[{device_key}] run_upgrade — host={host}, vendor={vendor}, model={model}, "
+        f"curr_os={curr_os}, total_hops={len(image_details)}"
+    )
     print(f"[{device_key}] Running Upgrade...")
 
     # Seed rollback chain with the original image/OS from YAML
     rollback_image = [{"image": curr_image, "expected_os": curr_os}]
+    logger.debug(f"[{device_key}] Rollback chain seeded — image={curr_image}, os={curr_os}")
 
     device_results[device_key]["upgrade"]["status"] = "in_progress"
 
@@ -318,6 +359,11 @@ def run_upgrade(conn, device: dict, device_key: str, accepted_vendors: list, log
             image       = details.get("image")
             expected_os = details.get("expected_os")
             checksum    = details.get("checksum")
+
+            logger.info(
+                f"[{device_key}] ── Hop [{i}/{len(image_details)-1}] ── "
+                f"image={image}, expected_os={expected_os}"
+            )
 
             if not image or not expected_os or not checksum:
                 msg = (
@@ -333,6 +379,7 @@ def run_upgrade(conn, device: dict, device_key: str, accepted_vendors: list, log
             print(f"[{device_key}] Hop [{i}] upgrading with {image}")
 
             conn, is_upgrade = upgrade.imageUpgrade(conn, expected_os, image, i, logger)
+            logger.debug(f"[{device_key}] Hop [{i}] imageUpgrade returned is_upgrade={is_upgrade}")
 
             if not is_upgrade:
                 msg = f"Upgrade hop [{i}] failed for {image}"
@@ -341,12 +388,18 @@ def run_upgrade(conn, device: dict, device_key: str, accepted_vendors: list, log
                 device_results[device_key]["upgrade"]["exception"] = msg
 
                 logger.info(f"[{device_key}] Triggering rollback...")
+                logger.debug(
+                    f"[{device_key}] Rollback chain at failure: "
+                    + str([e.get("image") for e in rollback_image])
+                )
                 print(f"[{device_key}] Upgrade failed — starting rollback")
 
                 conn, rollback_ok = run_rollback(
                     conn, device, device_key, vendor, rollback_image,
                     accepted_vendors, logger
                 )
+                logger.info(f"[{device_key}] run_rollback completed — rollback_ok={rollback_ok}")
+
                 if not rollback_ok:
                     msg = f"Rollback also failed for {device_key} — stopping device"
                     logger.error(f"[{device_key}] {msg}")
@@ -377,15 +430,17 @@ def run_upgrade(conn, device: dict, device_key: str, accepted_vendors: list, log
 
 # ─────────────────────────────────────────────────────────────────────────────
 # run_rollback
-# Module-level function. Lives in upgrade.py.
-# Mirrors Charishma's run_rollback() with same reversed-chain logic.
 # ─────────────────────────────────────────────────────────────────────────────
 def run_rollback(conn, device: dict, device_key: str, vendor: str,
                  rollback_image: list, accepted_vendors: list, logger):
-    host       = device.get("host")
+    host        = device.get("host")
     original_os = device.get("curr_os")
 
     logger.info(f"[{device_key}] Rollback started at {datetime.now()}")
+    logger.info(
+        f"[{device_key}] run_rollback — host={host}, vendor={vendor}, "
+        f"original_os={original_os}, chain_length={len(rollback_image)}"
+    )
     print(f"[{device_key}] Running Rollback...")
 
     upgrade = Upgrade(device_key, device, accepted_vendors)
@@ -402,9 +457,14 @@ def run_rollback(conn, device: dict, device_key: str, vendor: str,
             log_lines.append("=====================================\n")
             logger.info("\n".join(log_lines))
 
-            for details in reversed_list:
+            for step_idx, details in enumerate(reversed_list):
                 rollback_img = details.get("image")
                 expected_os  = details.get("expected_os")
+
+                logger.info(
+                    f"[{device_key}] Rollback step [{step_idx+1}/{len(reversed_list)}] — "
+                    f"image={rollback_img}, expected_os={expected_os}"
+                )
 
                 if not rollback_img or not expected_os:
                     msg = "Rollback entry missing image or expected_os — aborting rollback"
@@ -415,12 +475,14 @@ def run_rollback(conn, device: dict, device_key: str, vendor: str,
                 logger.info(f"[{device_key}] {step_msg}")
                 print(f"[{device_key}] {step_msg}")
 
-                # hop_index=-1 means rollback writes nothing into hops[] — we don't
-                # want to corrupt the upgrade hops with rollback attempts.
-                # We pass a sentinel index and guard against it in imageUpgrade.
                 conn, is_rollback = upgrade.imageUpgrade(
                     conn, expected_os, rollback_img, -1, logger
                 )
+                logger.debug(
+                    f"[{device_key}] Rollback step [{step_idx+1}] imageUpgrade returned "
+                    f"is_rollback={is_rollback}"
+                )
+
                 if not is_rollback:
                     msg = f"Rollback step failed for {rollback_img}"
                     logger.error(f"[{device_key}] {msg}")

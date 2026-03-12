@@ -19,7 +19,7 @@ devices:
         expected_os: 23.4R2-S5.6
         checksum: 3e97c983380ac3a1b28e143219c8960a
       - image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
-        expected_os: 22.4R8.96
+        expected_os: 23.4R2-S6.9
         checksum: dec5349a0d238dad686dc01f468a0bbe
     #dec5349a0d238dad686dc01f468a0bbe
     image_path: "/home/automation2/software/juniper/junos/MX204"
