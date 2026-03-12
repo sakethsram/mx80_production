@@ -115,26 +115,16 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
             "initial_os": initial_os,
             "target_os":  target_os,
             "exception":  "",
-            # ── top-level upgrade connect slot ────────────────────────────────
-            # Written by Upgrade.connect() on every fresh connection attempt
-            # during the upgrade phase.  The pre-check phase uses pre.connect
-            # above; this slot covers the upgrade-phase connections only.
             "connect": {
                 "status":    "not_started",
                 "exception": "",
             },
-            # ── per-hop results ───────────────────────────────────────────────
-            # One entry per imageDetails item.
-            # Written by imageUpgrade() and reconnect_and_verify().
             "hops": [
                 {
                     "image":     img.get("image", ""),
                     "status":    "not_started",
                     "exception": "",
                     "md5_match": False,
-                    # Written by Upgrade.reconnect_and_verify() after each
-                    # systemReboot() — records whether SSH came back,
-                    # which attempt succeeded, and any exception.
                     "connect": {
                         "status":    "not_started",
                         "attempt":   0,
@@ -145,21 +135,22 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
             ],
         },
         "post": {
-            "connect": {
-                "status":    "not_started",
-                "exception": "",
-            },
-            "execute_show_commands": {
-                "status":    "not_started",
-                "exception": "",
-                "commands":  [],
-            },
             "show_version": {
                 "status":    "not_started",
                 "exception": "",
                 "version":   "",
                 "platform":  "",
                 "hostname":  "",
+            },
+            "execute_show_commands": {
+                "status":    "not_started",
+                "exception": "",
+                "commands":  [],
+            },
+            # ── stub — set aside for future implementation ────────────────────
+            "enable_re_protect_filter": {
+                "status":    "",
+                "exception": "",
             },
         },
         "diff": {},
@@ -168,16 +159,6 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
 
 # ─────────────────────────────────────────────────────────────────────────────
 # get_show_version
-#
-# Unified pre/post show version handler.
-#
-# check_type = "pre"  → writes into device_results[key]["pre"]["show_version"]
-#                        also seeds device_info.version / hostname / model
-# check_type = "post" → writes into device_results[key]["post"]["show_version"]
-#                        overwrites device_info.version with post-upgrade value
-#                        (model is intentionally NOT updated on post — hardware
-#                        doesn't change, and imageUpgrade() uses device_info
-#                        to verify the hop so we don't want to clobber it)
 # ─────────────────────────────────────────────────────────────────────────────
 def get_show_version(device_key: str, conn, vendor: str, logger,
                      check_type: str = "pre") -> bool:
@@ -218,7 +199,6 @@ def get_show_version(device_key: str, conn, vendor: str, logger,
             if m:
                 hostname = m.group(1).strip()
 
-        # ── Write into the correct phase slot ─────────────────────────────────
         device_results[device_key][phase_key]["show_version"] = {
             "status":    "ok",
             "exception": "",
@@ -227,10 +207,6 @@ def get_show_version(device_key: str, conn, vendor: str, logger,
             "hostname":  hostname,
         }
 
-        # ── Keep device_info current ──────────────────────────────────────────
-        # Both pre and post update version + hostname so the rest of the
-        # pipeline always sees the latest values.
-        # Model is only written on "pre" — hardware doesn't change post-upgrade.
         if hostname:
             device_results[device_key]["device_info"]["hostname"] = hostname
         if version:
@@ -551,7 +527,6 @@ def export_device_summary(device_key: str):
         f"       Session log: outputs/{ip_clean}_{vendor}_{model}_*.log"
     )
 
-    # ── HTML report ───────────────────────────────────────────────────────────
     reports_dir = os.path.join(os.getcwd(), "reports")
     os.makedirs(reports_dir, exist_ok=True)
     generated   = generate_html_report(all_devices_summary, output_dir=reports_dir)
@@ -582,9 +557,6 @@ def merge_thread_result(device_key: str, result: dict):
 
 # ─────────────────────────────────────────────────────────────────────────────
 # connect / disconnect
-# Used for the PRE-CHECK phase connection.
-# Upgrade phase uses Upgrade.connect() / Upgrade.reconnect_and_verify().
-# Post-check phase reuses the conn returned by run_upgrade().
 # ─────────────────────────────────────────────────────────────────────────────
 def connect(device_key: str, dev: dict, logger):
     host     = dev["host"]
