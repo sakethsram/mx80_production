@@ -11,3 +11,28 @@ C:\Users\la1-SRam\Desktop\reports
 2026-03-12 15:50:49,147 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
 2026-03-12 15:50:49,147 - INFO - [THREAD-128652266104512] [10_80_71_55_juniper_mx204] Pipeline finished at 2026-03-12 15:50:49.147896
 [10_80_71_55_juniper_mx204] ===== PIPELINE FINISHED =====
+
+
+
+      "exception": ""
+          }
+        }
+      ]
+    },
+    "post": {
+      "show_version": {
+        "status": "ok",
+        "exception": "",
+        "version": "23.4R2-S6.9",
+        "platform": "mx204",
+        "hostname": "EFFPER01"
+      }
+    },
+    "diff": {}
+  }
+}
+
+
+1. make the post checks have 3 things - 1. show  version , execute commadns(post),enable_re_protect_filter
+2. the diff -  i have some code for the diff - this code should be used to find the differneces bw pre and post checks execute commadns - use my code only 
+
