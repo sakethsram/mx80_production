@@ -6,8 +6,7 @@ Location:  ~/Documents/MS1Automation/downloader.py
 What it does:
   1. Lists both sibling folders (reports/ and precheck_jsons/)
   2. Finds the single latest file across both folders
-  3. Clears the Desktop
-  4. Copies that file to ~/Desktop/
+  3. Copies that file to ~/Desktop/
 ─────────────────────────────────────────────────────────────────────────────
 """
 
@@ -59,20 +58,6 @@ def find_latest_file(*folders: pathlib.Path) -> pathlib.Path:
         raise FileNotFoundError("No files found in any of the source folders.")
     return max(all_files, key=lambda f: f.stat().st_mtime)
 
-
-def clear_desktop(desktop: pathlib.Path) -> None:
-    banner(f"Clearing Desktop: {desktop}")
-    if not desktop.exists():
-        print("  Desktop not found — nothing to clear.")
-        return
-    removed = 0
-    for item in desktop.iterdir():
-        try:
-            shutil.rmtree(item) if item.is_dir() else item.unlink()
-            removed += 1
-        except Exception as e:
-            print(f"  [SKIP] {item.name}: {e}")
-    print(f"  → Removed {removed} item(s).")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
