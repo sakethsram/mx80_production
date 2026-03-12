@@ -1,1 +1,13 @@
 C:\Users\la1-SRam\Desktop\reports
+
+2026-03-12 15:50:49,104 - INFO - [10_80_71_55_juniper_mx204] ── PHASE 4 DIFF starting
+2026-03-12 15:50:49,104 - ERROR - [10_80_71_55_juniper_mx204] PHASE 4 DIFF failed — No module named 'diff'
+[EXPORT] Summary JSON saved -> /home/colt/Documents/MS1Automation/precheck_jsons/10_80_71_55_juniper_mx204_2026-03-12_15-50-49.json
+[LOGS] Device log : logging/10_80_71_55_juniper_mx204_*.log
+       Session log: outputs/10_80_71_55_juniper_mx204_*.log
+[REPORT] /home/colt/Documents/MS1Automation/reports/10_80_71_55_juniper_mx204_2026-03-12_15-50-49.html
+2026-03-12 15:50:49,137 - INFO - [10_80_71_55_juniper_mx204] HTML report exported
+2026-03-12 15:50:49,147 - INFO - Logout successful from 10.80.71.55
+2026-03-12 15:50:49,147 - INFO - [10_80_71_55_juniper_mx204] Disconnected from 10.80.71.55
+2026-03-12 15:50:49,147 - INFO - [THREAD-128652266104512] [10_80_71_55_juniper_mx204] Pipeline finished at 2026-03-12 15:50:49.147896
+[10_80_71_55_juniper_mx204] ===== PIPELINE FINISHED =====
