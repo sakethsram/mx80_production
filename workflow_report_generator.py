@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
 workflow_report_generator.py
-Pre + Upgrade driven by actual JSON data.
-Post + Report stubbed (pending real data).
+Pre + Upgrade + Post driven by actual JSON data.
 """
 
 from datetime import datetime
@@ -25,8 +24,8 @@ PRE_TASK_TITLES = {
 
 POST_TASK_TITLES = {
     "connect":               "Connect to Device",
-    "execute_show_commands": "Collect Show Outputs",
-    "show_version":          "Show Version",
+    "show_version":          "Show Version (Post-Upgrade)",
+    "execute_show_commands": "Collect Show Outputs (Post-Upgrade)",
 }
 
 PHASE_META = {
@@ -124,7 +123,6 @@ def _cmd_drawer(cmds: list, prefix: str, phase: str) -> str:
 # ─── verify_checksum list ─────────────────────────────────────────────────────
 
 def _checksum_drawer(entries: list, prefix: str):
-    """Returns (toggle_html, drawer_html). entries is the verify_checksum list."""
     if not entries:
         return "", ""
     rows = []
@@ -178,12 +176,12 @@ def _hops_rows(hops: list) -> str:
                     '<span class="badge b-ns">—</span>')
         rows.append(
             f'<tr class="task-row{"" if status in ("ok","not_started","") else " failed-row"}">'
-            f'<td class="subtask-cell mono">{i+1}</td>'
-            f'<td class="subtask-cell mono" style="word-break:break-all;font-size:.67rem;">{image}</td>'
-            f'<td class="status-cell">{_badge(status)}</td>'
-            f'<td class="status-cell">{md5_html}</td>'
-            f'<td class="status-cell">{conn_html}</td>'
-            f'<td class="remark-cell">{"<span class=remark-err>" + exc + "</span>" if exc else "<span class=remark-na>—</span>"}</td>'
+            f'<td class="hop-num-cell">{i+1}</td>'
+            f'<td class="hop-image-cell">{image}</td>'
+            f'<td class="hop-status-cell">{_badge(status)}</td>'
+            f'<td class="hop-status-cell">{md5_html}</td>'
+            f'<td class="hop-status-cell">{conn_html}</td>'
+            f'<td class="hop-remark-cell">{"<span class=remark-err>" + exc + "</span>" if exc else "<span class=remark-na>—</span>"}</td>'
             f'</tr>'
         )
     return "\n".join(rows)
@@ -202,7 +200,7 @@ def _pre_rows(tasks: dict, prefix: str) -> tuple:
 
     for name, data in items:
 
-        # ── verify_checksum is a LIST ────────────────────────────────────
+        # ── verify_checksum is a LIST ─────────────────────────────────────────
         if name == "verify_checksum" and isinstance(data, list):
             if not data:
                 agg = "not_started"
@@ -235,7 +233,7 @@ def _pre_rows(tasks: dict, prefix: str) -> tuple:
             )
             continue
 
-        # ── standard dict task ───────────────────────────────────────────
+        # ── standard dict task ────────────────────────────────────────────────
         status   = _norm_status(data.get("status", ""))
         is_blank = status in ("", "not_started")
         exc      = data.get("exception", "") or ""
@@ -343,7 +341,6 @@ def _upgrade_rows(upg: dict, prefix: str) -> tuple:
     upg_exc    = _esc(upg.get("exception",  "") or "")
     hops       = upg.get("hops", [])
 
-    # top-level upgrade connect
     conn_raw  = upg.get("connect") if isinstance(upg.get("connect"), dict) else {}
     conn_st   = _norm_status(conn_raw.get("status", "not_started")) if conn_raw else "not_started"
     conn_exc  = _esc(conn_raw.get("exception", "") or "") if conn_raw else ""
@@ -362,13 +359,20 @@ def _upgrade_rows(upg: dict, prefix: str) -> tuple:
     if hops:
         hid        = f"hops-{prefix}"
         hop_toggle = f'<button class="mini-btn" onclick="tgl(\'{hid}\')">Hops ({len(hops)})</button>'
-        hop_drawer = (f'<div class="cmd-drawer" hidden id="{hid}">'
-                      f'<table class="hop-table"><thead><tr>'
-                      f'<th>#</th><th>Image</th><th>Status</th>'
-                      f'<th>MD5</th><th>Reconnect</th><th>Remark</th>'
-                      f'</tr></thead><tbody>{_hops_rows(hops)}</tbody></table></div>')
+        hop_drawer = (
+            f'<div class="cmd-drawer" hidden id="{hid}">'
+            f'<div class="hop-table-wrap">'
+            f'<table class="hop-table"><thead><tr>'
+            f'<th class="hop-th-num">#</th>'
+            f'<th class="hop-th-image">Image</th>'
+            f'<th class="hop-th-status">Status</th>'
+            f'<th class="hop-th-status">MD5</th>'
+            f'<th class="hop-th-status">Reconnect</th>'
+            f'<th class="hop-th-remark">Remark</th>'
+            f'</tr></thead><tbody>{_hops_rows(hops)}</tbody></table>'
+            f'</div></div>'
+        )
 
-    # 4 sub-rows: Overall | Connect | OS Path | Hops
     rows = [
         (f'<tr class="task-row{"" if upg_status in ("ok","not_started","") else " failed-row"}">'
          f'<td class="phase-cell" rowspan="4" style="border-left:3px solid {color};">'
@@ -407,44 +411,275 @@ def _upgrade_rows(upg: dict, prefix: str) -> tuple:
     return "\n".join(rows), total, success, failed
 
 
-# ─── post + report stubs ──────────────────────────────────────────────────────
+# ─── post rows (real data) ────────────────────────────────────────────────────
 
-def _post_stub(prefix: str) -> str:
-    color  = PHASE_META["post"]["color"]
-    tasks  = list(POST_TASK_TITLES.items())
+def _post_rows(post: dict, prefix: str) -> tuple:
+    """
+    Renders real post-check data from device_results[key]["post"].
+    Falls back to stub rows for any task that hasn't run yet.
+    """
+    color = PHASE_META["post"]["color"]
+    label = PHASE_META["post"]["label"]
+
+    task_order = ["connect", "show_version", "execute_show_commands"]
+    count  = len(task_order)
     rows   = []
-    for i, (_, display) in enumerate(tasks):
-        pc = (f'<td class="phase-cell" rowspan="{len(tasks)}" '
+    total  = success = failed = 0
+    first  = True
+
+    for name in task_order:
+        display = POST_TASK_TITLES.get(name, name.replace("_", " ").title())
+        data    = post.get(name, {})
+
+        # Empty post dict or task not yet written → stub row
+        if not data:
+            pc = (f'<td class="phase-cell" rowspan="{count}" '
+                  f'style="border-left:3px solid {color};">'
+                  f'<span class="phase-lbl" style="color:{color};">{label}</span></td>'
+                  ) if first else ""
+            first = False
+            rows.append(
+                f'<tr class="task-row">{pc}'
+                f'<td class="subtask-cell"><span class="mono">{_esc(display)}</span></td>'
+                f'<td class="status-cell"><span class="badge b-ns">—</span></td>'
+                f'<td class="remark-cell"><span class="remark-na">—</span></td>'
+                f'</tr>'
+            )
+            continue
+
+        status   = _norm_status(data.get("status", ""))
+        is_blank = status in ("", "not_started")
+        exc      = data.get("exception", "") or ""
+
+        total += 1
+        if status == "ok":   success += 1
+        elif not is_blank:   failed  += 1
+
+        pc = (f'<td class="phase-cell" rowspan="{count}" '
               f'style="border-left:3px solid {color};">'
-              f'<span class="phase-lbl" style="color:{color};">Post-Checks</span></td>'
-              ) if i == 0 else ""
+              f'<span class="phase-lbl" style="color:{color};">{label}</span></td>'
+              ) if first else ""
+        first = False
+
+        toggle = drawer = ""
+
+        # ── show_version: display pre vs post side-by-side in remark ──────────
+        if name == "show_version":
+            ver  = data.get("version","")
+            plat = data.get("platform","")
+            hn   = data.get("hostname","")
+            parts = []
+            if hn:   parts.append(f'<span class="mono" style="color:var(--accent);">{_esc(hn)}</span>')
+            if plat: parts.append(f'<span class="mono" style="color:var(--muted2);">{_esc(plat)}</span>')
+            if ver:  parts.append(f'<span class="mono" style="color:#86efac;">v{_esc(ver)}</span>')
+            if exc:  parts.append(f'<span class="remark-err">{_esc(exc)}</span>')
+            remark = " &nbsp;·&nbsp; ".join(parts) or '<span class="remark-na">—</span>'
+
+        # ── execute_show_commands: button + drawer ─────────────────────────────
+        elif name == "execute_show_commands":
+            cmds   = data.get("commands", [])
+            bid    = f"cmds-{prefix}-post"
+            toggle = f'<button class="mini-btn" onclick="tgl(\'{bid}\')">Outputs ({len(cmds)})</button>'
+            drawer = _cmd_drawer(cmds, prefix, "post")
+            remark = _remark(exc)
+
+        # ── connect ───────────────────────────────────────────────────────────
+        elif name == "connect":
+            remark = _remark(exc)
+
+        else:
+            remark = _remark(exc)
+
+        row_cls = "" if (status == "ok" or is_blank) else " failed-row"
         rows.append(
-            f'<tr class="task-row">{pc}'
-            f'<td class="subtask-cell"><span class="mono">{_esc(display)}</span></td>'
-            f'<td class="status-cell"><span class="badge b-ns">—</span></td>'
+            f'<tr class="task-row{row_cls}">'
+            f'{pc}'
+            f'<td class="subtask-cell"><span class="mono">{_esc(display)}</span>'
+            f' {toggle}{drawer}</td>'
+            f'<td class="status-cell">{_badge(status)}</td>'
+            f'<td class="remark-cell">{remark}</td>'
+            f'</tr>'
+        )
+
+    rows.append('<tr class="phase-sep"><td colspan="4"></td></tr>')
+    return "\n".join(rows), total, success, failed
+
+
+# ─── report / diff phase ──────────────────────────────────────────────────────
+#
+# Renders the Phase 4 comparison report inline in the table.
+# For every command that has changes it shows a side-by-side diff where:
+#   • unchanged lines are rendered normally
+#   • removed tokens (pre only)  are highlighted in red
+#   • added   tokens (post only) are highlighted in green
+#   • lines present on one side but not the other show "N/A" in the missing col
+#
+# The diff data comes from device_results[key]["diff"] which is populated by
+# run_diff_phase() in main.py using diff_devices() from diff.py.
+# ──────────────────────────────────────────────────────────────────────────────
+
+import difflib as _difflib
+
+
+def _inline_diff_html(pre_out: str, post_out: str) -> str:
+    """
+    Given two full command outputs (multi-line strings), returns an HTML
+    side-by-side table where changed tokens are highlighted.
+    Unchanged lines are shown with no markup.
+    """
+    pre_lines  = pre_out.splitlines() if pre_out else []
+    post_lines = post_out.splitlines() if post_out else []
+    matcher    = _difflib.SequenceMatcher(None, pre_lines, post_lines, autojunk=False)
+
+    pre_col  = []   # list of HTML strings, one per display row
+    post_col = []
+
+    def _mark_line_diff(a: str, b: str):
+        """Return (html_a, html_b) with intra-line token highlights."""
+        sm     = _difflib.SequenceMatcher(None, a, b, autojunk=False)
+        ha, hb = [], []
+        for tag, i1, i2, j1, j2 in sm.get_opcodes():
+            if tag == "equal":
+                ha.append(_esc(a[i1:i2]))
+                hb.append(_esc(b[j1:j2]))
+            elif tag == "replace":
+                ha.append(f'<mark class="diff-del">{_esc(a[i1:i2])}</mark>')
+                hb.append(f'<mark class="diff-ins">{_esc(b[j1:j2])}</mark>')
+            elif tag == "delete":
+                ha.append(f'<mark class="diff-del">{_esc(a[i1:i2])}</mark>')
+            elif tag == "insert":
+                hb.append(f'<mark class="diff-ins">{_esc(b[j1:j2])}</mark>')
+        return "".join(ha), "".join(hb)
+
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            for ln in pre_lines[i1:i2]:
+                pre_col.append(f'<span class="diff-eq">{_esc(ln)}</span>')
+                post_col.append(f'<span class="diff-eq">{_esc(ln)}</span>')
+
+        elif tag == "replace":
+            a_blk = pre_lines[i1:i2]
+            b_blk = post_lines[j1:j2]
+            pairs = min(len(a_blk), len(b_blk))
+            for k in range(pairs):
+                ha, hb = _mark_line_diff(a_blk[k], b_blk[k])
+                pre_col.append(f'<span class="diff-line-del">{ha}</span>')
+                post_col.append(f'<span class="diff-line-ins">{hb}</span>')
+            for k in range(pairs, len(a_blk)):
+                pre_col.append(f'<span class="diff-line-del">{_esc(a_blk[k])}</span>')
+                post_col.append(f'<span class="diff-na">N/A</span>')
+            for k in range(pairs, len(b_blk)):
+                pre_col.append(f'<span class="diff-na">N/A</span>')
+                post_col.append(f'<span class="diff-line-ins">{_esc(b_blk[k])}</span>')
+
+        elif tag == "delete":
+            for ln in pre_lines[i1:i2]:
+                pre_col.append(f'<span class="diff-line-del">{_esc(ln)}</span>')
+                post_col.append(f'<span class="diff-na">N/A</span>')
+
+        elif tag == "insert":
+            for ln in post_lines[j1:j2]:
+                pre_col.append(f'<span class="diff-na">N/A</span>')
+                post_col.append(f'<span class="diff-line-ins">{_esc(ln)}</span>')
+
+    pre_html  = "\n".join(pre_col)  or "<span class='diff-na'>(empty)</span>"
+    post_html = "\n".join(post_col) or "<span class='diff-na'>(empty)</span>"
+    return pre_html, post_html
+
+
+def _report_rows(diff: dict, device_data: dict, prefix: str) -> str:
+    """
+    Renders Phase 4 rows.
+    diff = device_results[key]["diff"]  (may be empty if phase hasn't run)
+    """
+    color = PHASE_META["report"]["color"]
+
+    # ── No diff data yet ──────────────────────────────────────────────────────
+    if not diff:
+        rows = [
+            (f'<tr class="task-row">'
+             f'<td class="phase-cell" rowspan="2" style="border-left:3px solid {color};">'
+             f'<span class="phase-lbl" style="color:{color};">Report</span></td>'
+             f'<td class="subtask-cell"><span class="mono">Diff Status</span></td>'
+             f'<td class="status-cell"><span class="badge b-ns">Pending</span></td>'
+             f'<td class="remark-cell"><span class="remark-na">—</span></td>'
+             f'</tr>'),
+            (f'<tr class="task-row">'
+             f'<td class="subtask-cell" colspan="3">'
+             f'<div class="diff-none">Diff will be available after post-checks complete.</div>'
+             f'</td></tr>'),
+            '<tr class="phase-sep"><td colspan="4"></td></tr>',
+        ]
+        return "\n".join(rows)
+
+    # ── Pull full command outputs from pre/post for inline rendering ──────────
+    pre_cmds  = device_data.get("pre",  {}).get("execute_show_commands", {}).get("commands", [])
+    post_cmds = device_data.get("post", {}).get("execute_show_commands", {}).get("commands", [])
+    pre_map   = {c["cmd"]: c.get("output", "") for c in pre_cmds}
+    post_map  = {c["cmd"]: c.get("output", "") for c in post_cmds}
+
+    changed_cmds = sorted(diff.keys())
+    total_cmds   = len(changed_cmds)
+    # +2 for the summary row + overall status row
+    rowspan      = total_cmds + 2
+
+    rows = []
+
+    # ── Overall status row ────────────────────────────────────────────────────
+    rows.append(
+        f'<tr class="task-row">'
+        f'<td class="phase-cell" rowspan="{rowspan}" style="border-left:3px solid {color};">'
+        f'<span class="phase-lbl" style="color:{color};">Report</span></td>'
+        f'<td class="subtask-cell"><span class="mono">Diff Status</span></td>'
+        f'<td class="status-cell"><span class="badge b-ok">Complete</span></td>'
+        f'<td class="remark-cell mono" style="color:var(--muted2);">'
+        f'{total_cmds} command(s) with changes</td>'
+        f'</tr>'
+    )
+
+    # ── Summary counts row ────────────────────────────────────────────────────
+    rows.append(
+        f'<tr class="task-row">'
+        f'<td class="subtask-cell" colspan="3">'
+        f'<span class="mono" style="color:var(--muted2);font-size:.68rem;">'
+        f'Commands compared: {len(set(pre_map)|set(post_map))} &nbsp;·&nbsp; '
+        f'Changed: {total_cmds}</span>'
+        f'</td></tr>'
+    )
+
+    # ── One row per changed command ───────────────────────────────────────────
+    for cmd in changed_cmds:
+        pre_out  = pre_map.get(cmd, "")
+        post_out = post_map.get(cmd, "")
+        pre_html, post_html = _inline_diff_html(pre_out, post_out)
+
+        did = f"diff-{prefix}-{abs(hash(cmd)) % 999999}"
+        toggle = f'<button class="mini-btn" onclick="tgl(\'{did}\')">Show Diff</button>'
+
+        drawer = (
+            f'<div class="cmd-drawer" hidden id="{did}">'
+            f'<div class="diff-outer">'
+            f'<div class="diff-grid">'
+            f'<div class="diff-hdr"><span>Pre-Upgrade</span></div>'
+            f'<div class="diff-hdr"><span>Post-Upgrade</span></div>'
+            f'<div class="diff-pane"><pre>{pre_html}</pre></div>'
+            f'<div class="diff-pane"><pre>{post_html}</pre></div>'
+            f'</div></div></div>'
+        )
+
+        rows.append(
+            f'<tr class="task-row">'
+            f'<td class="subtask-cell">'
+            f'<span class="mono" style="font-size:.72rem;color:#c8d3e8;">{_esc(cmd)}</span>'
+            f' {toggle}{drawer}</td>'
+            f'<td class="status-cell"><span class="badge b-warn">'
+            f'{len(diff[cmd])} change(s)</span></td>'
             f'<td class="remark-cell"><span class="remark-na">—</span></td>'
             f'</tr>'
         )
+
     rows.append('<tr class="phase-sep"><td colspan="4"></td></tr>')
     return "\n".join(rows)
-
-
-def _report_stub() -> str:
-    color = PHASE_META["report"]["color"]
-    return (
-        f'<tr class="task-row">'
-        f'<td class="phase-cell" rowspan="2" style="border-left:3px solid {color};">'
-        f'<span class="phase-lbl" style="color:{color};">Report</span></td>'
-        f'<td class="subtask-cell"><span class="mono">Diff Status</span></td>'
-        f'<td class="status-cell"><span class="badge b-ns">Pending</span></td>'
-        f'<td class="remark-cell"><span class="remark-na">—</span></td>'
-        f'</tr>'
-        f'<tr class="task-row">'
-        f'<td class="subtask-cell" colspan="3">'
-        f'<div class="diff-none">Diff will be available after post-checks complete.</div>'
-        f'</td></tr>'
-        f'<tr class="phase-sep"><td colspan="4"></td></tr>'
-    )
 
 
 # ─── full tbody ───────────────────────────────────────────────────────────────
@@ -464,8 +699,12 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
         r, t, s, f = _upgrade_rows(upg, prefix)
         all_rows.append(r); total += t; success += s; failed += f
 
-    all_rows.append(_post_stub(prefix))
-    all_rows.append(_report_stub())
+    post = device_data.get("post", {})
+    r, t, s, f = _post_rows(post, prefix)
+    all_rows.append(r); total += t; success += s; failed += f
+
+    diff = device_data.get("diff", {})
+    all_rows.append(_report_rows(diff, device_data, prefix))
 
     return "\n".join(all_rows), total, success, failed
 
@@ -497,8 +736,24 @@ def _phase_summary(device_data: dict) -> dict:
     hok  = sum(1 for h in hops if _norm_status(h.get("status","")) == "ok")
     out["upgrade"] = (len(hops), hok, len(hops) - hok)
 
-    out["post"]   = (0, 0, 0)   # pending
-    out["report"] = (0, 0, 0)   # pending
+    post = device_data.get("post", {})
+    pt = ps = pf = 0
+    for name in ("connect", "show_version", "execute_show_commands"):
+        td = post.get(name, {})
+        if not td: continue
+        st = _norm_status(td.get("status",""))
+        if st in ("","not_started"): continue
+        pt += 1
+        if st == "ok": ps += 1
+        else: pf += 1
+    out["post"] = (pt, ps, pf)
+
+    diff = device_data.get("diff", {})
+    if diff:
+        # count commands with changes as "tasks"; all are "ok" (diff ran successfully)
+        out["report"] = (len(diff), len(diff), 0)
+    else:
+        out["report"] = (0, 0, 0)
     return out
 
 
@@ -517,13 +772,13 @@ def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> st
         t, s, f = summary.get(key, (0, 0, 0))
         meta  = PHASE_META[key]
         pct   = round(s / t * 100) if t else 0
-        stub  = key in ("post", "report")
+        stub  = key in ("report",)
         if stub:
             cls, inner = "partial", "—"
         else:
             cls   = "ok" if f == 0 and t > 0 else ("fail" if s == 0 and t > 0 else "partial")
             label = "Hops" if key == "upgrade" else "Tasks"
-            inner = f"{s}/{t} {label}"
+            inner = f"{s}/{t} {label}" if t > 0 else "—"
         return (f'<div class="ph-card">'
                 f'<div class="ph-top">'
                 f'<span class="ph-lbl" style="color:{meta["color"]};">{meta["label"]}</span>'
@@ -548,7 +803,8 @@ def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> st
     <div class="df"><span class="lbl">Vendor</span><span class="val" id="di-vendor-{dk}">—</span></div>
     <div class="df"><span class="lbl">Model</span><span class="val" id="di-model-{dk}">—</span></div>
     <div class="df"><span class="lbl">Hostname</span><span class="val" id="di-hostname-{dk}">—</span></div>
-    <div class="df"><span class="lbl">Version</span><span class="val" id="di-version-{dk}">—</span></div>
+    <div class="df"><span class="lbl">Version (Pre)</span><span class="val" id="di-pre-version-{dk}">—</span></div>
+    <div class="df"><span class="lbl">Version (Post)</span><span class="val" id="di-post-version-{dk}" style="color:#86efac;">—</span></div>
   </div>
 
   <div class="ph-summary">
@@ -596,20 +852,33 @@ def _overall_stats(workflow_data: dict) -> tuple:
             total += 1
             if st == "ok": success += 1
             else: failed += 1
+
+        for name in ("connect", "show_version", "execute_show_commands"):
+            td = dd.get("post",{}).get(name, {})
+            if not td: continue
+            st = _norm_status(td.get("status",""))
+            if st in ("","not_started"): continue
+            total += 1
+            if st == "ok": success += 1
+            else: failed += 1
+
     return total, success, failed
 
 
 def _device_info_json(workflow_data: dict) -> str:
-    return json.dumps({
-        dk: {
-            "host":     dd.get("device_info",{}).get("host","—") or "—",
-            "vendor":   (dd.get("device_info",{}).get("vendor","—") or "—").upper(),
-            "model":    (dd.get("device_info",{}).get("model","—") or "—").upper(),
-            "hostname": dd.get("device_info",{}).get("hostname","—") or "—",
-            "version":  dd.get("device_info",{}).get("version","—") or "—",
+    out = {}
+    for dk, dd in workflow_data.items():
+        pre_ver  = dd.get("pre",  {}).get("show_version", {}).get("version", "") or "—"
+        post_ver = dd.get("post", {}).get("show_version", {}).get("version", "") or "—"
+        out[dk] = {
+            "host":         dd.get("device_info",{}).get("host","—") or "—",
+            "vendor":       (dd.get("device_info",{}).get("vendor","—") or "—").upper(),
+            "model":        (dd.get("device_info",{}).get("model","—") or "—").upper(),
+            "hostname":     dd.get("device_info",{}).get("hostname","—") or "—",
+            "pre_version":  pre_ver,
+            "post_version": post_ver,
         }
-        for dk, dd in workflow_data.items()
-    })
+    return json.dumps(out)
 
 
 # ─── HTML generation ──────────────────────────────────────────────────────────
@@ -747,12 +1016,49 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
 .dot-ok{{background:var(--ok)}} .dot-fail{{background:var(--err)}}
 .cm-cmd{{font-family:var(--mono);font-size:.72rem;color:#cbd5e1;flex:1;min-width:0;word-break:break-all}}
 .cm-btns{{display:flex;gap:.25rem;flex-wrap:wrap;margin-left:auto}}
-.hop-table{{width:100%;border-collapse:collapse;font-size:.75rem;margin-top:.4rem}}
-.hop-table th{{padding:.35rem .6rem;font-size:.58rem;text-transform:uppercase;letter-spacing:.08em;
+
+/* ── hops table — wider, no word-wrap ───────────────────────── */
+.hop-table-wrap{{overflow-x:auto;width:100%;border-radius:4px}}
+.hop-table{{border-collapse:collapse;font-size:.75rem;margin-top:.4rem;
+            min-width:780px;table-layout:auto;width:100%}}
+.hop-table th{{padding:.4rem .9rem;font-size:.58rem;text-transform:uppercase;letter-spacing:.08em;
                color:var(--muted);font-weight:600;background:var(--surf3);
-               border-bottom:1px solid var(--border);text-align:left}}
-.hop-table td{{padding:.4rem .6rem;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.72rem}}
+               border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}}
+.hop-table td{{padding:.45rem .9rem;border-bottom:1px solid var(--border);
+               font-family:var(--mono);font-size:.72rem;white-space:nowrap}}
+.hop-num-cell{{width:2.5rem;text-align:center}}
+.hop-image-cell{{min-width:320px;white-space:nowrap;word-break:keep-all}}
+.hop-status-cell{{width:7rem;text-align:center}}
+.hop-remark-cell{{min-width:200px;white-space:normal;word-break:break-word}}
+/* ─────────────────────────────────────────────────────────────── */
+
 .diff-none{{font-family:var(--mono);font-size:.72rem;color:var(--muted);padding:.4rem 0;font-style:italic}}
+
+/* ── inline diff viewer ─────────────────────────────────────── */
+.diff-outer{{
+  /* stretch beyond the narrow remark column into full panel width */
+  position:relative;
+  margin-left:calc(-11% - 26% - 9%);   /* pull left past Phase + Task + Status cols */
+  width:calc(100% + 11% + 26% + 9%);   /* expand to fill the full table row width  */
+  margin-top:.5rem;
+}}
+.diff-grid{{display:grid;grid-template-columns:1fr 1fr;gap:0;
+            border:1px solid var(--border2);border-radius:4px;overflow:hidden;width:100%}}
+.diff-hdr{{background:var(--surf3);padding:.35rem 1rem;font-family:var(--mono);
+           font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;
+           color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)}}
+.diff-hdr:first-child{{border-right:1px solid var(--border)}}
+.diff-pane{{background:#060810;padding:.6rem 1rem;overflow-x:auto;max-height:480px;overflow-y:auto}}
+.diff-pane:first-of-type{{border-right:1px solid var(--border2)}}
+.diff-pane pre{{font-family:var(--mono);font-size:.68rem;line-height:1.8;
+                color:#8896aa;white-space:pre;word-break:normal}}
+.diff-eq{{color:#8896aa}}
+.diff-line-del{{display:block;background:rgba(244,63,94,.08);border-left:2px solid #f43f5e;padding-left:4px}}
+.diff-line-ins{{display:block;background:rgba(34,197,94,.07);border-left:2px solid #22c55e;padding-left:4px}}
+.diff-na{{display:block;color:var(--muted);font-style:italic;opacity:.5}}
+mark.diff-del{{background:rgba(244,63,94,.35);color:#fca5a5;border-radius:2px;padding:0 1px}}
+mark.diff-ins{{background:rgba(34,197,94,.25);color:#86efac;border-radius:2px;padding:0 1px}}
+/* ─────────────────────────────────────────────────────────────── */
 .json-sec{{margin-top:1.5rem}}
 .json-sec summary{{cursor:pointer;font-family:var(--mono);font-size:.68rem;font-weight:600;
                    text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
@@ -806,11 +1112,12 @@ var DI = {di_json};
 function updateInfo(key) {{
   var d = DI[key]; if (!d) return;
   var set = function(id,v){{ var el=document.getElementById(id); if(el) el.textContent=v||'—'; }};
-  set('di-host-'+key,    d.host);
-  set('di-vendor-'+key,  d.vendor);
-  set('di-model-'+key,   d.model);
-  set('di-hostname-'+key,d.hostname);
-  set('di-version-'+key, d.version);
+  set('di-host-'+key,         d.host);
+  set('di-vendor-'+key,       d.vendor);
+  set('di-model-'+key,        d.model);
+  set('di-hostname-'+key,     d.hostname);
+  set('di-pre-version-'+key,  d.pre_version);
+  set('di-post-version-'+key, d.post_version);
 }}
 function selectDevice(key) {{
   document.querySelectorAll('.device-panel').forEach(function(p){{p.style.display='none';}});
@@ -845,7 +1152,7 @@ if __name__ == "__main__":
             "status": "",
             "device_info": {
                 "host": "10.80.71.55", "vendor": "juniper",
-                "model": "mx204", "hostname": "EFFPER01", "version": "22.4R3.25"
+                "model": "mx204", "hostname": "EFFPER01", "version": "23.4R2-S6.9"
             },
             "pre": {
                 "connect": {"ping": "up", "status": True, "exception": ""},
@@ -853,9 +1160,7 @@ if __name__ == "__main__":
                     "status": "completed", "exception": "",
                     "commands": [
                         {"cmd": "show arp no-resolve | no-more",
-                         "output": "Total entries: 40\n", "json": {}, "exception": ""},
-                        {"cmd": "show lldp neighbors | no-more",
-                         "output": "fxp0  -  ec:38:73:d6:f7:80  584  BLRMGN02\n",
+                         "output": "Total entries: 3\n10.80.71.1   00:11:22:33:44:55  fxp0.0\n10.80.71.2   aa:bb:cc:dd:ee:ff  xe-0/0/0.0\n10.80.71.3   11:22:33:44:55:66  xe-0/0/1.0",
                          "json": {}, "exception": ""},
                     ]
                 },
@@ -865,7 +1170,7 @@ if __name__ == "__main__":
                 },
                 "check_storage": {
                     "status": "low_space_cleaned",
-                    "deleted_files": ["juniper_mx204_2026-*", "/var/tmp/juniper_mx204_2026-*"],
+                    "deleted_files": ["juniper_mx204_2026-*"],
                     "exception": "", "sufficient": False
                 },
                 "backup_active_filesystem": {"status": "ok", "exception": "", "disk_count": "dual"},
@@ -899,10 +1204,10 @@ if __name__ == "__main__":
                 "disable_re_protect_filter": {"status": "not_started", "exception": ""},
             },
             "upgrade": {
-                "status": "failed",
+                "status": "success",
                 "initial_os": "22.4R3.25",
-                "target_os": "22.4R8.96",
-                "exception": "Upgrade hop [1] failed for junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
+                "target_os":  "23.4R2-S6.9",
+                "exception":  "",
                 "connect": {"status": True, "exception": ""},
                 "hops": [
                     {
@@ -912,14 +1217,33 @@ if __name__ == "__main__":
                     },
                     {
                         "image": "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
-                        "status": "failed",
-                        "exception": "Version mismatch after upgrade \u2014 expected=22.4R8.96, got=23.4R2-S6.9",
-                        "md5_match": False,
+                        "status": "success", "exception": "", "md5_match": True,
                         "connect": {"status": True, "attempt": 1, "exception": ""}
                     }
                 ]
             },
-            "post": {}
+            "post": {
+                "connect": {"status": "not_started", "exception": ""},
+                "show_version": {
+                    "status": "ok", "exception": "",
+                    "version": "23.4R2-S6.9", "platform": "mx204", "hostname": "EFFPER01"
+                },
+                "execute_show_commands": {
+                    "status": "completed", "exception": "",
+                    "commands": [
+                        {"cmd": "show arp no-resolve | no-more",
+                         "output": "Total entries: 3\n10.80.71.1   00:11:22:33:44:99  fxp0.0\n10.80.71.2   aa:bb:cc:dd:ee:ff  xe-0/0/0.0\n10.80.71.4   77:88:99:aa:bb:cc  xe-0/0/2.0",
+                         "json": {}, "exception": ""},
+                    ]
+                },
+            },
+            "diff": {
+                "show arp no-resolve | no-more": [
+                    {"pre": "10.80.71.1   00:11:22:33:44:55  fxp0.0",
+                     "post": "10.80.71.1   00:11:22:33:44:99  fxp0.0",
+                     "change": [["55","99"], ["55","99"]]}
+                ]
+            }
         }
     }
 

@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from lib.utilities import *
 from prechecks import PreCheck
+from postchecks import PostCheck
 from upgrade import Upgrade, run_upgrade, run_rollback
 
 MAX_THREADS = 5
@@ -60,7 +61,7 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
 
         # ── STEP 2: Show version ──────────────────────────────────────────────
         try:
-            ok = get_show_version(device_key, conn, vendor_lc, logger)
+            ok = get_show_version(device_key, conn, vendor_lc, logger, check_type="pre")
             if not ok:
                 raise RuntimeError("get_show_version returned False")
         except Exception as e:
@@ -195,6 +196,59 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# run_postchecks
+# Phase 3 — runs on the SAME thread as run_upgrade (see run_device_pipeline).
+# conn is the live connection returned by run_upgrade after the final hop.
+#
+# Steps:
+#   1. show version  (post-upgrade) → device_results[key]["post"]["show_version"]
+#   2. execute show commands (post) → device_results[key]["post"]["execute_show_commands"]
+# ─────────────────────────────────────────────────────────────────────────────
+def run_postchecks(conn, dev: dict, device_key: str, logger):
+    tid       = threading.get_ident()
+    vendor_lc = dev["vendor"].lower()
+    model_lc  = str(dev["model"]).lower().replace("-", "")
+    host      = dev.get("host")
+
+    logger.info(f"[THREAD-{tid}] [{device_key}] Postchecks started at {datetime.now()}")
+
+    try:
+        # ── STEP 1: Show version (post-upgrade) ───────────────────────────────
+        print(f"[{device_key}] POST STEP 1: show version")
+        logger.info(f"[{device_key}] POST STEP 1: show version")
+
+        try:
+            ok = get_show_version(device_key, conn, vendor_lc, logger, check_type="post")
+            if not ok:
+                raise RuntimeError("get_show_version returned False")
+            logger.info(f"[{device_key}] POST STEP 1 show_version OK — "
+                        f"version={device_results[device_key]['post']['show_version'].get('version','?')}")
+        except Exception as e:
+            logger.error(f"[{device_key}] POST STEP 1 SHOW VERSION failed — {e}")
+            device_results[device_key]["post"]["show_version"]["exception"] = str(e)
+            logger.warning(f"[{device_key}] POST STEP 1 failed but continuing postchecks")
+
+        # ── STEP 2: Execute show commands (post) ──────────────────────────────
+        print(f"[{device_key}] POST STEP 2: executing show commands")
+        logger.info(f"[{device_key}] POST STEP 2: executing show commands")
+
+        exec_ok = execute_show_commands(device_key, vendor_lc, model_lc, conn, "post", logger)
+        if not exec_ok:
+            msg = f"{host}: execute_show_commands() failed during postchecks"
+            logger.error(f"[{device_key}] POST STEP 2 failed — {msg}")
+            device_results[device_key]["post"]["execute_show_commands"]["exception"] = msg
+            return False
+
+        logger.info(f"[{device_key}] POST STEP 2 execute_show_commands OK")
+        logger.info(f"[THREAD-{tid}] [{device_key}] All post-checks passed")
+        return True
+
+    except Exception as e:
+        logger.error(f"[THREAD-{tid}] [{device_key}] run_postchecks unhandled exception: {e}")
+        return False
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # run_device_pipeline
 #
 # ONE thread per device — owns everything from connect to report.
@@ -222,6 +276,10 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
 #             │     │           └─ reconnect_and_verify() (same pattern)
 #             │     └─ (rollback if any hop fails)
 #             │
+#             ├─ PHASE 3: run_postchecks()   receives final conn from upgrade
+#             │     ├─ step 1: show version  (post-upgrade)
+#             │     └─ step 2: execute show commands (post)
+#             │
 #             └─ finally:
 #                   export_device_summary()  JSON + HTML report
 #                   disconnect()             clean up last conn
@@ -234,12 +292,12 @@ def run_device_pipeline(dev: dict, accepted_vendors: list):
     ip_clean   = host.replace(".", "_")
     device_key = f"{ip_clean}_{vendor}_{model}"
 
-    # Store accepted_vendors on dev so PreCheck / Upgrade can read it
+    # Store accepted_vendors on dev so PreCheck / Upgrade / PostCheck can read it
     dev["accepted_vendors"] = accepted_vendors
 
     # ── init results + logger ─────────────────────────────────────────────────
     init_device_results(device_key, host, vendor, model, dev)
-    logger = setup_logger(device_key, vendor=vendor, model=model)
+    logger = setup_logger(device_key, vendor=vendor, model=model, host=host)
 
     tid = threading.get_ident()
     logger.info(f"[THREAD-{tid}] [{device_key}] Pipeline started at {datetime.now()}")
@@ -259,11 +317,7 @@ def run_device_pipeline(dev: dict, accepted_vendors: list):
             device_results[device_key]["pre"]["connect"]["exception"] = msg
             raise ConnectionError(msg)
 
-        # ── CONNECT — one connection established here, passed to both phases ──
-        # Pre-checks use this conn directly.
-        # Upgrade phase receives this conn but replaces it after each reboot
-        # via Upgrade.reconnect_and_verify() → Upgrade.connect().
-        # The finally block always disconnects whatever conn is current.
+        # ── CONNECT ───────────────────────────────────────────────────────────
         conn = connect(device_key, dev, logger)
         if not conn:
             msg = f"[{device_key}] connect() returned None"
@@ -289,10 +343,7 @@ def run_device_pipeline(dev: dict, accepted_vendors: list):
         logger.info(f"[{device_key}] ── PHASE 1 COMPLETE — starting Phase 2")
         print(f"[{device_key}] ── PHASE 1 COMPLETE — starting Phase 2")
 
-        # ── PHASE 2: UPGRADE ─────────────────────────────────────────────────
-        # Same thread continues here with the same conn from Phase 1.
-        # run_upgrade() will replace conn internally after each reboot.
-        # We get the final conn back so finally can disconnect it cleanly.
+        # ── PHASE 2: UPGRADE ──────────────────────────────────────────────────
         conn, upgrade_ok = run_upgrade(conn, dev, device_key, accepted_vendors, logger)
 
         # Always sync device_results['conn'] with whatever conn we got back
@@ -304,8 +355,32 @@ def run_device_pipeline(dev: dict, accepted_vendors: list):
             print(msg)
             return False
 
-        logger.info(f"[{device_key}] ── PHASE 2 COMPLETE — upgrade successful")
-        print(f"[{device_key}] ── PHASE 2 COMPLETE — upgrade successful")
+        logger.info(f"[{device_key}] ── PHASE 2 COMPLETE — starting Phase 3")
+        print(f"[{device_key}] ── PHASE 2 COMPLETE — starting Phase 3")
+
+        # ── PHASE 3: POST-CHECKS ──────────────────────────────────────────────
+        postcheck_ok = run_postchecks(conn, dev, device_key, logger)
+        if not postcheck_ok:
+            logger.warning(f"[{device_key}] Phase 3 completed with errors — check post section")
+        else:
+            logger.info(f"[{device_key}] ── PHASE 3 COMPLETE")
+        print(f"[{device_key}] ── PHASE 3 COMPLETE")
+
+        # ── PHASE 4: DIFF / COMPARISON REPORT ────────────────────────────────
+        print(f"[{device_key}] ── PHASE 4 DIFF starting")
+        logger.info(f"[{device_key}] ── PHASE 4 DIFF starting")
+        try:
+            from diff import diff_devices
+            diff_input  = {device_key: device_results.get(device_key, {})}
+            diff_result = diff_devices(data=diff_input)
+            device_results[device_key]["diff"] = diff_result.get(device_key, {})
+            changed = len(device_results[device_key]["diff"])
+            logger.info(f"[{device_key}] ── PHASE 4 COMPLETE — {changed} command(s) with changes")
+            print(f"[{device_key}] ── PHASE 4 COMPLETE — {changed} command(s) with changes")
+        except Exception as e:
+            logger.error(f"[{device_key}] PHASE 4 DIFF failed — {e}")
+            device_results[device_key]["diff"] = {}
+
         return True
 
     finally:
@@ -345,4 +420,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main()  

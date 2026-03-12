@@ -162,14 +162,30 @@ def init_device_results(device_key: str, host: str, vendor: str, model: str, dev
                 "hostname":  "",
             },
         },
+        "diff": {},
     }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # get_show_version
+#
+# Unified pre/post show version handler.
+#
+# check_type = "pre"  → writes into device_results[key]["pre"]["show_version"]
+#                        also seeds device_info.version / hostname / model
+# check_type = "post" → writes into device_results[key]["post"]["show_version"]
+#                        overwrites device_info.version with post-upgrade value
+#                        (model is intentionally NOT updated on post — hardware
+#                        doesn't change, and imageUpgrade() uses device_info
+#                        to verify the hop so we don't want to clobber it)
 # ─────────────────────────────────────────────────────────────────────────────
-def get_show_version(device_key: str, conn, vendor: str, logger) -> bool:
-    logger.info(f"[{device_key}] get_show_version — sending 'show version'")
+def get_show_version(device_key: str, conn, vendor: str, logger,
+                     check_type: str = "pre") -> bool:
+
+    phase_key = "pre" if check_type == "pre" else "post"
+    logger.info(
+        f"[{device_key}] get_show_version — phase={phase_key}, sending 'show version'"
+    )
 
     try:
         output = conn.send_command("show version")
@@ -202,7 +218,8 @@ def get_show_version(device_key: str, conn, vendor: str, logger) -> bool:
             if m:
                 hostname = m.group(1).strip()
 
-        device_results[device_key]["pre"]["show_version"] = {
+        # ── Write into the correct phase slot ─────────────────────────────────
+        device_results[device_key][phase_key]["show_version"] = {
             "status":    "ok",
             "exception": "",
             "version":   version,
@@ -210,22 +227,26 @@ def get_show_version(device_key: str, conn, vendor: str, logger) -> bool:
             "hostname":  hostname,
         }
 
+        # ── Keep device_info current ──────────────────────────────────────────
+        # Both pre and post update version + hostname so the rest of the
+        # pipeline always sees the latest values.
+        # Model is only written on "pre" — hardware doesn't change post-upgrade.
         if hostname:
             device_results[device_key]["device_info"]["hostname"] = hostname
         if version:
             device_results[device_key]["device_info"]["version"]  = version
-        if model:
-            device_results[device_key]["device_info"]["model"]    = model
+        if model and phase_key == "pre":
+            device_results[device_key]["device_info"]["model"] = model
 
         logger.info(
-            f"[{device_key}] show_version parsed — "
+            f"[{device_key}] [{phase_key}] show_version parsed — "
             f"hostname={hostname}  model={model}  version={version}"
         )
         return True
 
     except Exception as e:
-        logger.error(f"[{device_key}] get_show_version failed — {e}")
-        device_results[device_key]["pre"]["show_version"] = {
+        logger.error(f"[{device_key}] get_show_version (phase={phase_key}) failed — {e}")
+        device_results[device_key][phase_key]["show_version"] = {
             "status":    "failed",
             "exception": str(e),
             "version":   "",
@@ -430,16 +451,18 @@ def parse_outputs(device_key: str, vendor: str, check_type: str, log) -> bool:
 # ─────────────────────────────────────────────────────────────────────────────
 # setup_logger
 # ─────────────────────────────────────────────────────────────────────────────
-def setup_logger(name: str, vendor: str = "", model: str = ""):
+def setup_logger(name: str, vendor: str = "", model: str = "", host: str = ""):
     vendor = vendor or "unknown"
     model  = model  or "unknown"
 
     log_dir  = os.path.join(os.getcwd(), "logging")
     os.makedirs(log_dir, exist_ok=True)
-    log_file = f"{vendor}_{model}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+
+    ip_clean = host.replace(".", "_") if host else "unknown_ip"
+    log_file = f"{ip_clean}_{vendor}_{model}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
     log_path = os.path.join(log_dir, log_file)
 
-    file_logger = logging.getLogger(f"{vendor}_{model}")
+    file_logger = logging.getLogger(f"{ip_clean}_{vendor}_{model}")
     file_logger.setLevel(logging.DEBUG)
     file_logger.propagate = True
     handler   = logging.FileHandler(log_path)
@@ -515,19 +538,24 @@ def export_device_summary(device_key: str):
     os.makedirs(output_dir, exist_ok=True)
     timestamp    = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     device_info  = slot.get("device_info", {})
+    host         = device_info.get("host",   "unknown_ip")
     vendor       = device_info.get("vendor", "unknown")
     model        = device_info.get("model",  "unknown")
-    summary_file = os.path.join(output_dir, f"{vendor}_{model}_{timestamp}.json")
+    ip_clean     = host.replace(".", "_")
+    summary_file = os.path.join(output_dir, f"{ip_clean}_{vendor}_{model}_{timestamp}.json")
     with open(summary_file, "w") as f:
         json.dump(all_devices_summary, f, indent=2, default=str)
     print(f"[EXPORT] Summary JSON saved -> {summary_file}")
-    print(f"[LOGS] Device log: logging/{vendor}_{model}_*.log | Session log: outputs/{vendor}_{model}_*.log")
+    print(
+        f"[LOGS] Device log : logging/{ip_clean}_{vendor}_{model}_*.log\n"
+        f"       Session log: outputs/{ip_clean}_{vendor}_{model}_*.log"
+    )
 
     # ── HTML report ───────────────────────────────────────────────────────────
     reports_dir = os.path.join(os.getcwd(), "reports")
     os.makedirs(reports_dir, exist_ok=True)
     generated   = generate_html_report(all_devices_summary, output_dir=reports_dir)
-    html_name   = f"{vendor}_{model}_{timestamp}.html"
+    html_name   = f"{ip_clean}_{vendor}_{model}_{timestamp}.html"
     html_path   = os.path.join(reports_dir, html_name)
     if generated and generated != html_path:
         os.rename(generated, html_path)
@@ -543,7 +571,7 @@ def merge_thread_result(device_key: str, result: dict):
         if slot is None:
             logger.warning(f"[merge] device_key='{device_key}' not in device_results — skipping")
             return
-        for key in ("pre", "post", "upgrade"):
+        for key in ("pre", "post", "upgrade", "diff"):
             if key in result:
                 slot[key] = result[key]
         for field, value in result.get("device_info", {}).items():
@@ -556,17 +584,19 @@ def merge_thread_result(device_key: str, result: dict):
 # connect / disconnect
 # Used for the PRE-CHECK phase connection.
 # Upgrade phase uses Upgrade.connect() / Upgrade.reconnect_and_verify().
+# Post-check phase reuses the conn returned by run_upgrade().
 # ─────────────────────────────────────────────────────────────────────────────
 def connect(device_key: str, dev: dict, logger):
-    host    = dev["host"]
-    vendor  = dev["vendor"].lower()
-    model   = str(dev["model"]).lower().replace("-", "")
+    host     = dev["host"]
+    vendor   = dev["vendor"].lower()
+    model    = str(dev["model"]).lower().replace("-", "")
+    ip_clean = host.replace(".", "_")
 
     session_log_dir = os.path.join(os.getcwd(), "outputs")
     os.makedirs(session_log_dir, exist_ok=True)
     session_log_path = os.path.join(
         session_log_dir,
-        f"{vendor}_{model}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+        f"{ip_clean}_{vendor}_{model}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_pre.log"
     )
 
     logger.info(f"[{device_key}] Connecting to {host}")
