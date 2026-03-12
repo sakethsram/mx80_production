@@ -5,7 +5,7 @@ import threading
 import os
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from diff import diff_devices
+
 from lib.utilities import *
 from prechecks import PreCheck
 from upgrade import Upgrade, run_upgrade, run_rollback
@@ -177,7 +177,6 @@ def run_prechecks(conn, dev: dict, device_key: str, logger):
             thread_result = {
                 "pre":         device_results.get(device_key, {}).get("pre", {}),
                 "device_info": device_results.get(device_key, {}).get("device_info", {}),
-                "post":        {},
                 "upgrade":     device_results.get(device_key, {}).get("upgrade", {}),
             }
             merge_thread_result(device_key, thread_result)
@@ -362,6 +361,7 @@ def run_device_pipeline(dev: dict, accepted_vendors: list):
         logger.info(f"[{device_key}] ── PHASE 4 DIFF starting")
 
         try:
+            from diff import diff_devices
             diff_input  = {device_key: device_results.get(device_key, {})}
             diff_result = diff_devices(data=diff_input)
             device_results[device_key]["diff"] = diff_result.get(device_key, {})
