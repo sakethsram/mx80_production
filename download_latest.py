@@ -81,8 +81,6 @@ def main() -> None:
     print(f"     Modified    : {mtime}")
     print(f"     Size        : {size:,} bytes")
 
-    # STEP 3 — wipe the Desktop
-    clear_desktop(LOCAL_DESKTOP)
 
     # STEP 4 — copy the file to the Desktop
     banner("Copying to Desktop …")
