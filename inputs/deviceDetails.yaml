@@ -1,15 +1,22 @@
+accepted_vendors:
+  - "juniper"
+  - "cisco"
+
 devices:
+
+# ═════════════════════════════════════════════════════════════════════════════
+# JUNIPER MX204  —  10.80.71.55
+# ═════════════════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JUNIPER UPGRADE  →  22.4R3.25  →  23.4R2-S5.6  →  23.4R2-S6.9   (ACTIVE)
+# ─────────────────────────────────────────────────────────────────────────────
   - host: "10.80.71.55"
     vendor: "juniper"
     model: mx204
     device_type: "juniper"
     curr_image: junos-vmhost-install-mx-x86-64-22.4R3.25.tgz
     curr_os: 22.4R3.25
-#    curr_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
-#    curr_os: 23.4R2-S6.9
-#    expected_os:
-#      - target_os: 23.4R2-S6.9
-#        intermediate_os: 23.4R2-S5.6
     intermediate_release: True
     min_disk_gb: 6
     username: "lab"
@@ -21,61 +28,97 @@ devices:
       - image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
         expected_os: 23.4R2-S6.9
         checksum: dec5349a0d238dad686dc01f468a0bbe
-    #dec5349a0d238dad686dc01f468a0bbe
     image_path: "/home/automation2/software/juniper/junos/MX204"
     remote_backup_server: "automation2@10.80.109.134"
     remote_password: "kTRq8amH888r"
     cleanup_files:
-     - juniper_mx204_2026-*
-     - /var/tmp/juniper_mx204_2026-*
-#    intermediate_image: junos-vmhost-install-mx-x86-64-22.4R3.25.tgz
-    # mount = "/var
-#    md5checksum_file:
-#      - target_image_checksum:
-#        intermediate_image_checksum: d866fae12b23e414469da93c0845008c
-    # local_image_path = ""
+      - juniper_mx204_2026-*
+      - /var/tmp/juniper_mx204_2026-*
 
-#  - host: "10.80.109.250"
-#    vendor: "cisco"
-#    model: asr9910
-#    device_type: "cisco_xr"
-#    current_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
-#    expected_os: 23.4R2-S5.1
-#    intermediate_os: False
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JUNIPER DOWNGRADE  →  23.4R2-S6.9  →  23.4R2-S5.6  →  22.4R3.25 (COMMENTED)
+# ─────────────────────────────────────────────────────────────────────────────
+#  - host: "10.80.71.55"
+#    vendor: "juniper"
+#    model: mx204
+#    device_type: "juniper"
+#    curr_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
+#    curr_os: 23.4R2-S6.9
+#    intermediate_release: True
 #    min_disk_gb: 6
-#    username: "admin"
-#    password: "Colt@123"
-#    target_image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
+#    username: "lab"
+#    password: "lab123"
+#    imageDetails:
+#      - image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
+#        expected_os: 23.4R2-S5.6
+#        checksum: 3e97c983380ac3a1b28e143219c8960a
+#      - image: junos-vmhost-install-mx-x86-64-22.4R3.25.tgz
+#        expected_os: 22.4R3.25
+#        checksum: d866fae12b23e414469da93c0845008c
 #    image_path: "/home/automation2/software/juniper/junos/MX204"
 #    remote_backup_server: "automation2@10.80.109.134"
 #    remote_password: "kTRq8amH888r"
 #    cleanup_files:
-#     - juniper_mx204_2026-*
-#     - /var/tmp/juniper_mx204_2026-*
-#    intermediate_image: junos-os-21.2R2-S5.bin
-#    # mount = "/var
-#    md5checksum_file: 3e97c983380ac3a1b28e143219c8960a
-    # local_image_path = ""
+#      - juniper_mx204_2026-*
+#      - /var/tmp/juniper_mx204_2026-*
 
+
+# ═════════════════════════════════════════════════════════════════════════════
+# CISCO ASR9910  —  10.80.109.250
+# ═════════════════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CISCO UPGRADE  →  23.4R2-S5.1  →  23.4R2-S5.6  →  23.4R2-S6.9   (COMMENTED)
+# ─────────────────────────────────────────────────────────────────────────────
 #  - host: "10.80.109.250"
 #    vendor: "cisco"
 #    model: asr9910
 #    device_type: "cisco_xr"
-#    current_image: junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz
-#    expected_os: 23.4R2-S5.6
-#    intermediate_os: False
+#    curr_image: asr9910-mini-x.iso-23.4R2-S5.1
+#    curr_os: 23.4R2-S5.1
+#    intermediate_release: True
+#    min_disk_gb: 6
+#    username: "admin"
+#    password: "Colt@123"
+#    imageDetails:
+#      - image: asr9910-mini-x.iso-23.4R2-S5.6
+#        expected_os: 23.4R2-S5.6
+#        checksum: 3e97c983380ac3a1b28e143219c8960a
+#      - image: asr9910-mini-x.iso-23.4R2-S6.9
+#        expected_os: 23.4R2-S6.9
+#        checksum: dec5349a0d238dad686dc01f468a0bbe
+#    image_path: "/home/automation2/software/cisco/ios-xr/ASR9910"
+#    remote_backup_server: "automation2@10.80.109.134"
+#    remote_password: "kTRq8amH888r"
+#    cleanup_files:
+#      - cisco_asr9910_2026-*
+#      - /var/tmp/cisco_asr9910_2026-*
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CISCO DOWNGRADE  →  23.4R2-S6.9  →  23.4R2-S5.6  →  23.4R2-S5.1 (COMMENTED)
+# ─────────────────────────────────────────────────────────────────────────────
+#  - host: "10.80.109.250"
+#    vendor: "cisco"
+#    model: asr9910
+#    device_type: "cisco_xr"
+#    curr_image: asr9910-mini-x.iso-23.4R2-S6.9
+#    curr_os: 23.4R2-S6.9
+#    intermediate_release: True
 #    min_disk_gb: 5
 #    username: "admin"
 #    password: "Colt@123"
-#    target_image: junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz
-#    remote_backup_server: sftp://backup@10.10.20.20/backups/
+#    imageDetails:
+#      - image: asr9910-mini-x.iso-23.4R2-S5.6
+#        expected_os: 23.4R2-S5.6
+#        checksum: 3e97c983380ac3a1b28e143219c8960a
+#      - image: asr9910-mini-x.iso-23.4R2-S5.1
+#        expected_os: 23.4R2-S5.1
+#        checksum: d866fae12b23e414469da93c0845008c
+#    image_path: "/home/automation2/software/cisco/ios-xr/ASR9910"
+#    remote_backup_server: "automation2@10.80.109.134"
+#    remote_password: "kTRq8amH888r"
 #    cleanup_files:
-#     - list of files
-#    intermediate_image: junos-os-21.2R2-S5.bin
-#    rollback: False
-#    # mount = "/var
-#    md5checksum_file : "dec5349a0d238dad686dc01f468a0bbe"
-#    # local_image_path = ""
-accepted_vendors:
-  - "juniper"
-  - "cisco"
+#      - cisco_asr9910_2026-*
+#      - /var/tmp/cisco_asr9910_2026-*
