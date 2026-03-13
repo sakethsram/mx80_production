@@ -498,12 +498,6 @@ def _post_rows(post: dict, prefix: str) -> tuple:
 
 
 # ─── report / diff phase ──────────────────────────────────────────────────────
-#
-# CHANGE: Diff viewer is now rendered as a full-width overlay below the table
-# instead of trying to fit inside a narrow remark cell.
-# Each changed command gets its own collapsible full-width diff block that
-# sits outside the table, attached below the device panel.
-# ──────────────────────────────────────────────────────────────────────────────
 
 import difflib as _difflib
 
@@ -572,8 +566,8 @@ def _inline_diff_html(pre_out: str, post_out: str) -> tuple:
 def _report_rows(diff: dict, device_data: dict, prefix: str) -> str:
     """
     Renders Phase 4 summary rows in the table.
-    The actual diff content is rendered in a separate full-width section
-    BELOW the table (see build_device_panel).
+    Shows only two summary lines: Diff Status + Commands compared/changed.
+    Per-command rows and orange badges are removed.
     """
     color = PHASE_META["report"]["color"]
 
@@ -601,51 +595,40 @@ def _report_rows(diff: dict, device_data: dict, prefix: str) -> str:
     post_cmds = device_data.get("post", {}).get("execute_show_commands", {}).get("commands", [])
     pre_map   = {c["cmd"]: c.get("output", "") for c in pre_cmds}
     post_map  = {c["cmd"]: c.get("output", "") for c in post_cmds}
+    total_compared = len(set(pre_map) | set(post_map))
 
-    # ── Summary rows in table ─────────────────────────────────────────────────
+    # Build "Show Diff" buttons for each changed command inline in the summary row
+    diff_buttons = " ".join(
+        f'<button class="mini-btn" style="font-size:.5rem;" onclick="tglDiff(\'diff-{prefix}-{abs(hash(cmd)) % 999999}\')">'
+        f'{_esc(cmd)}</button>'
+        for cmd in changed_cmds
+    )
+
     rows = [
+        # Row 1: Diff Status
         (f'<tr class="task-row">'
-         f'<td class="phase-cell" rowspan="{total_cmds + 2}" style="border-left:3px solid {color};">'
+         f'<td class="phase-cell" rowspan="2" style="border-left:3px solid {color};">'
          f'<span class="phase-lbl" style="color:{color};">Report</span></td>'
          f'<td class="subtask-cell"><span class="mono">Diff Status</span></td>'
          f'<td class="status-cell"><span class="badge b-ok">Complete</span></td>'
          f'<td class="remark-cell mono" style="color:var(--muted2);">'
-         f'{total_cmds} command(s) with changes</td>'
+         f'{total_cmds} changed &nbsp;·&nbsp; {total_compared} compared</td>'
          f'</tr>'),
+        # Row 2: Show Diff buttons (vertical stack)
         (f'<tr class="task-row">'
          f'<td class="subtask-cell" colspan="3">'
-         f'<span class="mono" style="color:var(--muted2);font-size:.68rem;">'
-         f'Commands compared: {len(set(pre_map)|set(post_map))} &nbsp;·&nbsp; '
-         f'Changed: {total_cmds}</span>'
+         f'<span class="mono" style="color:var(--muted2);font-size:.63rem;display:block;margin-bottom:.3rem;">Show diff:</span>'
+         f'<div style="display:flex;flex-direction:column;align-items:flex-start;gap:.25rem;">{diff_buttons}</div>'
          f'</td></tr>'),
+        '<tr class="phase-sep"><td colspan="4"></td></tr>',
     ]
 
-    # ── One summary row per changed command (button scrolls to full-width diff) ──
-    for cmd in changed_cmds:
-        did    = f"diff-{prefix}-{abs(hash(cmd)) % 999999}"
-        toggle = (f'<button class="mini-btn" '
-                  f'onclick="tglDiff(\'{did}\')">'
-                  f'Show Diff</button>')
-        rows.append(
-            f'<tr class="task-row">'
-            f'<td class="subtask-cell">'
-            f'<span class="mono" style="font-size:.72rem;color:#c8d3e8;">{_esc(cmd)}</span>'
-            f' {toggle}</td>'
-            f'<td class="status-cell"><span class="badge b-warn">'
-            f'{len(diff[cmd])} change(s)</span></td>'
-            f'<td class="remark-cell"><span class="remark-na">—</span></td>'
-            f'</tr>'
-        )
-
-    rows.append('<tr class="phase-sep"><td colspan="4"></td></tr>')
     return "\n".join(rows)
 
 
 def _diff_section(diff: dict, device_data: dict, prefix: str) -> str:
     """
     Renders the full-width diff section that lives BELOW the main table.
-    This keeps the diff viewer as wide as the whole panel rather than
-    squeezed into the Remark column.
     """
     if not diff:
         return ""
@@ -1036,7 +1019,6 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
 
 /* ════════════════════════════════════════════════════════════════
    FULL-WIDTH DIFF SECTION (below the main table)
-   Each diff block is an independent card, full panel width.
    ════════════════════════════════════════════════════════════════ */
 .diff-section{{
   display:flex;
@@ -1117,9 +1099,9 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
 .diff-pane{{
   background:#060810;
   padding:.75rem 1.1rem;
-  overflow-x:auto;
-  max-height:520px;
+  overflow-x:hidden;
   overflow-y:auto;
+  max-height:520px;
 }}
 .diff-pane:first-of-type{{
   border-right:1px solid var(--border2);
@@ -1127,11 +1109,11 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
 
 .diff-pane pre{{
   font-family:var(--mono);
-  font-size:.72rem;
-  line-height:1.9;
+  font-size:.62rem;
+  line-height:1.85;
   color:#8896aa;
-  white-space:pre;
-  word-break:normal;
+  white-space:pre-wrap;
+  word-break:break-all;
   tab-size:4;
 }}
 
@@ -1252,7 +1234,6 @@ function tglDiff(id) {{
   var wasHidden = el.hidden;
   el.hidden = !wasHidden;
   if(!el.hidden) {{
-    // smooth scroll to the diff block
     setTimeout(function(){{ el.scrollIntoView({{behavior:'smooth',block:'nearest'}}); }}, 50);
   }}
 }}
@@ -1275,7 +1256,6 @@ if __name__ == "__main__":
     from pathlib import Path
 
     if len(sys.argv) > 1:
-        # Usage: python3 workflow_report_generator.py your_device.json
         json_path = Path(sys.argv[1])
         if not json_path.exists():
             print(f"ERROR: File not found: {json_path}")
@@ -1284,17 +1264,15 @@ if __name__ == "__main__":
         with open(json_path, encoding="utf-8") as f:
             raw = json.load(f)
 
-        # Auto-detect single vs multi-device
         first_val = next(iter(raw.values()), None)
         if isinstance(first_val, dict) and any(k in first_val for k in ("pre", "upgrade", "post")):
-            workflow_data = raw  # already multi-device
+            workflow_data = raw
         else:
-            workflow_data = {json_path.stem: raw}  # wrap as single device
+            workflow_data = {json_path.stem: raw}
 
         path = generate_html_report(workflow_data, output_dir=".")
         print(f"Report written: {path}")
 
     else:
-        # No args → run with built-in sample data
         path = generate_html_report(sample, output_dir=".")
         print(f"Report written: {path}")
