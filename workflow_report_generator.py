@@ -1270,109 +1270,31 @@ document.addEventListener('DOMContentLoaded',function(){{
         f.write(html)
     return file_path
 
-
-# ─── entry point ──────────────────────────────────────────────────────────────
-
 if __name__ == "__main__":
-    sample = {
-        "10_80_71_55_juniper_mx204": {
-            "status": "",
-            "device_info": {
-                "host": "10.80.71.55", "vendor": "juniper",
-                "model": "mx204", "hostname": "EFFPER01", "version": "23.4R2-S6.9"
-            },
-            "pre": {
-                "connect": {"ping": "up", "status": True, "exception": ""},
-                "execute_show_commands": {
-                    "status": "completed", "exception": "",
-                    "commands": [
-                        {"cmd": "show arp no-resolve | no-more",
-                         "output": "Total entries: 3\n10.80.71.1   00:11:22:33:44:55  fxp0.0\n10.80.71.2   aa:bb:cc:dd:ee:ff  xe-0/0/0.0\n10.80.71.3   11:22:33:44:55:66  xe-0/0/1.0",
-                         "json": {}, "exception": ""},
-                    ]
-                },
-                "show_version": {
-                    "status": "ok", "exception": "",
-                    "version": "22.4R3.25", "platform": "mx204", "hostname": "EFFPER01"
-                },
-                "check_storage": {
-                    "status": "low_space_cleaned",
-                    "deleted_files": ["juniper_mx204_2026-*"],
-                    "exception": "", "sufficient": False
-                },
-                "backup_active_filesystem": {"status": "ok", "exception": "", "disk_count": "dual"},
-                "backup_running_config": {
-                    "status": "ok", "exception": "",
-                    "config_file": "juniper_mx204_2026-03-11_19-10-09",
-                    "log_file":    "juniper_mx204_2026-03-11_19-10-09.tgz",
-                    "destination": "automation2@10.80.109.134"
-                },
-                "transfer_image": {
-                    "status": "ok", "exception": "",
-                    "image": "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
-                    "destination": "/var/tmp/"
-                },
-                "verify_checksum": [
-                    {
-                        "image": "junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz",
-                        "status": "ok", "exception": "",
-                        "expected": "3e97c983380ac3a1b28e143219c8960a",
-                        "computed": "3e97c983380ac3a1b28e143219c8960a",
-                        "match": True
-                    },
-                    {
-                        "image": "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
-                        "status": "ok", "exception": "",
-                        "expected": "dec5349a0d238dad686dc01f468a0bbe",
-                        "computed": "dec5349a0d238dad686dc01f468a0bbe",
-                        "match": True
-                    }
-                ],
-                "disable_re_protect_filter": {"status": "not_started", "exception": ""},
-            },
-            "upgrade": {
-                "status": "success",
-                "initial_os": "22.4R3.25",
-                "target_os":  "23.4R2-S6.9",
-                "exception":  "",
-                "connect": {"status": True, "exception": ""},
-                "hops": [
-                    {
-                        "image": "junos-vmhost-install-mx-x86-64-23.4R2-S5.6.tgz",
-                        "status": "success", "exception": "", "md5_match": True,
-                        "connect": {"status": True, "attempt": 1, "exception": ""}
-                    },
-                    {
-                        "image": "junos-vmhost-install-mx-x86-64-23.4R2-S6.9.tgz",
-                        "status": "success", "exception": "", "md5_match": True,
-                        "connect": {"status": True, "attempt": 1, "exception": ""}
-                    }
-                ]
-            },
-            "post": {
-                "connect": {"status": "not_started", "exception": ""},
-                "show_version": {
-                    "status": "ok", "exception": "",
-                    "version": "23.4R2-S6.9", "platform": "mx204", "hostname": "EFFPER01"
-                },
-                "execute_show_commands": {
-                    "status": "completed", "exception": "",
-                    "commands": [
-                        {"cmd": "show arp no-resolve | no-more",
-                         "output": "Total entries: 3\n10.80.71.1   00:11:22:33:44:99  fxp0.0\n10.80.71.2   aa:bb:cc:dd:ee:ff  xe-0/0/0.0\n10.80.71.4   77:88:99:aa:bb:cc  xe-0/0/2.0",
-                         "json": {}, "exception": ""},
-                    ]
-                },
-            },
-            "diff": {
-                "show arp no-resolve | no-more": [
-                    {"pre": "10.80.71.1   00:11:22:33:44:55  fxp0.0",
-                     "post": "10.80.71.1   00:11:22:33:44:99  fxp0.0",
-                     "change": [["55","99"], ["55","99"]]}
-                ]
-            }
-        }
-    }
+    import sys
+    from pathlib import Path
 
-    path = generate_html_report(sample, output_dir=".")
-    print(f"Report written: {path}")
+    if len(sys.argv) > 1:
+        # Usage: python3 workflow_report_generator.py your_device.json
+        json_path = Path(sys.argv[1])
+        if not json_path.exists():
+            print(f"ERROR: File not found: {json_path}")
+            sys.exit(1)
+
+        with open(json_path, encoding="utf-8") as f:
+            raw = json.load(f)
+
+        # Auto-detect single vs multi-device
+        first_val = next(iter(raw.values()), None)
+        if isinstance(first_val, dict) and any(k in first_val for k in ("pre", "upgrade", "post")):
+            workflow_data = raw  # already multi-device
+        else:
+            workflow_data = {json_path.stem: raw}  # wrap as single device
+
+        path = generate_html_report(workflow_data, output_dir=".")
+        print(f"Report written: {path}")
+
+    else:
+        # No args → run with built-in sample data
+        path = generate_html_report(sample, output_dir=".")
+        print(f"Report written: {path}")
