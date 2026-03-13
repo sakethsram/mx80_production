@@ -1275,4 +1275,4 @@ if __name__ == "__main__":
 
     else:
         path = generate_html_report(sample, output_dir=".")
-        print(f"Report written: {path}")
+        print(f"Report written:this  {path}")
