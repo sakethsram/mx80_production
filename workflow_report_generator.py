@@ -355,12 +355,13 @@ def _upgrade_rows(upg: dict, prefix: str) -> tuple:
 
     upg_remark = f'<span class="remark-err">{upg_exc}</span>' if upg_exc else '<span class="remark-na">—</span>'
 
-    hop_toggle = hop_drawer = ""
+    hop_toggle = ""
+    hop_drawer_html = ""
     if hops:
         hid        = f"hops-{prefix}"
-        hop_toggle = f'<button class="mini-btn" onclick="tgl(\'{hid}\')">Hops ({len(hops)})</button>'
-        hop_drawer = (
-            f'<div class="cmd-drawer" hidden id="{hid}">'
+        hop_toggle = (
+            f'<button class="mini-btn" onclick="tglHops(\'{hid}\')">Hops ({len(hops)})</button>'
+            f'<div class="hops-inline" hidden id="{hid}">'
             f'<div class="hop-table-wrap">'
             f'<table class="hop-table"><thead><tr>'
             f'<th class="hop-th-num">#</th>'
@@ -397,7 +398,7 @@ def _upgrade_rows(upg: dict, prefix: str) -> tuple:
 
         (f'<tr class="task-row">'
          f'<td class="subtask-cell"><span class="mono">Hop Details</span>'
-         f' {hop_toggle}{hop_drawer}</td>'
+         f' {hop_toggle}</td>'
          f'<td class="status-cell"></td>'
          f'<td class="remark-cell"></td>'
          f'</tr>'),
@@ -408,7 +409,7 @@ def _upgrade_rows(upg: dict, prefix: str) -> tuple:
     total   = 1
     success = 1 if upg_status == "ok" else 0
     failed  = 1 if upg_status not in ("", "ok", "not_started") else 0
-    return "\n".join(rows), total, success, failed
+    return "\n".join(rows), total, success, failed, ""
 
 
 # ─── post rows (real data) ────────────────────────────────────────────────────
@@ -670,6 +671,7 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
     prefix   = device_key.replace(".", "_").replace("-", "_")
     all_rows = []
     total = success = failed = 0
+    hop_drawer_html = ""
 
     pre = device_data.get("pre", {})
     if pre:
@@ -678,7 +680,7 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
 
     upg = device_data.get("upgrade", {})
     if upg:
-        r, t, s, f = _upgrade_rows(upg, prefix)
+        r, t, s, f, hop_drawer_html = _upgrade_rows(upg, prefix)
         all_rows.append(r); total += t; success += s; failed += f
 
     post = device_data.get("post", {})
@@ -688,7 +690,7 @@ def build_tbody(device_data: dict, device_key: str) -> tuple:
     diff = device_data.get("diff", {})
     all_rows.append(_report_rows(diff, device_data, prefix))
 
-    return "\n".join(all_rows), total, success, failed
+    return "\n".join(all_rows), total, success, failed, hop_drawer_html
 
 
 # ─── phase summary for cards ──────────────────────────────────────────────────
@@ -738,7 +740,7 @@ def _phase_summary(device_data: dict) -> dict:
 # ─── device panel ─────────────────────────────────────────────────────────────
 
 def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> str:
-    tbody, total, success, failed = build_tbody(device_data, device_key)
+    tbody, total, success, failed, hop_drawer_html = build_tbody(device_data, device_key)
     summary  = _phase_summary(device_data)
     prefix   = device_key.replace(".", "_").replace("-", "_")
     diff     = device_data.get("diff", {})
@@ -866,7 +868,7 @@ def _device_info_json(workflow_data: dict) -> str:
 
 # ─── HTML generation ──────────────────────────────────────────────────────────
 
-def generate_html_report(workflow_data: dict, output_dir: str = ".") -> str:
+def generate_html_report(workflow_data: dict, output_dir: str = ".", stem: str = None) -> str:
     safe_data = {
         dk: {k: v for k, v in slot.items() if k not in ("conn","yaml")}
         for dk, slot in workflow_data.items()
@@ -1013,6 +1015,32 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
 .hop-image-cell{{min-width:320px;white-space:nowrap;word-break:keep-all}}
 .hop-status-cell{{width:7rem;text-align:center}}
 .hop-remark-cell{{min-width:200px;white-space:normal;word-break:break-word}}
+
+.hops-inline{{
+  margin-top:.4rem;
+  background:var(--surf2);
+  border:1px solid var(--border2);
+  border-radius:var(--r);
+  overflow-x:auto;
+  max-width:100%;
+}}
+.hops-inline .hop-table{{
+  font-size:.62rem;
+  min-width:auto;
+}}
+.hops-inline .hop-table th{{
+  font-size:.54rem;
+  padding:.3rem .6rem;
+}}
+.hops-inline .hop-table td{{
+  padding:.3rem .6rem;
+  font-size:.62rem;
+}}
+.hops-inline .hop-image-cell{{
+  min-width:160px;
+  white-space:nowrap;
+  word-break:keep-all;
+}}
 
 .diff-none{{font-family:var(--mono);font-size:.72rem;color:var(--muted);padding:.4rem 0;font-style:italic}}
 
@@ -1228,6 +1256,14 @@ function tgl(id) {{
   var el=document.getElementById(id);
   if(el) el.hidden=!el.hidden;
 }}
+function tglHops(id) {{
+  var el=document.getElementById(id);
+  if(!el) return;
+  el.hidden=!el.hidden;
+  if(!el.hidden) {{
+    setTimeout(function(){{ el.scrollIntoView({{behavior:'smooth',block:'nearest'}}); }}, 50);
+  }}
+}}
 function tglDiff(id) {{
   var el=document.getElementById(id);
   if(!el) return;
@@ -1245,8 +1281,13 @@ document.addEventListener('DOMContentLoaded',function(){{
 </html>"""
 
     os.makedirs(output_dir, exist_ok=True)
-    filename  = f"workflow_report_{ts_file}.html"
+    import glob
+    for old in glob.glob(os.path.join(output_dir, "workflow_report_*.html")):
+        os.remove(old)
+    filename  = f"{stem}.html" if stem else f"workflow_report_{ts_file}.html"
     file_path = os.path.join(output_dir, filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(html)
     return file_path
@@ -1270,9 +1311,9 @@ if __name__ == "__main__":
         else:
             workflow_data = {json_path.stem: raw}
 
-        path = generate_html_report(workflow_data, output_dir=".")
+        path = generate_html_report(workflow_data, output_dir=str(Path(__file__).parent), stem=json_path.stem)
         print(f"Report written: {path}")
 
     else:
         path = generate_html_report(sample, output_dir=".")
-        print(f"Report written:this  {path}")
+        print(f"Report written: {path}")
