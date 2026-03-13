@@ -649,7 +649,6 @@ def _diff_section(diff: dict, device_data: dict, prefix: str) -> str:
 <div class="diff-block" id="{did}" hidden>
   <div class="diff-block-hdr">
     <div class="diff-block-cmd">
-      <span class="diff-block-label">DIFF</span>
       <code class="diff-block-cmdname">{_esc(cmd)}</code>
     </div>
     <button class="mini-btn mini-err" onclick="tglDiff('{did}')">Close</button>
@@ -1031,7 +1030,7 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
   background:var(--surf);
   border:1px solid var(--border2);
   border-radius:var(--r);
-  overflow:hidden;
+  overflow:visible;
   animation:fadeIn .18s ease;
 }}
 
@@ -1099,9 +1098,9 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
 .diff-pane{{
   background:#060810;
   padding:.75rem 1.1rem;
-  overflow-x:hidden;
-  overflow-y:auto;
+  overflow:hidden;
   max-height:520px;
+  overflow-y:auto;
 }}
 .diff-pane:first-of-type{{
   border-right:1px solid var(--border2);
@@ -1114,6 +1113,7 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
   color:#8896aa;
   white-space:pre-wrap;
   word-break:break-all;
+  overflow-wrap:break-word;
   tab-size:4;
 }}
 
