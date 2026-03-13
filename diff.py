@@ -114,6 +114,66 @@ def diff_devices(data: dict = None) -> dict:
     return results
 
 
+# ─── production JSON reader ───────────────────────────────────────────────────
+
+PROD_JSON = Path(__file__).parent / "10_80_71_55_juniper_mx204_2026-03-12_22-27-01.json"
+
+def load_production_json(json_path: Path = None) -> dict:
+    """
+    Reads a production-level device JSON file (same schema as mock.json).
+    Defaults to PROD_JSON (10_80_71_55_juniper_mx204_2026-03-12_22-27-01.json)
+    in the same directory as this script.
+
+    The JSON may be either:
+      • A single device dict  → wrapped into {"<filename_stem>": data}
+      • A multi-device dict   → used as-is
+
+    Returns the normalised multi-device dict.
+    """
+    path = Path(json_path) if json_path else PROD_JSON
+    if not path.exists():
+        raise FileNotFoundError(f"Production JSON not found: {path}")
+
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+
+    # If the top-level keys look like device keys (have "pre"/"upgrade"/"post"),
+    # treat it as a multi-device dict already.
+    if isinstance(raw, dict):
+        first_val = next(iter(raw.values()), None)
+        if isinstance(first_val, dict) and any(k in first_val for k in ("pre", "upgrade", "post")):
+            return raw  # already multi-device format
+
+    # Otherwise wrap it as a single device using the filename stem as key.
+    device_key = path.stem
+    return {device_key: raw}
+
+
+def run_diff_and_generate_report(json_path: Path = None, output_dir: str = ".") -> str:
+    """
+    1. Load the production JSON (defaults to PROD_JSON).
+    2. Run diff_devices() to compute pre→post diffs.
+    3. Inject the diff results back into the device data under ["diff"].
+    4. Call generate_html_report() to produce the HTML file.
+
+    Returns the path to the generated HTML file.
+    """
+    from workflow_report_generator import generate_html_report   # local import to avoid circular deps
+
+    # Load data
+    workflow_data = load_production_json(json_path)
+
+    # Compute diffs and inject
+    diff_results = diff_devices(workflow_data)
+    for device_key, cmd_diffs in diff_results.items():
+        if device_key in workflow_data:
+            workflow_data[device_key]["diff"] = cmd_diffs
+
+    # Generate HTML
+    html_path = generate_html_report(workflow_data, output_dir=output_dir)
+    return html_path
+
+
 def print_diff(results: dict = None):
     """NOT FOR PRODUCTION."""
     if results is None:
@@ -121,5 +181,30 @@ def print_diff(results: dict = None):
     print(json.dumps(results, indent=2))
 
 
+# ─── entry point ──────────────────────────────────────────────────────────────
+
 if __name__ == "__main__":
-    print_diff()
+    import sys
+
+    # Usage:
+    #   python diff.py                          → diff + HTML from default PROD_JSON
+    #   python diff.py path/to/other.json       → diff + HTML from a custom JSON file
+    #   python diff.py --print-only             → just print diff JSON to stdout (mock)
+
+    if "--print-only" in sys.argv:
+        print_diff()
+    else:
+        json_path = None
+        for arg in sys.argv[1:]:
+            if not arg.startswith("--"):
+                json_path = Path(arg)
+                break
+
+        try:
+            html_path = run_diff_and_generate_report(json_path=json_path, output_dir=".")
+            print(f"Report written: {html_path}")
+        except FileNotFoundError as e:
+            print(f"ERROR: {e}")
+            print("Place the JSON file next to diff.py or pass the path as an argument:")
+            print("  python diff.py path/to/your_device.json")
+            sys.exit(1)

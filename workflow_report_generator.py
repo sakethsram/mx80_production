@@ -414,10 +414,6 @@ def _upgrade_rows(upg: dict, prefix: str) -> tuple:
 # ─── post rows (real data) ────────────────────────────────────────────────────
 
 def _post_rows(post: dict, prefix: str) -> tuple:
-    """
-    Renders real post-check data from device_results[key]["post"].
-    Falls back to stub rows for any task that hasn't run yet.
-    """
     color = PHASE_META["post"]["color"]
     label = PHASE_META["post"]["label"]
 
@@ -431,7 +427,6 @@ def _post_rows(post: dict, prefix: str) -> tuple:
         display = POST_TASK_TITLES.get(name, name.replace("_", " ").title())
         data    = post.get(name, {})
 
-        # Empty post dict or task not yet written → stub row
         if not data:
             pc = (f'<td class="phase-cell" rowspan="{count}" '
                   f'style="border-left:3px solid {color};">'
@@ -463,7 +458,6 @@ def _post_rows(post: dict, prefix: str) -> tuple:
 
         toggle = drawer = ""
 
-        # ── show_version: display pre vs post side-by-side in remark ──────────
         if name == "show_version":
             ver  = data.get("version","")
             plat = data.get("platform","")
@@ -475,7 +469,6 @@ def _post_rows(post: dict, prefix: str) -> tuple:
             if exc:  parts.append(f'<span class="remark-err">{_esc(exc)}</span>')
             remark = " &nbsp;·&nbsp; ".join(parts) or '<span class="remark-na">—</span>'
 
-        # ── execute_show_commands: button + drawer ─────────────────────────────
         elif name == "execute_show_commands":
             cmds   = data.get("commands", [])
             bid    = f"cmds-{prefix}-post"
@@ -483,7 +476,6 @@ def _post_rows(post: dict, prefix: str) -> tuple:
             drawer = _cmd_drawer(cmds, prefix, "post")
             remark = _remark(exc)
 
-        # ── connect ───────────────────────────────────────────────────────────
         elif name == "connect":
             remark = _remark(exc)
 
@@ -507,35 +499,28 @@ def _post_rows(post: dict, prefix: str) -> tuple:
 
 # ─── report / diff phase ──────────────────────────────────────────────────────
 #
-# Renders the Phase 4 comparison report inline in the table.
-# For every command that has changes it shows a side-by-side diff where:
-#   • unchanged lines are rendered normally
-#   • removed tokens (pre only)  are highlighted in red
-#   • added   tokens (post only) are highlighted in green
-#   • lines present on one side but not the other show "N/A" in the missing col
-#
-# The diff data comes from device_results[key]["diff"] which is populated by
-# run_diff_phase() in main.py using diff_devices() from diff.py.
+# CHANGE: Diff viewer is now rendered as a full-width overlay below the table
+# instead of trying to fit inside a narrow remark cell.
+# Each changed command gets its own collapsible full-width diff block that
+# sits outside the table, attached below the device panel.
 # ──────────────────────────────────────────────────────────────────────────────
 
 import difflib as _difflib
 
 
-def _inline_diff_html(pre_out: str, post_out: str) -> str:
+def _inline_diff_html(pre_out: str, post_out: str) -> tuple:
     """
-    Given two full command outputs (multi-line strings), returns an HTML
-    side-by-side table where changed tokens are highlighted.
-    Unchanged lines are shown with no markup.
+    Given two full command outputs (multi-line strings), returns
+    (pre_html, post_html) with highlighted tokens.
     """
     pre_lines  = pre_out.splitlines() if pre_out else []
     post_lines = post_out.splitlines() if post_out else []
     matcher    = _difflib.SequenceMatcher(None, pre_lines, post_lines, autojunk=False)
 
-    pre_col  = []   # list of HTML strings, one per display row
+    pre_col  = []
     post_col = []
 
     def _mark_line_diff(a: str, b: str):
-        """Return (html_a, html_b) with intra-line token highlights."""
         sm     = _difflib.SequenceMatcher(None, a, b, autojunk=False)
         ha, hb = [], []
         for tag, i1, i2, j1, j2 in sm.get_opcodes():
@@ -556,7 +541,6 @@ def _inline_diff_html(pre_out: str, post_out: str) -> str:
             for ln in pre_lines[i1:i2]:
                 pre_col.append(f'<span class="diff-eq">{_esc(ln)}</span>')
                 post_col.append(f'<span class="diff-eq">{_esc(ln)}</span>')
-
         elif tag == "replace":
             a_blk = pre_lines[i1:i2]
             b_blk = post_lines[j1:j2]
@@ -571,12 +555,10 @@ def _inline_diff_html(pre_out: str, post_out: str) -> str:
             for k in range(pairs, len(b_blk)):
                 pre_col.append(f'<span class="diff-na">N/A</span>')
                 post_col.append(f'<span class="diff-line-ins">{_esc(b_blk[k])}</span>')
-
         elif tag == "delete":
             for ln in pre_lines[i1:i2]:
                 pre_col.append(f'<span class="diff-line-del">{_esc(ln)}</span>')
                 post_col.append(f'<span class="diff-na">N/A</span>')
-
         elif tag == "insert":
             for ln in post_lines[j1:j2]:
                 pre_col.append(f'<span class="diff-na">N/A</span>')
@@ -589,12 +571,12 @@ def _inline_diff_html(pre_out: str, post_out: str) -> str:
 
 def _report_rows(diff: dict, device_data: dict, prefix: str) -> str:
     """
-    Renders Phase 4 rows.
-    diff = device_results[key]["diff"]  (may be empty if phase hasn't run)
+    Renders Phase 4 summary rows in the table.
+    The actual diff content is rendered in a separate full-width section
+    BELOW the table (see build_device_panel).
     """
     color = PHASE_META["report"]["color"]
 
-    # ── No diff data yet ──────────────────────────────────────────────────────
     if not diff:
         rows = [
             (f'<tr class="task-row">'
@@ -612,66 +594,43 @@ def _report_rows(diff: dict, device_data: dict, prefix: str) -> str:
         ]
         return "\n".join(rows)
 
-    # ── Pull full command outputs from pre/post for inline rendering ──────────
+    changed_cmds = sorted(diff.keys())
+    total_cmds   = len(changed_cmds)
+
     pre_cmds  = device_data.get("pre",  {}).get("execute_show_commands", {}).get("commands", [])
     post_cmds = device_data.get("post", {}).get("execute_show_commands", {}).get("commands", [])
     pre_map   = {c["cmd"]: c.get("output", "") for c in pre_cmds}
     post_map  = {c["cmd"]: c.get("output", "") for c in post_cmds}
 
-    changed_cmds = sorted(diff.keys())
-    total_cmds   = len(changed_cmds)
-    # +2 for the summary row + overall status row
-    rowspan      = total_cmds + 2
+    # ── Summary rows in table ─────────────────────────────────────────────────
+    rows = [
+        (f'<tr class="task-row">'
+         f'<td class="phase-cell" rowspan="{total_cmds + 2}" style="border-left:3px solid {color};">'
+         f'<span class="phase-lbl" style="color:{color};">Report</span></td>'
+         f'<td class="subtask-cell"><span class="mono">Diff Status</span></td>'
+         f'<td class="status-cell"><span class="badge b-ok">Complete</span></td>'
+         f'<td class="remark-cell mono" style="color:var(--muted2);">'
+         f'{total_cmds} command(s) with changes</td>'
+         f'</tr>'),
+        (f'<tr class="task-row">'
+         f'<td class="subtask-cell" colspan="3">'
+         f'<span class="mono" style="color:var(--muted2);font-size:.68rem;">'
+         f'Commands compared: {len(set(pre_map)|set(post_map))} &nbsp;·&nbsp; '
+         f'Changed: {total_cmds}</span>'
+         f'</td></tr>'),
+    ]
 
-    rows = []
-
-    # ── Overall status row ────────────────────────────────────────────────────
-    rows.append(
-        f'<tr class="task-row">'
-        f'<td class="phase-cell" rowspan="{rowspan}" style="border-left:3px solid {color};">'
-        f'<span class="phase-lbl" style="color:{color};">Report</span></td>'
-        f'<td class="subtask-cell"><span class="mono">Diff Status</span></td>'
-        f'<td class="status-cell"><span class="badge b-ok">Complete</span></td>'
-        f'<td class="remark-cell mono" style="color:var(--muted2);">'
-        f'{total_cmds} command(s) with changes</td>'
-        f'</tr>'
-    )
-
-    # ── Summary counts row ────────────────────────────────────────────────────
-    rows.append(
-        f'<tr class="task-row">'
-        f'<td class="subtask-cell" colspan="3">'
-        f'<span class="mono" style="color:var(--muted2);font-size:.68rem;">'
-        f'Commands compared: {len(set(pre_map)|set(post_map))} &nbsp;·&nbsp; '
-        f'Changed: {total_cmds}</span>'
-        f'</td></tr>'
-    )
-
-    # ── One row per changed command ───────────────────────────────────────────
+    # ── One summary row per changed command (button scrolls to full-width diff) ──
     for cmd in changed_cmds:
-        pre_out  = pre_map.get(cmd, "")
-        post_out = post_map.get(cmd, "")
-        pre_html, post_html = _inline_diff_html(pre_out, post_out)
-
-        did = f"diff-{prefix}-{abs(hash(cmd)) % 999999}"
-        toggle = f'<button class="mini-btn" onclick="tgl(\'{did}\')">Show Diff</button>'
-
-        drawer = (
-            f'<div class="cmd-drawer" hidden id="{did}">'
-            f'<div class="diff-outer">'
-            f'<div class="diff-grid">'
-            f'<div class="diff-hdr"><span>Pre-Upgrade</span></div>'
-            f'<div class="diff-hdr"><span>Post-Upgrade</span></div>'
-            f'<div class="diff-pane"><pre>{pre_html}</pre></div>'
-            f'<div class="diff-pane"><pre>{post_html}</pre></div>'
-            f'</div></div></div>'
-        )
-
+        did    = f"diff-{prefix}-{abs(hash(cmd)) % 999999}"
+        toggle = (f'<button class="mini-btn" '
+                  f'onclick="tglDiff(\'{did}\')">'
+                  f'Show Diff</button>')
         rows.append(
             f'<tr class="task-row">'
             f'<td class="subtask-cell">'
             f'<span class="mono" style="font-size:.72rem;color:#c8d3e8;">{_esc(cmd)}</span>'
-            f' {toggle}{drawer}</td>'
+            f' {toggle}</td>'
             f'<td class="status-cell"><span class="badge b-warn">'
             f'{len(diff[cmd])} change(s)</span></td>'
             f'<td class="remark-cell"><span class="remark-na">—</span></td>'
@@ -680,6 +639,47 @@ def _report_rows(diff: dict, device_data: dict, prefix: str) -> str:
 
     rows.append('<tr class="phase-sep"><td colspan="4"></td></tr>')
     return "\n".join(rows)
+
+
+def _diff_section(diff: dict, device_data: dict, prefix: str) -> str:
+    """
+    Renders the full-width diff section that lives BELOW the main table.
+    This keeps the diff viewer as wide as the whole panel rather than
+    squeezed into the Remark column.
+    """
+    if not diff:
+        return ""
+
+    pre_cmds  = device_data.get("pre",  {}).get("execute_show_commands", {}).get("commands", [])
+    post_cmds = device_data.get("post", {}).get("execute_show_commands", {}).get("commands", [])
+    pre_map   = {c["cmd"]: c.get("output", "") for c in pre_cmds}
+    post_map  = {c["cmd"]: c.get("output", "") for c in post_cmds}
+
+    blocks = []
+    for cmd in sorted(diff.keys()):
+        pre_out  = pre_map.get(cmd, "")
+        post_out = post_map.get(cmd, "")
+        pre_html, post_html = _inline_diff_html(pre_out, post_out)
+        did = f"diff-{prefix}-{abs(hash(cmd)) % 999999}"
+
+        blocks.append(f"""
+<div class="diff-block" id="{did}" hidden>
+  <div class="diff-block-hdr">
+    <div class="diff-block-cmd">
+      <span class="diff-block-label">DIFF</span>
+      <code class="diff-block-cmdname">{_esc(cmd)}</code>
+    </div>
+    <button class="mini-btn mini-err" onclick="tglDiff('{did}')">Close</button>
+  </div>
+  <div class="diff-grid">
+    <div class="diff-col-hdr">Pre-Upgrade</div>
+    <div class="diff-col-hdr">Post-Upgrade</div>
+    <div class="diff-pane"><pre>{pre_html}</pre></div>
+    <div class="diff-pane"><pre>{post_html}</pre></div>
+  </div>
+</div>""")
+
+    return f'<div class="diff-section" id="diffsec-{prefix}">{"".join(blocks)}</div>'
 
 
 # ─── full tbody ───────────────────────────────────────────────────────────────
@@ -749,11 +749,7 @@ def _phase_summary(device_data: dict) -> dict:
     out["post"] = (pt, ps, pf)
 
     diff = device_data.get("diff", {})
-    if diff:
-        # count commands with changes as "tasks"; all are "ok" (diff ran successfully)
-        out["report"] = (len(diff), len(diff), 0)
-    else:
-        out["report"] = (0, 0, 0)
+    out["report"] = (len(diff), len(diff), 0) if diff else (0, 0, 0)
     return out
 
 
@@ -761,7 +757,10 @@ def _phase_summary(device_data: dict) -> dict:
 
 def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> str:
     tbody, total, success, failed = build_tbody(device_data, device_key)
-    summary = _phase_summary(device_data)
+    summary  = _phase_summary(device_data)
+    prefix   = device_key.replace(".", "_").replace("-", "_")
+    diff     = device_data.get("diff", {})
+    diff_sec = _diff_section(diff, device_data, prefix)
 
     pill_cls = ("ok"     if failed == 0 and total > 0 else
                 "fail"   if success == 0 and total > 0 else "partial")
@@ -823,6 +822,8 @@ def build_device_panel(device_key: str, device_data: dict, is_first: bool) -> st
       </tbody>
     </table>
   </div>
+
+{diff_sec}
 
 </div>"""
 
@@ -930,7 +931,7 @@ def generate_html_report(workflow_data: dict, output_dir: str = ".") -> str:
   --r:6px;
 }}
 body{{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding:2rem 1rem 4rem;font-size:14px}}
-.wrap{{max-width:1080px;margin:0 auto}}
+.wrap{{max-width:1160px;margin:0 auto}}
 .hdr{{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;
       margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)}}
 .hdr h1{{font-size:1.35rem;font-weight:700;color:var(--text);letter-spacing:-.01em}}
@@ -968,7 +969,7 @@ body{{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:
 .ph-lbl{{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-family:var(--mono)}}
 .prog{{height:2px;background:var(--border);border-radius:99px;overflow:hidden}}
 .progbar{{height:100%;border-radius:99px;transition:width .4s ease}}
-.tw{{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:1.5rem}}
+.tw{{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:1rem}}
 table{{width:100%;border-collapse:collapse}}
 col.ct{{width:11%}} col.cs{{width:26%}} col.cst{{width:9%}} col.cr{{width:54%}}
 thead tr{{background:var(--surf2);border-bottom:2px solid var(--border)}}
@@ -1017,7 +1018,7 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
 .cm-cmd{{font-family:var(--mono);font-size:.72rem;color:#cbd5e1;flex:1;min-width:0;word-break:break-all}}
 .cm-btns{{display:flex;gap:.25rem;flex-wrap:wrap;margin-left:auto}}
 
-/* ── hops table — wider, no word-wrap ───────────────────────── */
+/* ── hops table ────────────────────────────────────────────────── */
 .hop-table-wrap{{overflow-x:auto;width:100%;border-radius:4px}}
 .hop-table{{border-collapse:collapse;font-size:.75rem;margin-top:.4rem;
             min-width:780px;table-layout:auto;width:100%}}
@@ -1030,35 +1031,149 @@ thead th{{padding:.6rem 1rem;font-size:.6rem;text-transform:uppercase;letter-spa
 .hop-image-cell{{min-width:320px;white-space:nowrap;word-break:keep-all}}
 .hop-status-cell{{width:7rem;text-align:center}}
 .hop-remark-cell{{min-width:200px;white-space:normal;word-break:break-word}}
-/* ─────────────────────────────────────────────────────────────── */
 
 .diff-none{{font-family:var(--mono);font-size:.72rem;color:var(--muted);padding:.4rem 0;font-style:italic}}
 
-/* ── inline diff viewer ─────────────────────────────────────── */
-.diff-outer{{
-  /* stretch beyond the narrow remark column into full panel width */
-  position:relative;
-  margin-left:calc(-11% - 26% - 9%);   /* pull left past Phase + Task + Status cols */
-  width:calc(100% + 11% + 26% + 9%);   /* expand to fill the full table row width  */
-  margin-top:.5rem;
+/* ════════════════════════════════════════════════════════════════
+   FULL-WIDTH DIFF SECTION (below the main table)
+   Each diff block is an independent card, full panel width.
+   ════════════════════════════════════════════════════════════════ */
+.diff-section{{
+  display:flex;
+  flex-direction:column;
+  gap:.75rem;
+  margin-bottom:1.5rem;
 }}
-.diff-grid{{display:grid;grid-template-columns:1fr 1fr;gap:0;
-            border:1px solid var(--border2);border-radius:4px;overflow:hidden;width:100%}}
-.diff-hdr{{background:var(--surf3);padding:.35rem 1rem;font-family:var(--mono);
-           font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;
-           color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)}}
-.diff-hdr:first-child{{border-right:1px solid var(--border)}}
-.diff-pane{{background:#060810;padding:.6rem 1rem;overflow-x:auto;max-height:480px;overflow-y:auto}}
-.diff-pane:first-of-type{{border-right:1px solid var(--border2)}}
-.diff-pane pre{{font-family:var(--mono);font-size:.68rem;line-height:1.8;
-                color:#8896aa;white-space:pre;word-break:normal}}
+
+.diff-block{{
+  background:var(--surf);
+  border:1px solid var(--border2);
+  border-radius:var(--r);
+  overflow:hidden;
+  animation:fadeIn .18s ease;
+}}
+
+.diff-block-hdr{{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:.6rem 1rem;
+  background:var(--surf3);
+  border-bottom:1px solid var(--border);
+  gap:1rem;
+}}
+
+.diff-block-cmd{{
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+  min-width:0;
+  flex:1;
+}}
+
+.diff-block-label{{
+  font-family:var(--mono);
+  font-size:.55rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--warn);
+  background:rgba(245,158,11,.08);
+  border:1px solid rgba(245,158,11,.2);
+  border-radius:3px;
+  padding:.1rem .35rem;
+  flex-shrink:0;
+}}
+
+.diff-block-cmdname{{
+  font-family:var(--mono);
+  font-size:.78rem;
+  color:#c8d3e8;
+  word-break:break-all;
+}}
+
+/* Side-by-side diff grid — full width, equal halves */
+.diff-grid{{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:auto 1fr;
+}}
+
+.diff-col-hdr{{
+  padding:.4rem 1rem;
+  font-family:var(--mono);
+  font-size:.6rem;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--muted);
+  font-weight:600;
+  background:var(--surf2);
+  border-bottom:1px solid var(--border);
+}}
+.diff-col-hdr:first-of-type{{
+  border-right:1px solid var(--border);
+}}
+
+.diff-pane{{
+  background:#060810;
+  padding:.75rem 1.1rem;
+  overflow-x:auto;
+  max-height:520px;
+  overflow-y:auto;
+}}
+.diff-pane:first-of-type{{
+  border-right:1px solid var(--border2);
+}}
+
+.diff-pane pre{{
+  font-family:var(--mono);
+  font-size:.72rem;
+  line-height:1.9;
+  color:#8896aa;
+  white-space:pre;
+  word-break:normal;
+  tab-size:4;
+}}
+
+/* Diff line styles */
 .diff-eq{{color:#8896aa}}
-.diff-line-del{{display:block;background:rgba(244,63,94,.08);border-left:2px solid #f43f5e;padding-left:4px}}
-.diff-line-ins{{display:block;background:rgba(34,197,94,.07);border-left:2px solid #22c55e;padding-left:4px}}
-.diff-na{{display:block;color:var(--muted);font-style:italic;opacity:.5}}
-mark.diff-del{{background:rgba(244,63,94,.35);color:#fca5a5;border-radius:2px;padding:0 1px}}
-mark.diff-ins{{background:rgba(34,197,94,.25);color:#86efac;border-radius:2px;padding:0 1px}}
-/* ─────────────────────────────────────────────────────────────── */
+.diff-line-del{{
+  display:block;
+  background:rgba(244,63,94,.10);
+  border-left:3px solid rgba(244,63,94,.55);
+  padding-left:6px;
+  margin-left:-6px;
+  color:#fca5a5;
+}}
+.diff-line-ins{{
+  display:block;
+  background:rgba(34,197,94,.08);
+  border-left:3px solid rgba(34,197,94,.45);
+  padding-left:6px;
+  margin-left:-6px;
+  color:#86efac;
+}}
+.diff-na{{
+  display:block;
+  color:var(--muted);
+  font-style:italic;
+  opacity:.45;
+}}
+mark.diff-del{{
+  background:rgba(244,63,94,.38);
+  color:#fca5a5;
+  border-radius:2px;
+  padding:0 2px;
+}}
+mark.diff-ins{{
+  background:rgba(34,197,94,.28);
+  color:#86efac;
+  border-radius:2px;
+  padding:0 2px;
+}}
+
+/* ═══════════════════════════════════════════════════════════════ */
+
 .json-sec{{margin-top:1.5rem}}
 .json-sec summary{{cursor:pointer;font-family:var(--mono);font-size:.68rem;font-weight:600;
                    text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
@@ -1075,6 +1190,8 @@ pre.jb{{margin-top:.6rem;background:var(--surf);border:1px solid var(--border);b
   .hdr{{flex-direction:column}}
   .sel-bar{{flex-direction:column;align-items:flex-start}}
   .dev-sel{{width:100%}}
+  .diff-grid{{grid-template-columns:1fr}}
+  .diff-col-hdr:first-of-type,.diff-pane:first-of-type{{border-right:none;border-bottom:1px solid var(--border)}}
 }}
 </style>
 </head>
@@ -1128,6 +1245,16 @@ function selectDevice(key) {{
 function tgl(id) {{
   var el=document.getElementById(id);
   if(el) el.hidden=!el.hidden;
+}}
+function tglDiff(id) {{
+  var el=document.getElementById(id);
+  if(!el) return;
+  var wasHidden = el.hidden;
+  el.hidden = !wasHidden;
+  if(!el.hidden) {{
+    // smooth scroll to the diff block
+    setTimeout(function(){{ el.scrollIntoView({{behavior:'smooth',block:'nearest'}}); }}, 50);
+  }}
 }}
 document.addEventListener('DOMContentLoaded',function(){{
   updateInfo('{first_key}');
