@@ -16,7 +16,7 @@ outputs/
 
 # OS files
 .DS_Store
-
+*.html
 # Environment files
 .env
 venv/
